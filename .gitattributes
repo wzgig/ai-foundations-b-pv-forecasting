@@ -1,0 +1,26 @@
+# Binary course artifacts
+*.pdf binary
+*.doc binary
+*.docx binary
+*.ppt binary
+*.pptx binary
+*.xls binary
+*.xlsx binary
+*.zip binary
+*.7z binary
+*.rar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.h5 binary
+*.pth binary
+*.eddx binary
+
+# Keep source and documentation text-normalized in the repository.
+*.md text eol=lf
+*.py text
+*.m text
+*.txt text
+*.csv text
+*.ipynb text eol=lf

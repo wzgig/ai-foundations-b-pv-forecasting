@@ -1,0 +1,41 @@
+# Editor and IDE files
+.idea/
+.vscode/
+*.iml
+
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Office temporary files
+~$*
+*.tmp
+
+# LaTeX / document build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+*.toc
+
+# MATLAB temporary files
+*.asv
+*.m~
+
+# Local runtime logs
+*.log.*
