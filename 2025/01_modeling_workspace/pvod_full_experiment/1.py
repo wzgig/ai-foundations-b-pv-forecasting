@@ -204,7 +204,11 @@ def train_model(model, train_X, train_Y, val_split=0.1, batch_size=64, epochs=50
     # 创建保存模型的目录
     import os
     os.makedirs('models', exist_ok=True)
-    model_path = 'models/best_model.pth'
+    model_path = f"models/{model.__class__.__name__}.pth"
+    if os.path.exists(model_path):
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        print(f"已复用训练好的模型：{model_path}")
+        return model, max_power
 
     # 训练循环
     for epoch in range(epochs):
@@ -245,7 +249,7 @@ def train_model(model, train_X, train_Y, val_split=0.1, batch_size=64, epochs=50
                 break
 
     # 加载最佳模型
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path, map_location=device))
     return model, max_power
 
 # ----------------------- 预测与评估 -----------------------

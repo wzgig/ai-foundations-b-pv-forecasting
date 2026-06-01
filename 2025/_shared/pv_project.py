@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import os
 import random
+import re
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
 import numpy as np
 import pandas as pd
@@ -242,3 +243,100 @@ def write_csv(df: pd.DataFrame, path: str | os.PathLike[str], **kwargs) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(target, encoding=UTF8_SIG, **kwargs)
+
+
+def slugify_checkpoint_name(name: str) -> str:
+    """Make a model/checkpoint name safe for Windows and Git paths."""
+
+    text = re.sub(r"[^\w\u4e00-\u9fff.-]+", "_", str(name), flags=re.UNICODE).strip("._")
+    return text or "model"
+
+
+def build_torch_checkpoint_signature(
+    model: Any,
+    train_X: np.ndarray,
+    train_Y: np.ndarray,
+    *,
+    input_length: int | None = None,
+    batch_size: int | None = None,
+    epochs: int | None = None,
+    lr: float | None = None,
+    patience: int | None = None,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Describe the training setup enough to avoid loading stale checkpoints."""
+
+    signature: dict[str, Any] = {
+        "model_class": model.__class__.__name__,
+        "train_X_shape": tuple(np.asarray(train_X).shape),
+        "train_Y_shape": tuple(np.asarray(train_Y).shape),
+        "input_length": input_length,
+        "batch_size": batch_size,
+        "epochs": epochs,
+        "lr": lr,
+        "patience": patience,
+    }
+    if extra:
+        signature.update(extra)
+    return signature
+
+
+def torch_checkpoint_path(
+    checkpoint_name: str,
+    directory: str | os.PathLike[str] = "models",
+) -> Path:
+    """Return the checkpoint file path for a named model run."""
+
+    return Path(directory) / f"{slugify_checkpoint_name(checkpoint_name)}.pth"
+
+
+def try_load_torch_checkpoint(
+    model: Any,
+    path: str | os.PathLike[str],
+    signature: dict[str, Any],
+    *,
+    torch_module: Any,
+    device: Any,
+) -> tuple[bool, float | None]:
+    """Load a compatible checkpoint and return whether it was reused."""
+
+    checkpoint_path = Path(path)
+    if not checkpoint_path.exists():
+        return False, None
+
+    checkpoint = torch_module.load(checkpoint_path, map_location=device)
+    if not isinstance(checkpoint, dict) or "state_dict" not in checkpoint:
+        return False, None
+
+    if checkpoint.get("signature") != signature:
+        return False, None
+
+    model.load_state_dict(checkpoint["state_dict"])
+    model.to(device)
+    model.eval()
+    return True, checkpoint.get("max_power")
+
+
+def save_torch_checkpoint(
+    model: Any,
+    path: str | os.PathLike[str],
+    signature: dict[str, Any],
+    *,
+    torch_module: Any,
+    max_power: float,
+    best_val_loss: float | None = None,
+) -> None:
+    """Save a reusable PyTorch checkpoint with metadata."""
+
+    checkpoint_path = Path(path)
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    torch_module.save(
+        {
+            "format_version": 1,
+            "signature": signature,
+            "state_dict": model.state_dict(),
+            "max_power": float(max_power),
+            "best_val_loss": None if best_val_loss is None else float(best_val_loss),
+        },
+        checkpoint_path,
+    )

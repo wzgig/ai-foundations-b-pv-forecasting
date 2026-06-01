@@ -52,6 +52,25 @@ class ProjectHealthTests(unittest.TestCase):
             module.resolve_input("问题2三模型预测结果对比表.csv", scenario_script).exists()
         )
 
+    def test_training_scripts_do_not_share_best_model_checkpoint_name(self):
+        offenders = []
+        for path in (PROJECT_ROOT / "2025").rglob("*.py"):
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            if "best_model.pth" in text:
+                offenders.append(str(path.relative_to(PROJECT_ROOT)))
+
+        self.assertEqual(offenders, [])
+
+    def test_checkpoint_names_are_safe_for_windows_paths(self):
+        shared_path = PROJECT_ROOT / "2025" / "_shared" / "pv_project.py"
+        spec = importlib.util.spec_from_file_location("pv_project", shared_path)
+        module = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(module)
+
+        path = module.torch_checkpoint_path("problem4 FusionModel:mixed")
+        self.assertEqual(path.as_posix(), "models/problem4_FusionModel_mixed.pth")
+
 
 if __name__ == "__main__":
     unittest.main()

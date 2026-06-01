@@ -64,6 +64,27 @@
 - 问题 3 的 SHAP 分析改为可选依赖，未安装 `shap` 时会跳过解释性图，不影响前面的场景分析输出。
 - `三模型绘图.py` 改为读取实际存在的 `问题3三模型预测结果对比表.csv`，并输出到脚本目录下的 `三模型绘图.png`。
 
+## 2026-06-02 模型训练缓存专项检查
+
+### 发现的问题
+
+代码中已经有保存模型的意识，但实现方式不完整：
+
+- 多数训练函数只在训练过程中保存 `models/best_model.pth`，再次运行时仍然从头训练。
+- 多模型循环共用同一个 `best_model.pth`，PureLSTM、FusionModel、BiFusionModel 会互相覆盖。
+- 检查点没有记录训练配置，后续很难判断某个 `.pth` 是否对应当前模型、输入维度、训练轮数和超参数。
+
+### 已完成的改进
+
+- 新增 `pv_project.py` 中的 checkpoint helper：构建训练签名、生成安全文件名、保存/加载带元数据的 PyTorch checkpoint。
+- 问题 2、问题 3、问题 4 的主脚本和对应建模工作区副本已支持：
+  - 按实验和模型独立保存，例如 `problem2_FusionModel.pth`、`problem4_BiFusionModel_mixed.pth`。
+  - 训练前先检查同名 checkpoint。
+  - 只有训练签名匹配时才复用，避免加载旧结构或旧超参数模型。
+  - 需要重新训练时可在函数参数中设置 `force_retrain=True`。
+- 早期建模工作区脚本已从共享 `best_model.pth` 改为按模型类名保存，并在训练前优先复用已有权重。
+- 回归测试新增检查：Python 脚本中不再硬编码 `best_model.pth`。
+
 ## 当前检查结果
 
 运行命令：
@@ -77,7 +98,7 @@ python -m unittest discover -s tests -q
 
 - Python 语法检查：通过。
 - 相对输入文件检查：通过，当前未发现找不到的相对输入。
-- 单元检查：2 个测试通过。
+- 单元检查：4 个测试通过。
 
 ## 后续建议
 

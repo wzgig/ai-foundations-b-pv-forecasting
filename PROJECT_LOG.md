@@ -2,6 +2,34 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-02 模型训练缓存专项优化
+
+### 问题判断
+
+- 代码中并非完全没有保存模型：多个训练函数会在早停时保存权重。
+- 但保存方式存在基础工程问题：大量脚本共用 `models/best_model.pth`，多模型训练会互相覆盖；再次运行时也不会先检查已有模型，仍会重新训练。
+
+### 主要改动
+
+- 在 `2025/_shared/pv_project.py` 中新增 PyTorch checkpoint 工具：
+  - 生成安全 checkpoint 文件名。
+  - 构建包含模型类、输入形状、训练轮数、学习率、早停参数等信息的训练签名。
+  - 保存包含 `state_dict`、`max_power`、训练签名和最佳验证损失的 checkpoint。
+  - 训练前只复用签名匹配的 checkpoint。
+- 优化问题 2、问题 3、问题 4 的主训练脚本和 `01_modeling_workspace` 中对应副本：
+  - 每个实验和模型使用独立 checkpoint 名称。
+  - 已有匹配模型时直接加载，跳过训练。
+  - 保留 `force_retrain=True` 入口用于强制重训。
+- 早期建模工作区脚本从共享 `best_model.pth` 改为按模型类名保存并优先复用。
+- 更新 `README.md`、`2025/README.md`、`2025/CODE_AUDIT.md`，说明模型缓存机制。
+- 回归测试新增检查，防止 Python 脚本重新硬编码共享 `best_model.pth`。
+
+### 验证结果
+
+- `python 2025\tools\project_health_check.py`：通过。
+- `python -m unittest discover -s tests -q`：通过，4 个测试成功。
+- Python 源码语法解析：通过。
+
 ## 2026-06-01 代码审计与第一轮工程化优化
 
 ### 调整目标

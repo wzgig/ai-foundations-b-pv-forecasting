@@ -63,7 +63,7 @@
 
 公共工程工具：
 
-- `pv_project.py`：Python 路径解析、中文绘图配置、随机种子、训练集归一化、分箱、指标和 CSV 写出工具。
+- `pv_project.py`：Python 路径解析、中文绘图配置、随机种子、训练集归一化、分箱、指标、CSV 写出和 PyTorch checkpoint 工具。
 - `matlab/resolve_project_input.m`：MATLAB 脚本的数据文件定位工具。
 
 ### `tools/`
@@ -90,6 +90,8 @@ python 2025\tools\project_health_check.py
 cd 2025\02_problem_solutions\problem3_scenario_analysis
 python .\问题3_场景划分分析_IEEE风格.py
 ```
+
+模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。问题 2-4 的主脚本会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`。
 
 ## 维护约定
 

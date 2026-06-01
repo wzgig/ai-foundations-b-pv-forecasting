@@ -33,11 +33,15 @@ SHARED_DIR = next(
 sys.path.insert(0, str(SHARED_DIR))
 
 from pv_project import (  # noqa: E402
+    build_torch_checkpoint_signature,
     configure_matplotlib,
     minmax_scale_train_only,
     resolve_input,
+    save_torch_checkpoint,
     set_random_seed,
     set_working_directory,
+    torch_checkpoint_path,
+    try_load_torch_checkpoint,
 )
 
 set_working_directory(__file__)
@@ -292,13 +296,49 @@ import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
 
 
-def train_model(model, train_X, train_Y, val_split=0.1, batch_size=64, epochs=50, lr=0.001, patience=5):
+def train_model(
+    model,
+    train_X,
+    train_Y,
+    val_split=0.1,
+    batch_size=64,
+    epochs=50,
+    lr=0.001,
+    patience=5,
+    checkpoint_name=None,
+    force_retrain=False,
+):
     # 设置设备
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
     # 数据归一化
-    max_power = train_X.max()
+    max_power = float(train_X.max())
+    checkpoint_name = checkpoint_name or model.__class__.__name__
+    checkpoint_path = torch_checkpoint_path(checkpoint_name)
+    checkpoint_signature = build_torch_checkpoint_signature(
+        model,
+        train_X,
+        train_Y,
+        input_length=train_X.shape[1],
+        batch_size=batch_size,
+        epochs=epochs,
+        lr=lr,
+        patience=patience,
+        extra={"checkpoint_name": checkpoint_name},
+    )
+    if not force_retrain:
+        loaded, checkpoint_max_power = try_load_torch_checkpoint(
+            model,
+            checkpoint_path,
+            checkpoint_signature,
+            torch_module=torch,
+            device=device,
+        )
+        if loaded:
+            print(f"已复用训练好的模型：{checkpoint_path}")
+            return model, float(checkpoint_max_power or max_power)
+
     train_X, train_Y = train_X / max_power, train_Y / max_power
 
     # 创建验证集
@@ -320,11 +360,6 @@ def train_model(model, train_X, train_Y, val_split=0.1, batch_size=64, epochs=50
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     criterion = nn.MSELoss()
     best_loss, counter = float('inf'), 0
-
-    # 创建保存模型的目录
-    import os
-    os.makedirs('models', exist_ok=True)
-    model_path = 'models/best_model.pth'
 
     # 训练循环
     for epoch in range(epochs):
@@ -356,8 +391,15 @@ def train_model(model, train_X, train_Y, val_split=0.1, batch_size=64, epochs=50
         if val_loss < best_loss:
             best_loss = val_loss
             counter = 0
-            torch.save(model.state_dict(), model_path)
-            print(f"模型保存于 {model_path}")
+            save_torch_checkpoint(
+                model,
+                checkpoint_path,
+                checkpoint_signature,
+                torch_module=torch,
+                max_power=max_power,
+                best_val_loss=best_loss,
+            )
+            print(f"模型保存于 {checkpoint_path}")
         else:
             counter += 1
             if counter >= patience:
@@ -365,7 +407,15 @@ def train_model(model, train_X, train_Y, val_split=0.1, batch_size=64, epochs=50
                 break
 
     # 加载最佳模型
-    model.load_state_dict(torch.load(model_path))
+    loaded, _ = try_load_torch_checkpoint(
+        model,
+        checkpoint_path,
+        checkpoint_signature,
+        torch_module=torch,
+        device=device,
+    )
+    if not loaded:
+        raise RuntimeError(f"未能加载最佳模型检查点：{checkpoint_path}")
     return model, max_power
 
 # ----------------------- 预测与评估 -----------------------
@@ -755,7 +805,12 @@ def run_input_mode_experiments(df, model_dict, modes=['nwp', 'lmd', 'mixed']):
             elif name == "FusionModel":
                 model_instance = FusionModel(input_len=96)
 
-            model_trained, max_power = train_model(model_instance, train_X_mv, train_Y)
+            model_trained, max_power = train_model(
+                model_instance,
+                train_X_mv,
+                train_Y,
+                checkpoint_name=f"problem4_{name}_{mode}",
+            )
             preds, rmse, mae, mape = evaluate_model(model_trained, test_X_mv, test_Y, test_timestamps, df, max_power)
 
             metrics = compute_all_metrics(test_Y, preds, test_timestamps, df)

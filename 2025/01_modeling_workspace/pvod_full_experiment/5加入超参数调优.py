@@ -220,6 +220,14 @@ def train_model(model, train_X, train_Y, val_split=0.1, batch_size=64, epochs=50
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     max_power = train_X.max()
+    import os
+    os.makedirs("models", exist_ok=True)
+    model_path = f"models/{model.__class__.__name__}_optimized.pth"
+    if os.path.exists(model_path):
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        print(f"已复用训练好的模型：{model_path}")
+        return model, max_power
+
     train_X, train_Y = train_X / max_power, train_Y / max_power
 
     val_size = int(len(train_X) * val_split)
@@ -266,14 +274,14 @@ def train_model(model, train_X, train_Y, val_split=0.1, batch_size=64, epochs=50
         if val_loss < best_loss:
             best_loss = val_loss
             counter = 0
-            torch.save(model.state_dict(), "models/best_model.pth")
+            torch.save(model.state_dict(), model_path)
         else:
             counter += 1
             if counter >= patience:
                 print("Early stopping")
                 break
 
-    model.load_state_dict(torch.load("models/best_model.pth"))
+    model.load_state_dict(torch.load(model_path, map_location=device))
     return model, max_power
 
 # ===================== Optuna 调参模板 =====================

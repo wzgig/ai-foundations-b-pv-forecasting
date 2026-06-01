@@ -23,6 +23,7 @@ import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.dates as mdates
 from matplotlib import rcParams
+import os
 import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False  # 修复负号显示问题
@@ -284,6 +285,13 @@ class ModelTrainer:
         """执行训练流程"""
         self._prepare_data()
         self.model.to(self.device)
+        os.makedirs("models", exist_ok=True)
+        model_path = f"models/{self.model.__class__.__name__}.pth"
+        if os.path.exists(model_path):
+            self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+            print(f"已复用训练好的模型：{model_path}")
+            return self.model
+
         optimizer = torch.optim.Adam(self.model.parameters(), lr=Config.LR)
         criterion = nn.MSELoss()
 
@@ -304,7 +312,7 @@ class ModelTrainer:
             if val_loss < best_loss:
                 best_loss = val_loss
                 patience_counter = 0
-                torch.save(self.model.state_dict(), 'models/best_model.pth')
+                torch.save(self.model.state_dict(), model_path)
             else:
                 patience_counter += 1
                 if patience_counter >= Config.PATIENCE:
@@ -312,7 +320,7 @@ class ModelTrainer:
 
             print(f"Epoch {epoch + 1}: Train Loss={train_loss:.4f}, Val Loss={val_loss:.4f}")
 
-        self.model.load_state_dict(torch.load('models/best_model.pth'))
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         return self.model
 
     def _prepare_data(self):
