@@ -9,13 +9,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 from math import radians, cos, sin, acos, exp
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+from pathlib import Path
 from scipy.integrate import odeint  # 使用odeint替代ode45
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib import rcParams
 
+SCRIPT_DIR = Path(__file__).resolve().parent
 rcParams['font.family'] = 'SimHei'  # 或者其他中文字体，如 'Microsoft YaHei'
 rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
@@ -33,7 +32,7 @@ TAU_A = 0.15          # 气溶胶AOD
 U_O = 0.3             # 臭氧厚度
 
 # === 读取数据 === #
-df = pd.read_excel('Solar station site 5 (Nominal capacity-110MW).xlsx')
+df = pd.read_excel(SCRIPT_DIR / 'Solar station site 5 (Nominal capacity-110MW).xlsx')
 df.columns = ['Time', 'Total', 'DNI', 'GHI', 'Temp', 'Pressure', 'RH', 'Power']
 df['Time'] = pd.to_datetime(df['Time'])
 

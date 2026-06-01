@@ -4,6 +4,9 @@ Created on 2025/5/25 09:13
 
 @author: Prince
 """
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,6 +21,24 @@ import plotly.express as px
 import plotly.graph_objects as go
 import seaborn as sns
 # ===============================================
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+SHARED_DIR = next(
+    parent / "_shared" for parent in (SCRIPT_DIR, *SCRIPT_DIR.parents)
+    if (parent / "_shared").exists()
+)
+sys.path.insert(0, str(SHARED_DIR))
+
+from pv_project import (  # noqa: E402
+    configure_matplotlib,
+    resolve_input,
+    set_random_seed,
+    set_working_directory,
+)
+
+set_working_directory(__file__)
+configure_matplotlib()
+set_random_seed()
 #
 # rcParams['font.family'] = 'SimHei'
 # rcParams['axes.unicode_minus'] = False
@@ -39,7 +60,7 @@ rcParams.update({
     'figure.dpi': 150
 })
 # ===============================================
-df = pd.read_csv("station00.csv")
+df = pd.read_csv(resolve_input("station00.csv", __file__))
 df['date_time'] = pd.to_datetime(df['date_time'])
 
 # 添加日期信息
@@ -113,6 +134,7 @@ test_timestamps = np.array(strict_test_timestamps)
 
 import torch
 import torch.nn as nn
+set_random_seed(torch_module=torch)
 
 class LSTMBranch(nn.Module):
     def __init__(self, input_len, hidden_dim=64, num_layers=2):

@@ -1,5 +1,10 @@
 % 数据读取与预处理
-filename = 'Solar station site 4 (Nominal capacity-130MW).xlsx';
+scriptDir = fileparts(mfilename('fullpath'));
+projectRoot = fileparts(fileparts(scriptDir));
+addpath(fullfile(projectRoot, '_shared', 'matlab'));
+filename = resolve_project_input( ...
+    'Solar station site 4 (Nominal capacity-130MW).xlsx', scriptDir, ...
+    {'Solar station site 5 (Nominal capacity-110MW).xlsx'});
 T = readtable(filename);
 
 % 重命名字段以方便调用

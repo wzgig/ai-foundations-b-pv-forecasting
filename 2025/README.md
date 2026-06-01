@@ -1,6 +1,6 @@
 # 2025 课程大作业目录说明
 
-本目录按工作流重新组织，目标是让后续修改、复现实验、查找结果和维护论文材料都有稳定入口。
+本目录按工作流组织 2025 年《人工智能基础B》A 题材料，目标是让后续复现实验、继续改代码、查找结果和维护论文都有稳定入口。
 
 ## 目录总览
 
@@ -20,55 +20,80 @@
 │   ├── exploratory_analysis/
 │   ├── paper_assets/
 │   └── scenario_comparisons/
-└── 04_paper/
-    └── final_submission/
+├── 04_paper/
+│   └── final_submission/
+├── _shared/
+│   ├── pv_project.py
+│   └── matlab/
+├── tools/
+│   └── project_health_check.py
+├── CODE_AUDIT.md
+├── README.md
+└── requirements.txt
 ```
 
 ## 目录职责
 
 ### `00_course_materials/`
 
-存放题面和课程附件。这里的文件只作为需求和背景资料，不放实验输出。
+存放题面和课程附件，只作为需求和背景资料，不放实验输出。
 
 ### `01_modeling_workspace/pvod_full_experiment/`
 
-完整 PVOD 建模工作区，保留了多站点数据、McClear 数据、模型脚本、预测结果、模型权重和若干过程文档。
-
-这个目录保持自包含：脚本通常按当前工作目录读取 `station00.csv`、`metadata.csv`、预测结果表等文件。复现实验时建议先进入该目录再运行脚本：
-
-```powershell
-cd 2025\01_modeling_workspace\pvod_full_experiment
-python .\7添加绘图与输出三个指标的对比表格.py
-python .\9问题3初步.py
-python .\10问题4.py
-```
+完整 PVOD 建模工作区，保留多站点数据、McClear 数据、模型脚本、预测结果、模型权重和过程文档。这里适合作为继续大规模实验的入口。
 
 ### `02_problem_solutions/`
 
-按题目拆分的交付材料。每个子目录保留对应问题的代码、输入数据、结果表、图表和简要文档。
+按题目拆分的交付材料。
 
-- `problem1_data_analysis/`：问题 1 的数据读取、统计分析、MATLAB/Python 探索脚本和单站点数据。
-- `problem2_baseline_forecasting/`：问题 2 的三模型预测、预测结果表、白昼指标和模型对比图。
-- `problem3_scenario_analysis/`：问题 3 的场景划分、特征重要性、提升来源分析和补充绘图。
-- `problem4_feature_ablation/`：问题 4 的不同输入特征组合对比、雷达图、热力图和指标图。
-
-这些目录也按“自包含运行”处理。若要重跑某一问题，先进入对应问题目录，再运行其中的脚本。
+- `problem1_data_analysis/`：理论功率建模、物理量分析、MATLAB/Python 探索脚本和单站点 Excel 数据。
+- `problem2_baseline_forecasting/`：三模型日前预测、白昼指标、统一预测表和可视化图。
+- `problem3_scenario_analysis/`：气象场景划分、特征重要性、提升来源分析和典型场景图。
+- `problem4_feature_ablation/`：不同输入特征组合的预测对比、雷达图、热力图和指标图。
 
 ### `03_figures/`
 
-集中存放跨问题复用或论文展示用的图像素材。
-
-- `exploratory_analysis/`：早期数据探索图和对应 MATLAB 绘图脚本。
-- `paper_assets/`：论文或汇报中使用的流程图、LSTM 图和手工整理图像。
-- `scenario_comparisons/`：典型优/弱场景对比图。
+集中保存跨问题复用或论文展示用的图像素材。
 
 ### `04_paper/final_submission/`
 
-最终论文文件，包含 PDF 和可编辑 Word 文档。后续若继续改论文，应优先从这里开始。
+最终论文 PDF 和可编辑 Word 文档。
+
+### `_shared/`
+
+公共工程工具：
+
+- `pv_project.py`：Python 路径解析、中文绘图配置、随机种子、训练集归一化、分箱、指标和 CSV 写出工具。
+- `matlab/resolve_project_input.m`：MATLAB 脚本的数据文件定位工具。
+
+### `tools/`
+
+`project_health_check.py` 会静态检查 Python 语法、重复代码快照和相对输入文件是否能在项目内找到。该脚本不会执行训练。
+
+## 复现建议
+
+安装依赖：
+
+```powershell
+pip install -r 2025\requirements.txt
+```
+
+运行健康检查：
+
+```powershell
+python 2025\tools\project_health_check.py
+```
+
+运行单个问题脚本时，可以直接进入问题目录：
+
+```powershell
+cd 2025\02_problem_solutions\problem3_scenario_analysis
+python .\问题3_场景划分分析_IEEE风格.py
+```
 
 ## 维护约定
 
-- 新的代码或结果优先放到对应问题目录；跨问题的完整实验放到 `01_modeling_workspace/`。
-- 不再提交重复压缩包、临时转换文档、IDE 配置、缓存文件或只用于个人归档的文件。
-- 若移动脚本旁边的数据文件，需要同步检查脚本中的相对路径。
-- 重要结构调整应同步更新根目录 `PROJECT_LOG.md`。
+- 新代码优先放到对应问题目录；跨问题复用逻辑放到 `_shared/`。
+- 不再提交重复压缩包、IDE 配置、缓存文件和临时转换文档。
+- 移动数据文件后，要同步运行 `python 2025\tools\project_health_check.py`。
+- 重要结构调整或代码优化要继续追加到根目录 `PROJECT_LOG.md`。

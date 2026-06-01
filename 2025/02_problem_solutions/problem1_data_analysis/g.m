@@ -2,7 +2,10 @@ clear; clc; tic;
 
 %% ------------------------ 1. 读取与预处理数据 ------------------------
 %读取数据
-filename = 'Solar station site 5 (Nominal capacity-110MW).xlsx';
+scriptDir = fileparts(mfilename('fullpath'));
+projectRoot = fileparts(fileparts(fileparts(scriptDir)));
+addpath(fullfile(projectRoot, '_shared', 'matlab'));
+filename = resolve_project_input('Solar station site 5 (Nominal capacity-110MW).xlsx', scriptDir);
 % 保留原始变量名，避免 MATLAB 自动更改列名
 T = readtable(filename, 'VariableNamingRule', 'preserve');  
 % 重命名列变量，统一格式

@@ -1,6 +1,9 @@
 clear; clc; tic
 %% === 数据读取 ===
-filename = 'Solar station site 5 (Nominal capacity-110MW).xlsx';
+scriptDir = fileparts(mfilename('fullpath'));
+projectRoot = fileparts(fileparts(fileparts(scriptDir)));
+addpath(fullfile(projectRoot, '_shared', 'matlab'));
+filename = resolve_project_input('Solar station site 5 (Nominal capacity-110MW).xlsx', scriptDir);
 T = readtable(filename);
 % 重命名列（清理空格与统一名称）
 T.Properties.VariableNames = {'Time','TotalIrradiance','DNI','GHI','Temp','Pressure','Humidity','Power'};

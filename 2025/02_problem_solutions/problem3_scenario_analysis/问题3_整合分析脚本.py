@@ -1,22 +1,39 @@
 
 # -*- coding: utf-8 -*-
+import sys
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 from sklearn.tree import plot_tree
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+SHARED_DIR = next(
+    parent / "_shared" for parent in (SCRIPT_DIR, *SCRIPT_DIR.parents)
+    if (parent / "_shared").exists()
+)
+sys.path.insert(0, str(SHARED_DIR))
+
+from pv_project import (  # noqa: E402
+    configure_matplotlib,
+    resolve_input,
+    safe_qcut,
+    set_working_directory,
+    write_csv,
+)
+
 # 设置中文字体（替代Arial，防止缺字）
-plt.rcParams['font.family'] = 'SimHei'
-plt.rcParams['axes.unicode_minus'] = False
+set_working_directory(__file__)
+configure_matplotlib(dpi=300)
 
 # ---------- 1. 数据读取 ----------
-df_station = pd.read_csv("station00.csv", parse_dates=["date_time"])
-df_q2 = pd.read_csv("问题2三模型预测结果对比表.csv", parse_dates=["起报时间", "预报时间"])
-df_q3 = pd.read_csv("问题3三模型预测结果对比表.csv", parse_dates=["起报时间", "预报时间"])
+df_station = pd.read_csv(resolve_input("station00.csv", __file__), parse_dates=["date_time"])
+df_q2 = pd.read_csv(resolve_input("问题2三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
+df_q3 = pd.read_csv(resolve_input("问题3三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
 
 # ---------- 2. 数据清洗 ----------
 clean_columns = lambda cols: [col.replace(" (MW)", "").replace("预测功率", "").strip() for col in cols]
@@ -31,12 +48,14 @@ df_q3_fusion = df_q3[["起报时间", "预报时间", "actual", "FusionModel"]].
 df_fusion_compare = pd.merge(df_q2_fusion, df_q3_fusion, on=["起报时间", "预报时间", "actual"])
 
 # ---------- 4. 计算每日RMSE提升 ----------
-daily_rmse = df_fusion_compare.groupby("起报时间", group_keys=False).apply(
-    lambda x: pd.Series({
-        "RMSE_Fusion_q2": np.sqrt(mean_squared_error(x["actual"], x["fusion_q2"])),
-        "RMSE_Fusion_q3": np.sqrt(mean_squared_error(x["actual"], x["fusion_q3"]))
-    }), include_groups=False
-).reset_index()
+daily_rows = []
+for start_time, group in df_fusion_compare.groupby("起报时间", observed=True):
+    daily_rows.append({
+        "起报时间": start_time,
+        "RMSE_Fusion_q2": np.sqrt(mean_squared_error(group["actual"], group["fusion_q2"])),
+        "RMSE_Fusion_q3": np.sqrt(mean_squared_error(group["actual"], group["fusion_q3"])),
+    })
+daily_rmse = pd.DataFrame(daily_rows)
 daily_rmse["提升值_RMSE"] = daily_rmse["RMSE_Fusion_q2"] - daily_rmse["RMSE_Fusion_q3"]
 
 # ---------- 5. 提取每日气象指标 ----------
@@ -64,7 +83,7 @@ df = df.sort_values("起报时间").reset_index(drop=True)
 
 # ---------- 7. 构建分组标签 ----------
 def create_bins(data, col, q, labels):
-    return pd.qcut(data[col], q=q, labels=labels, duplicates='drop')
+    return safe_qcut(data[col], q=q, labels=labels)
 
 df["天气类型"] = create_bins(df, "avg_globalirrad", 3, ["阴天", "多云", "晴天"])
 df["光照波动性"] = create_bins(df, "std_globalirrad", 2, ["稳定", "不稳定"])
@@ -77,7 +96,7 @@ df["季节"] = df["season"]
 group_fields = ["天气类型", "光照波动性", "气温", "湿度", "风速", "季节"]
 for feature in group_fields:
     fig, ax = plt.subplots(figsize=(6, 4))
-    stat = df.groupby(feature)["提升值_RMSE"].agg(["mean", "std", "count"]).reset_index()
+    stat = df.groupby(feature, observed=True)["提升值_RMSE"].agg(["mean", "std", "count"]).reset_index()
     sns.barplot(x=feature, y="mean", data=stat, palette="Set2", ax=ax)
     ax.errorbar(x=range(len(stat)), y=stat["mean"], yerr=stat["std"], fmt='none', capsize=4, color='black')
     for i, row in stat.iterrows():
@@ -85,7 +104,7 @@ for feature in group_fields:
     ax.set_ylabel("RMSE提升值")
     ax.set_title(f"{feature}分组分析")
     plt.tight_layout()
-    plt.savefig(f"{feature}_分组分析图.png", dpi=300)
+    plt.savefig(SCRIPT_DIR / f"{feature}_分组分析图.png", dpi=300)
     plt.close()
 
 # ---------- 9. 策略推荐分类器 ----------
@@ -102,9 +121,9 @@ plt.figure(figsize=(10, 6))
 plot_tree(clf, feature_names=features, class_names=["否", "是"], filled=True)
 plt.title("模型推荐策略决策树")
 plt.tight_layout()
-plt.savefig("推荐策略_决策树.png", dpi=300)
+plt.savefig(SCRIPT_DIR / "推荐策略_决策树.png", dpi=300)
 plt.close()
 
 # ---------- 10. 导出分析结果 ----------
-df.to_csv("场景划分提升分析结果.csv", index=False, encoding="utf_8_sig")
+write_csv(df, SCRIPT_DIR / "场景划分提升分析结果.csv", index=False)
 print("分析完成，图像和结果已导出。")

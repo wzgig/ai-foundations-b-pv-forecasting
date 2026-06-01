@@ -4,7 +4,9 @@ Created on 2025/5/25 09:13
 
 @author: Prince
 """
+import sys
 import time
+from pathlib import Path
 
 # 开始计时
 start_time = time.time()
@@ -22,6 +24,25 @@ import plotly.express as px
 import plotly.graph_objects as go
 import seaborn as sns
 # ===============================================
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+SHARED_DIR = next(
+    parent / "_shared" for parent in (SCRIPT_DIR, *SCRIPT_DIR.parents)
+    if (parent / "_shared").exists()
+)
+sys.path.insert(0, str(SHARED_DIR))
+
+from pv_project import (  # noqa: E402
+    configure_matplotlib,
+    minmax_scale_train_only,
+    resolve_input,
+    set_random_seed,
+    set_working_directory,
+)
+
+set_working_directory(__file__)
+configure_matplotlib()
+set_random_seed()
 #
 # rcParams['font.family'] = 'SimHei'
 # rcParams['axes.unicode_minus'] = False
@@ -43,7 +64,7 @@ rcParams.update({
     'figure.dpi': 150
 })
 # ===============================================
-df = pd.read_csv("station00.csv")
+df = pd.read_csv(resolve_input("station00.csv", __file__))
 
 df['date_time'] = pd.to_datetime(df['date_time'])
 
@@ -78,17 +99,10 @@ features = ['power', 'nwp_globalirrad', 'nwp_directirrad', 'nwp_temperature',
             'nwp_humidity', 'nwp_windspeed', 'nwp_pressure', 'wind_x', 'wind_y']
 
 
-# 归一化（仅对训练集拟合，全部样本变换）
+# 归一化（仅对训练集拟合，全部样本变换，避免测试集信息泄漏）
 from sklearn.preprocessing import MinMaxScaler
 
-scalers = {}
-for col in features:
-    scaler = MinMaxScaler()
-    train_vals = df[df['set'] == 'train'][col].values.reshape(-1, 1)
-    df[col + '_scaled'] = scaler.fit_transform(df[[col]])
-    scalers[col] = scaler
-
-scaled_features = [col + '_scaled' for col in features]
+df, scalers, scaled_features = minmax_scale_train_only(df, features)
 
 
 # 指定测试集：2、5、8、11 月最后 7 天
@@ -148,6 +162,7 @@ def get_inputs(use_mv):
 
 import torch
 import torch.nn as nn
+set_random_seed(torch_module=torch)
 
 class LSTMBranch(nn.Module):
     def __init__(self, input_len, hidden_dim=64, num_layers=2):
@@ -719,11 +734,11 @@ def run_input_mode_experiments(df, model_dict, modes=['nwp', 'lmd', 'mixed']):
         features = get_feature_columns(mode)
         scaled_features = []
 
-        # 归一化当前字段
+        # 归一化当前字段：只用训练集拟合，再变换全量数据
         for col in features + ['power']:
             scaler = MinMaxScaler()
-            train_vals = df[df['set'] == 'train'][col].values.reshape(-1, 1)
-            df[col + '_scaled'] = scaler.fit_transform(df[[col]])
+            scaler.fit(df.loc[df['set'] == 'train', [col]])
+            df[col + '_scaled'] = scaler.transform(df[[col]])
             scaled_features.append(col + '_scaled')
 
         # 构造样本

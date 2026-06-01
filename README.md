@@ -1,69 +1,70 @@
 # 光伏电站发电功率日前预测
 
-这是《人工智能基础B》课程大作业仓库，围绕 2025 年 A 题“光伏电站发电功率日前预测问题”整理代码、数据分析、模型实验、论文终稿、结果图表和必要数据。
+这是《人工智能基础B》课程大作业仓库，围绕 2025 年 A 题“光伏电站发电功率日前预测问题”整理代码、数据分析、模型实验、结果图表和最终论文。
 
 ## 项目概览
 
-本项目以光伏电站历史功率和数值天气预报数据为基础，完成从数据理解、特征分析、模型预测到结果评估的完整课程作业流程。仓库内容覆盖四个主要问题：
+项目基于光伏电站历史功率、数值天气预报和相关气象数据，完成从数据理解、理论功率分析、日前预测建模、场景划分到输入特征消融的完整课程作业流程。
 
-- 问题 1：光伏电站数据分析、指标统计与可视化。
-- 问题 2：基于历史功率序列的日前功率预测建模与评估。
-- 问题 3：结合气象因素的场景划分、误差来源分析与模型改进。
-- 问题 4：比较不同输入特征组合下的预测效果，并输出多模型指标对比。
+主要问题包括：
+
+- 问题 1：光伏电站数据分析、理论功率建模和可视化。
+- 问题 2：基于历史功率序列的日前功率预测和三模型对比。
+- 问题 3：引入气象变量后的场景划分、误差来源分析和模型改进。
+- 问题 4：比较不同输入特征组合下的预测效果。
 
 ## 目录结构
 
 ```text
 .
-├── 《人工智能基础B》期末大作业布置通知.pdf
-└── 2025/
-    ├── 00_course_materials/             # 题面和课程附件
-    ├── 01_modeling_workspace/           # 完整 PVOD 建模工作区
-    ├── 02_problem_solutions/            # 问题 1-4 的分问题代码、数据和结果
-    ├── 03_figures/                      # 探索图、论文图和场景对比图
-    ├── 04_paper/                        # 最终论文 PDF 与可编辑文档
-    └── README.md                        # 2025 目录内的结构说明
+├── 2025/
+│   ├── 00_course_materials/       题面和课程附件
+│   ├── 01_modeling_workspace/     完整 PVOD 建模实验工作区
+│   ├── 02_problem_solutions/      问题 1-4 的代码、数据、结果和图表
+│   ├── 03_figures/                探索图、论文素材图和场景对比图
+│   ├── 04_paper/                  最终论文 PDF 与 Word 文件
+│   ├── _shared/                   Python 与 MATLAB 公共工具
+│   ├── tools/                     项目健康检查脚本
+│   ├── CODE_AUDIT.md              代码审计与优化记录
+│   ├── README.md                  2025 目录说明
+│   └── requirements.txt           Python 依赖清单
+├── tests/                         轻量级回归检查
+└── PROJECT_LOG.md                 项目工作日志
 ```
 
 ## 技术栈
 
-- Python：`pandas`、`numpy`、`matplotlib`、`seaborn`、`scikit-learn`、`PyTorch`
-- MATLAB：数据分析、基础绘图和部分指标计算
-- Office 文档：论文终稿、分问题说明和补充记录
+- Python：`numpy`、`pandas`、`matplotlib`、`seaborn`、`scikit-learn`、`scipy`、`torch`、`plotly`
+- MATLAB：问题 1 理论功率建模和探索性绘图
+- Office 文档：论文终稿、分问题说明和补充材料
 
-## 主要产物
+## 复现与检查
 
-- 完整建模工作区：见 `2025/01_modeling_workspace/pvod_full_experiment/`
-- 分问题材料：见 `2025/02_problem_solutions/`
-- 可视化图表：见 `2025/03_figures/` 和各问题目录中的绘图结果
-- 论文材料：见 `2025/04_paper/final_submission/`
-- 工作记录：见根目录 `PROJECT_LOG.md`
+安装 Python 依赖：
 
-## 复现实验
+```powershell
+pip install -r 2025\requirements.txt
+```
 
-1. 进入对应问题目录，例如：
+运行项目健康检查：
 
-   ```powershell
-   cd 2025\01_modeling_workspace\pvod_full_experiment
-   ```
+```powershell
+python 2025\tools\project_health_check.py
+```
 
-2. 安装常用依赖：
+运行轻量级回归检查：
 
-   ```powershell
-   pip install numpy pandas matplotlib seaborn scikit-learn torch plotly openpyxl
-   ```
+```powershell
+python -m unittest discover -s tests -q
+```
 
-3. 根据脚本中的相对路径运行对应问题代码，例如：
+运行某个实验时，优先进入对应目录，例如：
 
-   ```powershell
-   python .\7添加绘图与输出三个指标的对比表格.py
-   python .\9问题3初步.py
-   python .\10问题4.py
-   ```
+```powershell
+cd 2025\02_problem_solutions\problem2_baseline_forecasting
+python .\7添加绘图与输出三个指标的对比表格.py
+```
 
-> [!NOTE]
-> 部分脚本来自课程实验过程，文件编码、字体和本地路径可能需要按运行环境调整。中文图表建议安装 `SimHei` 或其他可用中文字体。
+## 代码维护说明
 
-## 说明
-
-本仓库用于课程学习、实验复现和作业材料归档。目录中保留了核心数据、可运行脚本、结果图表和最终论文；重复压缩包、外部参考资料原文、转换中间稿和个人归档文件已清理，方便后续维护和公开展示。
+2026-06-01 已完成第一轮代码工程化优化：新增公共路径解析、中文绘图配置、随机种子设置、训练集归一化工具、MATLAB 数据定位函数和项目健康检查。后续如果继续重构，建议优先把重复的 PyTorch 模型定义和训练循环抽取为统一模块。

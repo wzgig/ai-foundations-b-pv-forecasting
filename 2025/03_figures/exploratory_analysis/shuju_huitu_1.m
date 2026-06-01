@@ -1,6 +1,9 @@
 clear,clc,tic
 %% 数据读取与预处理
-filename = 'Solar station site 5 (Nominal capacity-110MW).xlsx';
+scriptDir = fileparts(mfilename('fullpath'));
+projectRoot = fileparts(fileparts(scriptDir));
+addpath(fullfile(projectRoot, '_shared', 'matlab'));
+filename = resolve_project_input('Solar station site 5 (Nominal capacity-110MW).xlsx', scriptDir);
 T = readtable(filename);
 
 % 重命名字段

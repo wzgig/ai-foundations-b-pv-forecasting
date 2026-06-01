@@ -1,6 +1,11 @@
 clear,clc,tic
 %% 读取数据
-filename = 'Solar station site 4 (Nominal capacity-130MW).xlsx';
+scriptDir = fileparts(mfilename('fullpath'));
+projectRoot = fileparts(fileparts(fileparts(scriptDir)));
+addpath(fullfile(projectRoot, '_shared', 'matlab'));
+filename = resolve_project_input( ...
+    'Solar station site 4 (Nominal capacity-130MW).xlsx', scriptDir, ...
+    {'Solar station site 5 (Nominal capacity-110MW).xlsx'});
 T = readtable(filename);
 T.Properties.VariableNames = {'Time','TotalIrradiance','DNI','GHI','Temp','Pressure','Humidity','Power'};
 T.Time = datetime(T.Time, 'InputFormat', 'yyyy-MM-dd HH:mm:ss');

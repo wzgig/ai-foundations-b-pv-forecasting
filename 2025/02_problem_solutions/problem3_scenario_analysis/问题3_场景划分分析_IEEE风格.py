@@ -1,14 +1,35 @@
 # -*- coding: utf-8 -*-
+import sys
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import mean_squared_error
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+SHARED_DIR = next(
+    parent / "_shared" for parent in (SCRIPT_DIR, *SCRIPT_DIR.parents)
+    if (parent / "_shared").exists()
+)
+sys.path.insert(0, str(SHARED_DIR))
+
+from pv_project import (  # noqa: E402
+    configure_matplotlib,
+    resolve_input,
+    safe_qcut,
+    set_working_directory,
+    write_csv,
+)
+
+set_working_directory(__file__)
+configure_matplotlib(dpi=300)
+
 # ---------- 1. 数据读取 ----------
-df_station = pd.read_csv("station00.csv", parse_dates=["date_time"])
-df_q2 = pd.read_csv("问题2三模型预测结果对比表.csv", parse_dates=["起报时间", "预报时间"])
-df_q3 = pd.read_csv("问题3三模型预测结果对比表.csv", parse_dates=["起报时间", "预报时间"])
+df_station = pd.read_csv(resolve_input("station00.csv", __file__), parse_dates=["date_time"])
+df_q2 = pd.read_csv(resolve_input("问题2三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
+df_q3 = pd.read_csv(resolve_input("问题3三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
 
 # ---------- 2. 清洗与合并 ----------
 # 清理列名
@@ -28,13 +49,14 @@ df_q3_fusion = df_q3_fusion.drop_duplicates(subset=["起报时间", "预报时�
 df_fusion_compare = pd.merge(df_q2_fusion, df_q3_fusion, on=["起报时间", "预报时间"], suffixes=("_q2", "_q3"))
 
 # ---------- 3. 每日RMSE计算 ----------
-daily_rmse = (
-    df_fusion_compare.groupby("起报时间", observed=True)
-    .apply(lambda x: pd.Series({
-        "RMSE_Fusion_q2": np.sqrt(mean_squared_error(x["actual_q2"], x["fusion_q2"])),
-        "RMSE_Fusion_q3": np.sqrt(mean_squared_error(x["actual_q3"], x["fusion_q3"]))
-    }), include_groups=False)
-).reset_index()
+daily_rows = []
+for start_time, group in df_fusion_compare.groupby("起报时间", observed=True):
+    daily_rows.append({
+        "起报时间": start_time,
+        "RMSE_Fusion_q2": np.sqrt(mean_squared_error(group["actual_q2"], group["fusion_q2"])),
+        "RMSE_Fusion_q3": np.sqrt(mean_squared_error(group["actual_q3"], group["fusion_q3"])),
+    })
+daily_rmse = pd.DataFrame(daily_rows)
 daily_rmse["提升值_RMSE"] = daily_rmse["RMSE_Fusion_q2"] - daily_rmse["RMSE_Fusion_q3"]
 
 # ---------- 4. 每日天气指标构建 ----------
@@ -61,7 +83,7 @@ df = pd.merge(daily_rmse, daily_weather, left_on="起报时间", right_on="date"
 
 # ---------- 6. 构造分组标签 ----------
 def create_bins(data, col, q, labels):
-    return pd.qcut(data[col], q=q, labels=labels, duplicates='drop')
+    return safe_qcut(data[col], q=q, labels=labels)
 
 df["天气类型"] = create_bins(df, "avg_globalirrad", 3, ["阴天", "多云", "晴天"])
 df["光照波动性"] = create_bins(df, "std_globalirrad", 2, ["稳定", "不稳定"])
@@ -109,12 +131,12 @@ for idx, (field, gdf) in enumerate(group_results.items()):
 
 fig.suptitle("不同气象场景对预测精度提升的影响", fontsize=12, fontweight='bold')
 plt.tight_layout()
-plt.savefig("六类分组_IEEE风格.png", bbox_inches='tight')
+plt.savefig(SCRIPT_DIR / "六类分组_IEEE风格.png", bbox_inches='tight')
 plt.close()
 print("图像保存为：六类分组_IEEE风格.png")
 
 # ---------- 9. 结果保存 ----------
-df.to_csv("场景划分提升分析结果.csv", index=False, encoding="utf_8_sig")
+write_csv(df, SCRIPT_DIR / "场景划分提升分析结果.csv", index=False)
 print("分析数据已保存为：场景划分提升分析结果.csv")
 
 # ---------- 10. 提升来源建模分析（线性回归 + 特征重要性） ----------
@@ -164,59 +186,54 @@ sns.barplot(x="重要性", y="特征", data=rf_importance, palette="Greens", ax=
 axs[1].set_title("随机森林：特征重要性")
 
 plt.tight_layout()
-plt.savefig("特征重要性分析.png", bbox_inches="tight")
+plt.savefig(SCRIPT_DIR / "特征重要性分析.png", bbox_inches="tight")
 plt.close()
 print("图像保存为：特征重要性分析.png")
 
 # ---------- 保存分析数据 ----------
-coef_df.to_csv("线性回归_提升来源分析.csv", index=False, encoding="utf_8_sig")
-rf_importance.to_csv("随机森林_特征重要性.csv", index=False, encoding="utf_8_sig")
+write_csv(coef_df, SCRIPT_DIR / "线性回归_提升来源分析.csv", index=False)
+write_csv(rf_importance, SCRIPT_DIR / "随机森林_特征重要性.csv", index=False)
 print("回归分析结果保存完毕")
 
 
 # ---------- 11. SHAP解释性分析 ----------
-import shap
+try:
+    import shap
+except ImportError:
+    print("未安装 shap，已跳过 SHAP 解释性分析；如需生成解释图，请安装 requirements.txt 中的可选依赖。")
+else:
+    explainer = shap.Explainer(rf, X)
+    shap_values = explainer(X)
+    shap_dir = SCRIPT_DIR / "shap_images"
+    shap_dir.mkdir(exist_ok=True)
 
-# 初始化解释器
-explainer = shap.Explainer(rf, X)
-shap_values = explainer(X)
-
-# 创建图像文件夹（可选）
-import os
-if not os.path.exists("shap_images"):
-    os.makedirs("shap_images")
-
-# --- SHAP Summary Plot ---
-plt.figure()
-shap.summary_plot(shap_values, features=X, feature_names=features, plot_type="bar", show=False)
-plt.tight_layout()
-plt.savefig("shap_images/shap_summary_bar.png", dpi=300, bbox_inches="tight")
-plt.close()
-print("SHAP柱状图保存为：shap_images/shap_summary_bar.png")
-
-# --- SHAP Beeswarm Plot ---
-plt.figure()
-shap.summary_plot(shap_values, features=X, feature_names=features, show=False)
-plt.tight_layout()
-plt.savefig("shap_images/shap_summary_beeswarm.png", dpi=300, bbox_inches="tight")
-plt.close()
-print("SHAP蜜蜂图保存为：shap_images/shap_summary_beeswarm.png")
-
-# --- SHAP单变量依赖图（示例） ---
-for i, feat in enumerate(features):
     plt.figure()
-    shap.plots.scatter(shap_values[:, i], color=shap_values, show=False)
-    plt.title(f"SHAP值 vs 特征: {feat}")
+    shap.summary_plot(shap_values, features=X, feature_names=features, plot_type="bar", show=False)
     plt.tight_layout()
-    plt.savefig(f"shap_images/shap_dependence_{feat}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(shap_dir / "shap_summary_bar.png", dpi=300, bbox_inches="tight")
     plt.close()
-print("SHAP依赖图已保存")
+    print("SHAP柱状图保存为：shap_images/shap_summary_bar.png")
 
-# ---------- 保存SHAP值（可选） ----------
-shap_df = pd.DataFrame(shap_values.values, columns=features)
-shap_df["起报时间"] = df["起报时间"].values
-shap_df.to_csv("shap_每列贡献值.csv", index=False, encoding="utf_8_sig")
-print("SHAP数值已保存为：shap_每列贡献值.csv")
+    plt.figure()
+    shap.summary_plot(shap_values, features=X, feature_names=features, show=False)
+    plt.tight_layout()
+    plt.savefig(shap_dir / "shap_summary_beeswarm.png", dpi=300, bbox_inches="tight")
+    plt.close()
+    print("SHAP蜜蜂图保存为：shap_images/shap_summary_beeswarm.png")
+
+    for i, feat in enumerate(features):
+        plt.figure()
+        shap.plots.scatter(shap_values[:, i], color=shap_values, show=False)
+        plt.title(f"SHAP值 vs 特征: {feat}")
+        plt.tight_layout()
+        plt.savefig(shap_dir / f"shap_dependence_{feat}.png", dpi=300, bbox_inches="tight")
+        plt.close()
+    print("SHAP依赖图已保存")
+
+    shap_df = pd.DataFrame(shap_values.values, columns=features)
+    shap_df["起报时间"] = df["起报时间"].values
+    write_csv(shap_df, SCRIPT_DIR / "shap_每列贡献值.csv", index=False)
+    print("SHAP数值已保存为：shap_每列贡献值.csv")
 
 
 # ---------- 12. 典型场景案例提取与验证图示 ----------
@@ -259,7 +276,7 @@ def plot_day_curve(df_day, title, save_path):
     plt.title(title, fontsize=12)
     plt.xticks(rotation=30)
     plt.tight_layout()
-    plt.savefig(save_path, bbox_inches="tight")
+    plt.savefig(SCRIPT_DIR / save_path, bbox_inches="tight")
     plt.close()
     print(f"图像保存为：{save_path}")
 

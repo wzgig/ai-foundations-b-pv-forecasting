@@ -4,15 +4,17 @@ Created on 2025/5/24 10:21
 
 @author: Prince
 """
-# 文件路径请按实际文件位置修改
-file_path = 'Solar station site 5 (Nominal capacity-110MW).xlsx'
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 from math import sin, cos, tan, acos, atan2, radians, degrees, exp, pi
 from datetime import datetime
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+
 # ========== 1. 数据读取与预处理 ==========
-file_path = 'Solar station site 5 (Nominal capacity-110MW).xlsx'
+file_path = SCRIPT_DIR / 'Solar station site 5 (Nominal capacity-110MW).xlsx'
 df = pd.read_excel(file_path)
 df.columns = ['Time', 'TSI', 'DNI', 'GHI', 'Air_Temp', 'Pressure', 'RH', 'Power']
 df['Time'] = pd.to_datetime(df['Time'])

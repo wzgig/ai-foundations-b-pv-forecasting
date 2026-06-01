@@ -1,6 +1,9 @@
 %% ------------------------ 1. 读取与预处理数据 ------------------------
 clear; clc; tic;
-filename = 'station00.csv';
+scriptDir = fileparts(mfilename('fullpath'));
+projectRoot = fileparts(fileparts(fileparts(scriptDir)));
+addpath(fullfile(projectRoot, '_shared', 'matlab'));
+filename = resolve_project_input('station00.csv', scriptDir);
 T = readtable(filename);
 
 % 重命名变量

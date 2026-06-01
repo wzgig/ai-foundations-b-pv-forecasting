@@ -8,7 +8,10 @@ set(0, 'defaultLineLineWidth', 1.8);
 set(0, 'defaultFigureColor', 'w');
 
 %% 读取数据
-filename = 'station01.csv';
+scriptDir = fileparts(mfilename('fullpath'));
+projectRoot = fileparts(fileparts(scriptDir));
+addpath(fullfile(projectRoot, '_shared', 'matlab'));
+filename = resolve_project_input('station01.csv', scriptDir);
 T = readtable(filename, 'VariableNamingRule', 'preserve');
 T.date_time = datetime(T.date_time, 'InputFormat', 'yyyy/MM/dd HH:mm');
 
