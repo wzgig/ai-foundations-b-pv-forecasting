@@ -1,0 +1,35 @@
+{
+  "script": "problem3_integrated_scenario_analysis.py",
+  "generated_at": "2026-06-02T11:26:50.406348+00:00",
+  "metadata": {
+    "rows": 28,
+    "group_fields": [
+      "天气类型",
+      "光照波动性",
+      "气温",
+      "湿度",
+      "风速",
+      "季节"
+    ],
+    "classifier": "DecisionTreeClassifier(max_depth=3, random_state=0)",
+    "figure_style": "Chinese journal"
+  },
+  "artifacts": {
+    "predictions": [],
+    "metrics": [
+      "outputs\\metrics\\场景划分提升分析结果.csv"
+    ],
+    "figures": [
+      "outputs\\figures\\天气类型_分组分析图.png",
+      "outputs\\figures\\光照波动性_分组分析图.png",
+      "outputs\\figures\\气温_分组分析图.png",
+      "outputs\\figures\\湿度_分组分析图.png",
+      "outputs\\figures\\风速_分组分析图.png",
+      "outputs\\figures\\季节_分组分析图.png",
+      "outputs\\figures\\推荐策略_决策树.png"
+    ],
+    "reports": [
+      "outputs\\reports\\problem3_integrated_scenario_analysis_summary.json"
+    ]
+  }
+}

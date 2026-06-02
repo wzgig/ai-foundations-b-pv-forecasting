@@ -17,7 +17,9 @@ sys.path.insert(0, str(SHARED_DIR))
 
 from pv_project import (  # noqa: E402
     ExperimentArtifacts,
+    apply_journal_axes,
     configure_matplotlib,
+    journal_palette,
     resolve_input,
     safe_qcut,
     set_working_directory,
@@ -26,17 +28,43 @@ from pv_project import (  # noqa: E402
 set_working_directory(__file__)
 configure_matplotlib(dpi=300)
 ARTIFACTS = ExperimentArtifacts(__file__)
+PALETTE = journal_palette(8)
+
+
+def prediction_input_path(problem: str) -> Path:
+    if problem == "problem2":
+        standardized = (
+            SCRIPT_DIR.parent
+            / "problem2_baseline_forecasting"
+            / "outputs"
+            / "predictions"
+            / "三模型预测结果对比表.csv"
+        )
+        legacy_name = "问题2三模型预测结果对比表.csv"
+    elif problem == "problem3":
+        standardized = SCRIPT_DIR / "outputs" / "predictions" / "3三模型预测结果对比表.csv"
+        legacy_name = "问题3三模型预测结果对比表.csv"
+    else:
+        raise ValueError(f"unknown problem: {problem}")
+
+    if standardized.exists():
+        return standardized
+    return resolve_input(legacy_name, __file__)
+
+
+def clean_prediction_columns(cols):
+    return [col.replace(" (MW)", "").replace("预测功率", "").strip() for col in cols]
+
 
 # ---------- 1. 数据读取 ----------
 df_station = pd.read_csv(resolve_input("station00.csv", __file__), parse_dates=["date_time"])
-df_q2 = pd.read_csv(resolve_input("问题2三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
-df_q3 = pd.read_csv(resolve_input("问题3三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
+df_q2 = pd.read_csv(prediction_input_path("problem2"), parse_dates=["起报时间", "预报时间"])
+df_q3 = pd.read_csv(prediction_input_path("problem3"), parse_dates=["起报时间", "预报时间"])
 
 # ---------- 2. 清洗与合并 ----------
 # 清理列名
-clean_columns = lambda cols: [col.replace(" (MW)", "").replace("预测功率", "").strip() for col in cols]
-df_q2.columns = clean_columns(df_q2.columns)
-df_q3.columns = clean_columns(df_q3.columns)
+df_q2.columns = clean_prediction_columns(df_q2.columns)
+df_q3.columns = clean_prediction_columns(df_q3.columns)
 df_q2.rename(columns={"实际功率": "actual"}, inplace=True)
 df_q3.rename(columns={"实际功率": "actual"}, inplace=True)
 
@@ -48,12 +76,14 @@ df_q3_fusion = df_q3[["起报时间", "预报时间", "actual", "FusionModel"]].
 df_q2_fusion = df_q2_fusion.drop_duplicates(subset=["起报时间", "预报时间"])
 df_q3_fusion = df_q3_fusion.drop_duplicates(subset=["起报时间", "预报时间"])
 df_fusion_compare = pd.merge(df_q2_fusion, df_q3_fusion, on=["起报时间", "预报时间"], suffixes=("_q2", "_q3"))
+df_fusion_compare["目标日期"] = df_fusion_compare["预报时间"].dt.normalize()
 
 # ---------- 3. 每日RMSE计算 ----------
 daily_rows = []
-for start_time, group in df_fusion_compare.groupby("起报时间", observed=True):
+for target_date, group in df_fusion_compare.groupby("目标日期", observed=True):
     daily_rows.append({
-        "起报时间": start_time,
+        "目标日期": target_date,
+        "起报时间": group["起报时间"].min(),
         "RMSE_Fusion_q2": np.sqrt(mean_squared_error(group["actual_q2"], group["fusion_q2"])),
         "RMSE_Fusion_q3": np.sqrt(mean_squared_error(group["actual_q3"], group["fusion_q3"])),
     })
@@ -80,7 +110,7 @@ daily_weather["season"] = daily_weather["date"].dt.month.map(
 daily_weather["cloud_factor"] = daily_weather["std_globalirrad"] / (daily_weather["avg_globalirrad"] + 1e-6)
 
 # ---------- 5. 合并数据集 ----------
-df = pd.merge(daily_rmse, daily_weather, left_on="起报时间", right_on="date", how="inner")
+df = pd.merge(daily_rmse, daily_weather, left_on="目标日期", right_on="date", how="inner")
 
 # ---------- 6. 构造分组标签 ----------
 def create_bins(data, col, q, labels):
@@ -111,16 +141,20 @@ for idx, (field, gdf) in enumerate(group_results.items()):
     y = gdf["提升值均值"]
     yerr = gdf["标准差"]
 
-    sns.barplot(x=x, y=y, hue=x, ax=ax, palette="Blues", edgecolor="black", errorbar=None, legend=False)
-    ax.errorbar(range(len(x)), y, yerr=yerr, fmt='none', ecolor='black', capsize=5)
+    sns.barplot(x=x, y=y, hue=x, ax=ax, palette=PALETTE[: len(x)], edgecolor="#222222", errorbar=None, legend=False)
+    ax.errorbar(range(len(x)), y, yerr=yerr, fmt='none', ecolor="#222222", capsize=4, linewidth=1.0)
+    ax.axhline(0, color="#222222", linewidth=0.8)
 
     for i, (_, row) in enumerate(gdf.iterrows()):
-        ax.text(i, row["提升值均值"] + 0.01, f'n={row["样本数"]}', ha='center', va='bottom', fontsize=8)
+        label_y = row["提升值均值"] + 0.01 if row["提升值均值"] >= 0 else row["提升值均值"] - 0.01
+        label_va = "bottom" if row["提升值均值"] >= 0 else "top"
+        ax.text(i, label_y, f'n={row["样本数"]}', ha='center', va=label_va, fontsize=8)
 
     ax.set_title(field, fontsize=10, fontweight='bold')
     ax.set_xlabel("")
     ax.set_ylabel("RMSE提升值" if idx % 3 == 0 else "")
     ax.tick_params(axis='x', rotation=45)
+    apply_journal_axes(ax)
 
 fig.suptitle("不同气象场景对预测精度提升的影响", fontsize=12, fontweight='bold')
 plt.tight_layout()
@@ -170,12 +204,19 @@ rf_importance = pd.DataFrame({
 fig, axs = plt.subplots(1, 2, figsize=(12, 5), dpi=300)
 
 # 线性回归系数图
-sns.barplot(x="系数", y="特征", hue="特征", data=coef_df, palette="coolwarm", ax=axs[0], legend=False)
+sns.barplot(x="系数", y="特征", hue="特征", data=coef_df, palette=PALETTE[: len(coef_df)], ax=axs[0], legend=False, edgecolor="#222222")
 axs[0].set_title("线性回归：提升值影响系数")
+axs[0].axvline(0, color="#222222", linewidth=0.8)
+axs[0].set_xlabel("标准化回归系数")
+axs[0].set_ylabel("")
+apply_journal_axes(axs[0])
 
 # 随机森林特征重要性图
-sns.barplot(x="重要性", y="特征", hue="特征", data=rf_importance, palette="Greens", ax=axs[1], legend=False)
+sns.barplot(x="重要性", y="特征", hue="特征", data=rf_importance, palette=PALETTE[: len(rf_importance)], ax=axs[1], legend=False, edgecolor="#222222")
 axs[1].set_title("随机森林：特征重要性")
+axs[1].set_xlabel("重要性")
+axs[1].set_ylabel("")
+apply_journal_axes(axs[1])
 
 plt.tight_layout()
 path = ARTIFACTS.save_figure("特征重要性分析.png", fig=fig)
@@ -219,6 +260,7 @@ else:
     print("SHAP依赖图已保存")
 
     shap_df = pd.DataFrame(shap_values.values, columns=features)
+    shap_df["目标日期"] = df["目标日期"].values
     shap_df["起报时间"] = df["起报时间"].values
     ARTIFACTS.write_csv("metrics", "shap_每列贡献值.csv", shap_df, index=False)
     print("SHAP数值已保存为：shap_每列贡献值.csv")
@@ -230,9 +272,9 @@ else:
 top_case = df.sort_values("提升值_RMSE", ascending=False).iloc[0]
 worst_case = df.sort_values("提升值_RMSE", ascending=True).iloc[0]
 
-# 获取对应起报时间
-top_date = top_case["起报时间"]
-worst_date = worst_case["起报时间"]
+# 获取对应目标日期
+top_date = top_case["目标日期"]
+worst_date = worst_case["目标日期"]
 
 # 打印场景标签信息
 print(f"\n【典型优场景】{top_date}：")
@@ -243,8 +285,9 @@ print(f"天气类型={worst_case['天气类型']}，光照波动性={worst_case[
 
 # 提取当天预测数据
 def extract_day_curve(date):
-    df_day_q2 = df_q2[df_q2["起报时间"] == date].copy()
-    df_day_q3 = df_q3[df_q3["起报时间"] == date].copy()
+    target_date = pd.to_datetime(date).normalize()
+    df_day_q2 = df_q2[df_q2["预报时间"].dt.normalize() == target_date].copy()
+    df_day_q3 = df_q3[df_q3["预报时间"].dt.normalize() == target_date].copy()
     df_day = pd.merge(
         df_day_q2[["预报时间", "actual", "FusionModel"]].rename(columns={"FusionModel": "q2"}),
         df_day_q3[["预报时间", "FusionModel"]].rename(columns={"FusionModel": "q3"}),
@@ -254,17 +297,18 @@ def extract_day_curve(date):
 
 # 绘制时序图
 def plot_day_curve(df_day, title, save_path):
-    plt.figure(figsize=(10, 4), dpi=300)
-    plt.plot(df_day["预报时间"], df_day["actual"], label="实际功率", color="black", linewidth=1.2)
-    plt.plot(df_day["预报时间"], df_day["q2"], label="问题2预测", linestyle="--", color="blue")
-    plt.plot(df_day["预报时间"], df_day["q3"], label="问题3预测", linestyle="-.", color="green")
-    plt.legend()
-    plt.xlabel("时间")
-    plt.ylabel("功率/MW")
-    plt.title(title, fontsize=12)
-    plt.xticks(rotation=30)
-    plt.tight_layout()
-    path = ARTIFACTS.save_figure(save_path)
+    fig, ax = plt.subplots(figsize=(9.2, 4.2), dpi=300)
+    ax.plot(df_day["预报时间"], df_day["actual"], label="实测功率", color="#222222", linewidth=2.0)
+    ax.plot(df_day["预报时间"], df_day["q2"], label="问题2 FusionModel", linestyle="--", color=PALETTE[1], linewidth=1.8)
+    ax.plot(df_day["预报时间"], df_day["q3"], label="问题3 FusionModel", linestyle="-.", color=PALETTE[2], linewidth=1.8)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=3)
+    ax.set_xlabel("时间")
+    ax.set_ylabel("功率/MW")
+    ax.set_title(title, fontsize=12)
+    ax.tick_params(axis="x", rotation=25)
+    apply_journal_axes(ax)
+    fig.tight_layout()
+    path = ARTIFACTS.save_figure(save_path, fig=fig)
     print(f"图像保存为：{path}")
 
 # 绘图
@@ -287,6 +331,7 @@ ARTIFACTS.write_summary(
         "top_case": str(top_date),
         "worst_case": str(worst_date),
         "figure_style": "Chinese journal",
-    }
+    },
+    filename="problem3_scenario_ieee_analysis_summary.json",
 )
 print("典型场景案例图示完成")

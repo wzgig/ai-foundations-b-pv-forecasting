@@ -2,6 +2,48 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-02 问题 3 气象特征预测脚本运行测试与优化
+
+### 调整目标
+
+- 实际运行 `problem3_weather_feature_forecast.py`，解决训练超时、PyTorch 运行库和输出错位问题。
+- 将问题 3 建模口径明确为“前一日实测功率 + 目标日 NWP 气象序列”预测目标日功率，避免目标日功率泄漏。
+- 统一问题 3 主训练和二次分析脚本的标准输出路径、目标日时间对齐和中文期刊图像质量。
+
+### 主要改动
+
+- 修复运行环境：
+  - 发现上一轮超时后遗留的问题 2 Python 训练进程仍在后台运行并改动模型文件，已终止该遗留进程。
+  - 当前系统 `MSVCP140.dll` 版本较旧，直接导入 PyTorch 会触发 `c10.dll` 初始化失败；问题 3 主脚本新增本地 MSVC runtime 目录兜底，优先使用 `sklearn/.libs` 中的新运行库。
+- 重构 `problem3_weather_feature_forecast.py`：
+  - 输入窗口改为前一日 `power_scaled` 与目标日 NWP 气象特征序列组合。
+  - 修正训练窗口遍历边界，纳入最后一个合法训练样本，当前训练窗口数为 25253。
+  - 测试集改为 2、5、8、11 月最后 7 天的严格目标日样本，共 28 天。
+  - 预测表改为 `起报时间=目标日前一日 00:00`，`预报时间=目标测试日 96 个 15 分钟点`。
+  - 训练目标按功率最大值归一化，输入特征保留训练集拟合的 MinMax 缩放结果。
+  - 默认训练参数改为 `epochs=20`、`batch_size=128`、`patience=4`，并支持 `PV_FORECAST_*` 环境变量。
+  - 输出非负功率裁剪、checkpoint 复用状态、输入特征、测试日期范围和白昼指标写入 `run_summary.json`。
+  - 图像改为共享中文期刊风格；指标热力图按“误差越小、相关/准确/合格率越高”归一化着色，单日曲线严格限制在目标日 00:00-23:45。
+- 修复问题 3 二次分析脚本：
+  - `problem3_extended_scenario_analysis.py`、`problem3_integrated_scenario_analysis.py`、`problem3_scenario_ieee_analysis.py` 优先读取标准 `outputs/predictions/` 下的问题 2 和问题 3 预测表。
+  - 场景天气特征按 `预报时间` 对应的目标日合并，不再按起报日前一日合并。
+  - `problem3_three_model_curve_plot.py` 按目标日提取典型曲线。
+  - 二次分析脚本写入独立 `problem3_*_summary.json`，不再覆盖主训练 `run_summary.json`。
+  - 场景分组图、特征重要性图和典型场景对比图统一使用共享调色板、零基准线和期刊式坐标轴。
+
+### 验证结果
+
+- `python 2025\02_problem_solutions\problem3_scenario_analysis\problem3_weather_feature_forecast.py`：完整训练通过，三模型 checkpoint、预测表、指标表、静态 PNG、交互 HTML 和 `run_summary.json` 均已生成。
+- 再次运行 `python 2025\02_problem_solutions\problem3_scenario_analysis\problem3_weather_feature_forecast.py`：三模型均成功复用 `models/problem3_*.pth`，约 45.7 秒完成。
+- 问题 3 当前白昼指标：
+  - PureLSTM：`E_rmse=0.0796`，`E_mae=0.0574`，`C_R=92.04%`，`Q_R=99.11%`。
+  - FusionModel：`E_rmse=0.0699`，`E_mae=0.0509`，`C_R=93.01%`，`Q_R=99.76%`，当前综合表现最好。
+  - BiFusionModel：`E_rmse=0.0844`，`E_mae=0.0610`，`C_R=91.56%`，`Q_R=98.55%`。
+- `problem3_extended_scenario_analysis.py`、`problem3_integrated_scenario_analysis.py`、`problem3_scenario_ieee_analysis.py`、`problem3_three_model_curve_plot.py`：均通过；当前环境未安装可选依赖 `shap`，SHAP 分支按脚本逻辑跳过。
+- 已视觉抽查 `三模型评估指标热力图_白昼时段.png`、`三模型绘图.png`、`六类分组_IEEE风格.png`、`特征重要性分析.png`，图像非空且无明显遮挡。
+- `python 2025\tools\project_health_check.py`：通过。
+- `python -m unittest discover -s tests -q`：通过，6 个测试全部成功。
+
 ## 2026-06-02 问题 2 基准预测脚本运行测试与优化
 
 ### 调整目标

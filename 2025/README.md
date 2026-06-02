@@ -95,9 +95,9 @@ cd 2025\02_problem_solutions\problem3_scenario_analysis
 python .\problem3_scenario_ieee_analysis.py
 ```
 
-模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。问题 2-4 的主脚本会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`。
+模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。问题 2-4 的主脚本会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`，问题 2 和问题 3 也支持通过 `PV_FORCE_RETRAIN=1` 临时强制重训。
 
-问题 1 的理论功率脚本、问题 2-4 的主脚本和问题 3 二次分析脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测或理论功率明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存 `run_summary.json`。这些脚本默认不弹出图窗，适合长时间运行后自动保留所有结果。
+问题 1 的理论功率脚本、问题 2-4 的主脚本和问题 3 二次分析脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测或理论功率明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存运行摘要。问题 3 主训练脚本保留 `run_summary.json`，二次分析脚本写入各自独立的 `problem3_*_summary.json`。这些脚本默认不弹出图窗，适合长时间运行后自动保留所有结果。
 
 ## 维护约定
 

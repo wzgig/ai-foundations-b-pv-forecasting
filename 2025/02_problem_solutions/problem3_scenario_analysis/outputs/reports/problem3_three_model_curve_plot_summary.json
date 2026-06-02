@@ -1,0 +1,27 @@
+{
+  "script": "problem3_three_model_curve_plot.py",
+  "generated_at": "2026-06-02T11:28:21.800178+00:00",
+  "metadata": {
+    "target_date": "2019-02-22",
+    "rows": 96,
+    "daylight_points": 42,
+    "daylight_rmse_mw": {
+      "PureLSTM": 0.3603332951062979,
+      "FusionModel": 0.414149917802227,
+      "BiFusionModel": 0.4294486932281189
+    },
+    "figure_style": "Chinese journal"
+  },
+  "artifacts": {
+    "predictions": [
+      "outputs\\predictions\\problem3_three_model_curve_2019-02-22.csv"
+    ],
+    "metrics": [],
+    "figures": [
+      "outputs\\figures\\三模型绘图.png"
+    ],
+    "reports": [
+      "outputs\\reports\\problem3_three_model_curve_plot_summary.json"
+    ]
+  }
+}

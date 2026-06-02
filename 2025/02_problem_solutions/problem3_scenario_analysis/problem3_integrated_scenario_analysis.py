@@ -20,7 +20,9 @@ sys.path.insert(0, str(SHARED_DIR))
 
 from pv_project import (  # noqa: E402
     ExperimentArtifacts,
+    apply_journal_axes,
     configure_matplotlib,
+    journal_palette,
     resolve_input,
     safe_qcut,
     set_working_directory,
@@ -30,16 +32,42 @@ from pv_project import (  # noqa: E402
 set_working_directory(__file__)
 configure_matplotlib(dpi=300)
 ARTIFACTS = ExperimentArtifacts(__file__)
+PALETTE = journal_palette(8)
+
+
+def prediction_input_path(problem: str) -> Path:
+    if problem == "problem2":
+        standardized = (
+            SCRIPT_DIR.parent
+            / "problem2_baseline_forecasting"
+            / "outputs"
+            / "predictions"
+            / "三模型预测结果对比表.csv"
+        )
+        legacy_name = "问题2三模型预测结果对比表.csv"
+    elif problem == "problem3":
+        standardized = SCRIPT_DIR / "outputs" / "predictions" / "3三模型预测结果对比表.csv"
+        legacy_name = "问题3三模型预测结果对比表.csv"
+    else:
+        raise ValueError(f"unknown problem: {problem}")
+
+    if standardized.exists():
+        return standardized
+    return resolve_input(legacy_name, __file__)
+
+
+def clean_prediction_columns(cols):
+    return [col.replace(" (MW)", "").replace("预测功率", "").strip() for col in cols]
+
 
 # ---------- 1. 数据读取 ----------
 df_station = pd.read_csv(resolve_input("station00.csv", __file__), parse_dates=["date_time"])
-df_q2 = pd.read_csv(resolve_input("问题2三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
-df_q3 = pd.read_csv(resolve_input("问题3三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
+df_q2 = pd.read_csv(prediction_input_path("problem2"), parse_dates=["起报时间", "预报时间"])
+df_q3 = pd.read_csv(prediction_input_path("problem3"), parse_dates=["起报时间", "预报时间"])
 
 # ---------- 2. 数据清洗 ----------
-clean_columns = lambda cols: [col.replace(" (MW)", "").replace("预测功率", "").strip() for col in cols]
-df_q2.columns = clean_columns(df_q2.columns)
-df_q3.columns = clean_columns(df_q3.columns)
+df_q2.columns = clean_prediction_columns(df_q2.columns)
+df_q3.columns = clean_prediction_columns(df_q3.columns)
 df_q2.rename(columns={"实际功率": "actual"}, inplace=True)
 df_q3.rename(columns={"实际功率": "actual"}, inplace=True)
 
@@ -47,12 +75,14 @@ df_q3.rename(columns={"实际功率": "actual"}, inplace=True)
 df_q2_fusion = df_q2[["起报时间", "预报时间", "actual", "FusionModel"]].rename(columns={"FusionModel": "fusion_q2"})
 df_q3_fusion = df_q3[["起报时间", "预报时间", "actual", "FusionModel"]].rename(columns={"FusionModel": "fusion_q3"})
 df_fusion_compare = pd.merge(df_q2_fusion, df_q3_fusion, on=["起报时间", "预报时间", "actual"])
+df_fusion_compare["目标日期"] = df_fusion_compare["预报时间"].dt.normalize()
 
 # ---------- 4. 计算每日RMSE提升 ----------
 daily_rows = []
-for start_time, group in df_fusion_compare.groupby("起报时间", observed=True):
+for target_date, group in df_fusion_compare.groupby("目标日期", observed=True):
     daily_rows.append({
-        "起报时间": start_time,
+        "目标日期": target_date,
+        "起报时间": group["起报时间"].min(),
         "RMSE_Fusion_q2": np.sqrt(mean_squared_error(group["actual"], group["fusion_q2"])),
         "RMSE_Fusion_q3": np.sqrt(mean_squared_error(group["actual"], group["fusion_q3"])),
     })
@@ -79,7 +109,7 @@ daily_weather["season"] = daily_weather["date"].dt.month.map(
 daily_weather["cloud_factor"] = daily_weather["std_globalirrad"] / (daily_weather["avg_globalirrad"] + 1e-6)
 
 # ---------- 6. 合并分析数据 ----------
-df = pd.merge(daily_rmse, daily_weather, left_on="起报时间", right_on="date", how="inner")
+df = pd.merge(daily_rmse, daily_weather, left_on="目标日期", right_on="date", how="inner")
 df = df.sort_values("起报时间").reset_index(drop=True)
 
 # ---------- 7. 构建分组标签 ----------
@@ -98,12 +128,16 @@ group_fields = ["天气类型", "光照波动性", "气温", "湿度", "风速",
 for feature in group_fields:
     fig, ax = plt.subplots(figsize=(6, 4))
     stat = df.groupby(feature, observed=True)["提升值_RMSE"].agg(["mean", "std", "count"]).reset_index()
-    sns.barplot(x=feature, y="mean", hue=feature, data=stat, palette="Set2", ax=ax, legend=False)
-    ax.errorbar(x=range(len(stat)), y=stat["mean"], yerr=stat["std"], fmt='none', capsize=4, color='black')
+    sns.barplot(x=feature, y="mean", hue=feature, data=stat, palette=PALETTE[: len(stat)], ax=ax, legend=False, edgecolor="#222222")
+    ax.errorbar(x=range(len(stat)), y=stat["mean"], yerr=stat["std"], fmt='none', capsize=4, color="#222222", linewidth=1.0)
+    ax.axhline(0, color="#222222", linewidth=0.8)
     for i, row in stat.iterrows():
-        ax.text(i, max(row["mean"] + row["std"] + 0.005, 0.01), f"n={row['count']}", ha='center', va='bottom', fontsize=9)
+        label_y = row["mean"] + 0.01 if row["mean"] >= 0 else row["mean"] - 0.01
+        label_va = "bottom" if row["mean"] >= 0 else "top"
+        ax.text(i, label_y, f"n={row['count']}", ha='center', va=label_va, fontsize=9)
     ax.set_ylabel("RMSE提升值")
     ax.set_title(f"{feature}分组分析")
+    apply_journal_axes(ax)
     plt.tight_layout()
     ARTIFACTS.save_figure(f"{feature}_分组分析图.png", fig=fig)
 
@@ -131,6 +165,7 @@ ARTIFACTS.write_summary(
         "group_fields": group_fields,
         "classifier": "DecisionTreeClassifier(max_depth=3, random_state=0)",
         "figure_style": "Chinese journal",
-    }
+    },
+    filename="problem3_integrated_scenario_analysis_summary.json",
 )
 print("分析完成，图像和结果已导出。")

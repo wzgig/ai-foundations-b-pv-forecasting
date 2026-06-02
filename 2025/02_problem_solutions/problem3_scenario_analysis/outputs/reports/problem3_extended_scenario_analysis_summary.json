@@ -1,0 +1,29 @@
+{
+  "script": "problem3_extended_scenario_analysis.py",
+  "generated_at": "2026-06-02T11:26:36.362230+00:00",
+  "metadata": {
+    "rows": 28,
+    "group_fields": [
+      "天气类型",
+      "光照波动性",
+      "气温",
+      "湿度",
+      "风速",
+      "季节"
+    ],
+    "figure_style": "Chinese journal",
+    "outputs_note": "Scenario grouping figure and RMSE improvement table are written under outputs/."
+  },
+  "artifacts": {
+    "predictions": [],
+    "metrics": [
+      "outputs\\metrics\\场景划分提升分析结果.csv"
+    ],
+    "figures": [
+      "outputs\\figures\\六类分组_IEEE风格.png"
+    ],
+    "reports": [
+      "outputs\\reports\\problem3_extended_scenario_analysis_summary.json"
+    ]
+  }
+}

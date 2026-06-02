@@ -77,6 +77,8 @@ python .\problem2_baseline_three_model_forecast.py
 
 2026-06-02 已完成问题 1 理论功率诊断优化：`theoretical_power_diagnostics.py` 会把理论功率时序、月统计、白昼误差指标、诊断图和运行摘要统一写入 `problem1_data_analysis/outputs/`，并保留原大气修正口径作为对照。
 
+2026-06-02 已完成问题 3 气象特征预测优化：`problem3_weather_feature_forecast.py` 改为以前一日实测功率和目标日 NWP 气象序列预测目标日 96 点功率，修正预测表时间对齐、PyTorch DLL 运行库兜底、checkpoint 复用、中文期刊风格图和二次分析脚本的目标日场景合并。
+
 2026-06-02 已完成输出模块和中文期刊绘图规范整理：正式问题脚本统一使用 `outputs/` 目录和 `run_summary.json`，共享绘图配置改为中文字体兜底、600 dpi 保存、弱网格、统一配色和期刊式坐标轴；MATLAB 增加对应的输出与绘图 helper。
 
 2026-06-02 已完成脚本语义化命名：将早期的数字编号、临时中文名脚本统一改为按问题和功能命名，例如 `problem2_baseline_three_model_forecast.py`、`problem3_weather_feature_forecast.py`、`problem4_feature_ablation_forecast.py` 和 `theoretical_power_diagnostics.py`。

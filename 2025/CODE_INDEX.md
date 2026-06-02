@@ -49,11 +49,11 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_weather_feature_forecast.py` | 问题 3 主训练入口，在问题 2 模型基础上加入多维气象输入。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_scenario_ieee_analysis.py` | 中文期刊风格场景划分分析脚本，比较问题 2 与问题 3 结果在不同气象场景下的差异，并输出图、表和运行摘要。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_integrated_scenario_analysis.py` | 问题 3 综合分析脚本，整合场景划分、特征重要性和决策树策略解释，并输出到 `outputs/`。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_extended_scenario_analysis.py` | 问题 3 扩展分析脚本，用于补充更细的场景解释和结果输出，并保存运行摘要。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_three_model_curve_plot.py` | 从问题 3 预测结果中提取三模型典型日曲线并保存期刊风格图、曲线表和运行摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_weather_feature_forecast.py` | 问题 3 主训练入口，使用“前一日实测功率 + 目标日 NWP 气象序列”预测目标日 96 点功率，并输出 checkpoint、预测表、指标表、期刊风格图和主运行摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_scenario_ieee_analysis.py` | 中文期刊风格场景划分分析脚本，读取标准 `outputs/predictions/` 预测表，按目标日天气比较问题 2 与问题 3 的差异，并输出图、表和独立摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_integrated_scenario_analysis.py` | 问题 3 综合分析脚本，整合场景划分、特征重要性和决策树策略解释，并输出到 `outputs/` 和独立摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_extended_scenario_analysis.py` | 问题 3 扩展分析脚本，用于补充更细的目标日场景解释和结果输出，并保存独立摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_three_model_curve_plot.py` | 从问题 3 标准预测表中按目标日提取三模型典型日曲线，并保存期刊风格图、曲线表和独立摘要。 |
 
 ### 问题 4：输入特征消融
 

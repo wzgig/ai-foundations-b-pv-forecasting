@@ -112,12 +112,14 @@ outputs/reports/run_summary.json
 
 ### 步骤 3：问题 3 引入气象变量后的预测
 
-问题 3 在问题 2 的建模框架上加入 NWP 等多维气象输入，用于比较气象变量对预测效果的提升。
+问题 3 在问题 2 的建模框架上加入 NWP 等多维气象输入，用于比较气象变量对预测效果的提升。当前正式脚本采用严格日前口径：模型输入由“前一日实测功率曲线 + 目标日 NWP 气象序列”构成，预测输出为目标测试日 96 个 15 分钟功率点。
 
 ```powershell
 cd ..\problem3_scenario_analysis
 python .\problem3_weather_feature_forecast.py
 ```
+
+问题 3 主脚本也支持 `PV_FORECAST_EPOCHS`、`PV_FORECAST_PATIENCE`、`PV_FORECAST_BATCH_SIZE`、`PV_FORCE_RETRAIN` 等环境变量。默认训练参数为 `epochs=20`、`batch_size=128`、`patience=4`；后续复现会优先复用 `models/problem3_*.pth`。
 
 主要输出：
 
@@ -131,7 +133,10 @@ outputs/metrics/三模型白昼指标对比.csv
 outputs/figures/*.png
 outputs/figures/*.html
 outputs/reports/run_summary.json
+outputs/reports/problem3_*_summary.json
 ```
+
+其中 `run_summary.json` 由主训练脚本写入；场景划分、综合分析、IEEE 风格解释和典型日曲线脚本会写入独立的 `problem3_*_summary.json`，避免覆盖主训练摘要。
 
 ### 步骤 4：问题 3 场景划分与提升来源分析
 
@@ -156,7 +161,7 @@ python .\problem3_three_model_curve_plot.py
 2025/02_problem_solutions/problem3_scenario_analysis/outputs/predictions/3三模型预测结果对比表.csv
 ```
 
-这些二次分析脚本也统一写入 `problem3_scenario_analysis/outputs/`，包括场景分组图、特征重要性图、典型场景对比图、场景提升表和 `run_summary.json`。如果只是查看本仓库已保存的交付结果，可以直接运行这些二次分析脚本；如果你要做新的严格实验记录，建议以 `outputs/` 下的新表为准。
+这些二次分析脚本也统一写入 `problem3_scenario_analysis/outputs/`，包括场景分组图、特征重要性图、典型场景对比图、场景提升表和各自独立的 `problem3_*_summary.json`。如果只是查看本仓库已保存的交付结果，可以直接运行这些二次分析脚本；如果你要做新的严格实验记录，建议以 `outputs/` 下的新表为准。
 
 ### 步骤 5：问题 4 输入特征消融
 

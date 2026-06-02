@@ -17,7 +17,9 @@ sys.path.insert(0, str(SHARED_DIR))
 
 from pv_project import (  # noqa: E402
     ExperimentArtifacts,
+    apply_journal_axes,
     configure_matplotlib,
+    journal_palette,
     resolve_input,
     safe_qcut,
     set_working_directory,
@@ -26,17 +28,43 @@ from pv_project import (  # noqa: E402
 set_working_directory(__file__)
 configure_matplotlib(dpi=300)
 ARTIFACTS = ExperimentArtifacts(__file__)
+PALETTE = journal_palette(8)
+
+
+def prediction_input_path(problem: str) -> Path:
+    if problem == "problem2":
+        standardized = (
+            SCRIPT_DIR.parent
+            / "problem2_baseline_forecasting"
+            / "outputs"
+            / "predictions"
+            / "三模型预测结果对比表.csv"
+        )
+        legacy_name = "问题2三模型预测结果对比表.csv"
+    elif problem == "problem3":
+        standardized = SCRIPT_DIR / "outputs" / "predictions" / "3三模型预测结果对比表.csv"
+        legacy_name = "问题3三模型预测结果对比表.csv"
+    else:
+        raise ValueError(f"unknown problem: {problem}")
+
+    if standardized.exists():
+        return standardized
+    return resolve_input(legacy_name, __file__)
+
+
+def clean_prediction_columns(cols):
+    return [col.replace(" (MW)", "").replace("预测功率", "").strip() for col in cols]
+
 
 # ---------- 1. 数据读取 ----------
 df_station = pd.read_csv(resolve_input("station00.csv", __file__), parse_dates=["date_time"])
-df_q2 = pd.read_csv(resolve_input("问题2三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
-df_q3 = pd.read_csv(resolve_input("问题3三模型预测结果对比表.csv", __file__), parse_dates=["起报时间", "预报时间"])
+df_q2 = pd.read_csv(prediction_input_path("problem2"), parse_dates=["起报时间", "预报时间"])
+df_q3 = pd.read_csv(prediction_input_path("problem3"), parse_dates=["起报时间", "预报时间"])
 
 # ---------- 2. 清洗与合并 ----------
 # 清理列名
-clean_columns = lambda cols: [col.replace(" (MW)", "").replace("预测功率", "").strip() for col in cols]
-df_q2.columns = clean_columns(df_q2.columns)
-df_q3.columns = clean_columns(df_q3.columns)
+df_q2.columns = clean_prediction_columns(df_q2.columns)
+df_q3.columns = clean_prediction_columns(df_q3.columns)
 df_q2.rename(columns={"实际功率": "actual"}, inplace=True)
 df_q3.rename(columns={"实际功率": "actual"}, inplace=True)
 
@@ -48,12 +76,14 @@ df_q3_fusion = df_q3[["起报时间", "预报时间", "actual", "FusionModel"]].
 df_q2_fusion = df_q2_fusion.drop_duplicates(subset=["起报时间", "预报时间"])
 df_q3_fusion = df_q3_fusion.drop_duplicates(subset=["起报时间", "预报时间"])
 df_fusion_compare = pd.merge(df_q2_fusion, df_q3_fusion, on=["起报时间", "预报时间"], suffixes=("_q2", "_q3"))
+df_fusion_compare["目标日期"] = df_fusion_compare["预报时间"].dt.normalize()
 
 # ---------- 3. 每日RMSE计算 ----------
 daily_rows = []
-for start_time, group in df_fusion_compare.groupby("起报时间", observed=True):
+for target_date, group in df_fusion_compare.groupby("目标日期", observed=True):
     daily_rows.append({
-        "起报时间": start_time,
+        "目标日期": target_date,
+        "起报时间": group["起报时间"].min(),
         "RMSE_Fusion_q2": np.sqrt(mean_squared_error(group["actual_q2"], group["fusion_q2"])),
         "RMSE_Fusion_q3": np.sqrt(mean_squared_error(group["actual_q3"], group["fusion_q3"])),
     })
@@ -80,7 +110,7 @@ daily_weather["season"] = daily_weather["date"].dt.month.map(
 daily_weather["cloud_factor"] = daily_weather["std_globalirrad"] / (daily_weather["avg_globalirrad"] + 1e-6)
 
 # ---------- 5. 合并数据集 ----------
-df = pd.merge(daily_rmse, daily_weather, left_on="起报时间", right_on="date", how="inner")
+df = pd.merge(daily_rmse, daily_weather, left_on="目标日期", right_on="date", how="inner")
 
 # ---------- 6. 构造分组标签 ----------
 def create_bins(data, col, q, labels):
@@ -111,16 +141,20 @@ for idx, (field, gdf) in enumerate(group_results.items()):
     y = gdf["提升值均值"]
     yerr = gdf["标准差"]
 
-    sns.barplot(x=x, y=y, hue=x, ax=ax, palette="Blues", edgecolor="black", errorbar=None, legend=False)
-    ax.errorbar(range(len(x)), y, yerr=yerr, fmt='none', ecolor='black', capsize=5)
+    sns.barplot(x=x, y=y, hue=x, ax=ax, palette=PALETTE[: len(x)], edgecolor="#222222", errorbar=None, legend=False)
+    ax.errorbar(range(len(x)), y, yerr=yerr, fmt='none', ecolor="#222222", capsize=4, linewidth=1.0)
+    ax.axhline(0, color="#222222", linewidth=0.8)
 
     for i, (_, row) in enumerate(gdf.iterrows()):
-        ax.text(i, row["提升值均值"] + 0.01, f'n={row["样本数"]}', ha='center', va='bottom', fontsize=8)
+        label_y = row["提升值均值"] + 0.01 if row["提升值均值"] >= 0 else row["提升值均值"] - 0.01
+        label_va = "bottom" if row["提升值均值"] >= 0 else "top"
+        ax.text(i, label_y, f'n={row["样本数"]}', ha='center', va=label_va, fontsize=8)
 
     ax.set_title(field, fontsize=10, fontweight='bold')
     ax.set_xlabel("")
     ax.set_ylabel("RMSE提升值" if idx % 3 == 0 else "")
     ax.tick_params(axis='x', rotation=45)
+    apply_journal_axes(ax)
 
 fig.suptitle("不同气象场景对预测精度提升的影响", fontsize=12, fontweight='bold')
 plt.tight_layout()
@@ -135,6 +169,7 @@ ARTIFACTS.write_summary(
         "group_fields": group_fields,
         "figure_style": "Chinese journal",
         "outputs_note": "Scenario grouping figure and RMSE improvement table are written under outputs/.",
-    }
+    },
+    filename="problem3_extended_scenario_analysis_summary.json",
 )
 print(f"分析数据已保存为：{path}")

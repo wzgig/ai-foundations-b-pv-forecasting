@@ -1,0 +1,44 @@
+{
+  "script": "problem3_scenario_ieee_analysis.py",
+  "generated_at": "2026-06-02T11:27:04.605818+00:00",
+  "metadata": {
+    "rows": 28,
+    "group_fields": [
+      "天气类型",
+      "光照波动性",
+      "气温",
+      "湿度",
+      "风速",
+      "季节"
+    ],
+    "features": [
+      "avg_globalirrad",
+      "std_globalirrad",
+      "amp_globalirrad",
+      "mean_temperature",
+      "mean_humidity",
+      "mean_windspeed",
+      "cloud_factor"
+    ],
+    "top_case": "2018-08-30 00:00:00",
+    "worst_case": "2018-08-29 00:00:00",
+    "figure_style": "Chinese journal"
+  },
+  "artifacts": {
+    "predictions": [],
+    "metrics": [
+      "outputs\\metrics\\场景划分提升分析结果.csv",
+      "outputs\\metrics\\线性回归_提升来源分析.csv",
+      "outputs\\metrics\\随机森林_特征重要性.csv"
+    ],
+    "figures": [
+      "outputs\\figures\\六类分组_IEEE风格.png",
+      "outputs\\figures\\特征重要性分析.png",
+      "outputs\\figures\\典型优场景对比图.png",
+      "outputs\\figures\\典型弱场景对比图.png"
+    ],
+    "reports": [
+      "outputs\\reports\\problem3_scenario_ieee_analysis_summary.json"
+    ]
+  }
+}

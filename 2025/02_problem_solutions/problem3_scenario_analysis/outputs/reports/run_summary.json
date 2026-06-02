@@ -1,35 +1,114 @@
 {
-  "script": "problem3_integrated_scenario_analysis.py",
-  "generated_at": "2026-06-02T04:00:09.720326+00:00",
+  "script": "problem3_weather_feature_forecast.py",
+  "generated_at": "2026-06-02T11:30:46.505526+00:00",
   "metadata": {
-    "rows": 28,
-    "group_fields": [
-      "天气类型",
-      "光照波动性",
-      "气温",
-      "湿度",
-      "风速",
-      "季节"
+    "problem": "problem3_scenario_analysis",
+    "models": [
+      "PureLSTM",
+      "FusionModel",
+      "BiFusionModel"
     ],
-    "classifier": "DecisionTreeClassifier(max_depth=3, random_state=0)",
-    "figure_style": "Chinese journal"
+    "train_samples": 25253,
+    "test_days": 28,
+    "test_date_first_in_problem_order": "2019-02-22",
+    "test_date_last_in_problem_order": "2018-11-30",
+    "test_date_min": "2018-08-25",
+    "test_date_max": "2019-05-31",
+    "input_length": 96,
+    "forecast_length": 96,
+    "input_dim": 9,
+    "input_features": [
+      "前一日功率",
+      "nwp_globalirrad",
+      "nwp_directirrad",
+      "nwp_temperature",
+      "nwp_humidity",
+      "nwp_windspeed",
+      "nwp_pressure",
+      "wind_x",
+      "wind_y"
+    ],
+    "capacity_kw": 6600,
+    "training": {
+      "epochs": 20,
+      "batch_size": 128,
+      "patience": 4,
+      "learning_rate": 0.001,
+      "hidden_dim": 32,
+      "force_retrain": false,
+      "checkpoint_reused": {
+        "PureLSTM": true,
+        "FusionModel": true,
+        "BiFusionModel": true
+      }
+    },
+    "daylight_scalar_metrics": {
+      "PureLSTM": {
+        "rmse_mw": 0.5255420299004904,
+        "mae_mw": 0.37859559903632184,
+        "mape_percent": 34.609108419522755
+      },
+      "FusionModel": {
+        "rmse_mw": 0.4616413608852222,
+        "mae_mw": 0.3359644863856304,
+        "mape_percent": 28.433185084180106
+      },
+      "BiFusionModel": {
+        "rmse_mw": 0.5571504024406967,
+        "mae_mw": 0.4029094662109387,
+        "mape_percent": 34.829661762138144
+      }
+    },
+    "best_models": {
+      "E_rmse_min": "FusionModel",
+      "E_mae_min": "FusionModel",
+      "C_R_max": "FusionModel",
+      "Q_R_max": "FusionModel",
+      "daylight_rmse_mw_min": "FusionModel"
+    },
+    "metric_heatmap_scoring": "E_rmse/E_mae/abs(E_me) are inverted; r/C_R/Q_R are direct, all normalized by column.",
+    "table_time_alignment": "issue_time is previous-day 00:00; forecast_time covers the target test day",
+    "elapsed_seconds": 39.24996304512024
   },
   "artifacts": {
-    "predictions": [],
+    "predictions": [
+      "outputs\\predictions\\3prediction_PureLSTM.csv",
+      "outputs\\predictions\\3prediction_FusionModel.csv",
+      "outputs\\predictions\\3prediction_BiFusionModel.csv",
+      "outputs\\predictions\\3三模型预测结果对比表.csv"
+    ],
     "metrics": [
-      "outputs\\metrics\\场景划分提升分析结果.csv"
+      "outputs\\metrics\\三模型白昼指标对比.csv"
     ],
     "figures": [
-      "outputs\\figures\\天气类型_分组分析图.png",
-      "outputs\\figures\\光照波动性_分组分析图.png",
-      "outputs\\figures\\气温_分组分析图.png",
-      "outputs\\figures\\湿度_分组分析图.png",
-      "outputs\\figures\\风速_分组分析图.png",
-      "outputs\\figures\\季节_分组分析图.png",
-      "outputs\\figures\\推荐策略_决策树.png"
+      "outputs\\figures\\PureLSTM_daylight_forecast_curve.png",
+      "outputs\\figures\\PureLSTM_daylight_error_distribution.png",
+      "outputs\\figures\\PureLSTM_actual_vs_predicted_scatter.png",
+      "outputs\\figures\\PureLSTM_professional_forecast_sample0.png",
+      "outputs\\figures\\PureLSTM_error_analysis_matrix.png",
+      "outputs\\figures\\PureLSTM_interactive_forecast_sample0.html",
+      "outputs\\figures\\FusionModel_daylight_forecast_curve.png",
+      "outputs\\figures\\FusionModel_daylight_error_distribution.png",
+      "outputs\\figures\\FusionModel_actual_vs_predicted_scatter.png",
+      "outputs\\figures\\FusionModel_professional_forecast_sample0.png",
+      "outputs\\figures\\FusionModel_error_analysis_matrix.png",
+      "outputs\\figures\\FusionModel_interactive_forecast_sample0.html",
+      "outputs\\figures\\BiFusionModel_daylight_forecast_curve.png",
+      "outputs\\figures\\BiFusionModel_daylight_error_distribution.png",
+      "outputs\\figures\\BiFusionModel_actual_vs_predicted_scatter.png",
+      "outputs\\figures\\BiFusionModel_professional_forecast_sample0.png",
+      "outputs\\figures\\BiFusionModel_error_analysis_matrix.png",
+      "outputs\\figures\\BiFusionModel_interactive_forecast_sample0.html",
+      "outputs\\figures\\三模型评估指标热力图_白昼时段.png",
+      "outputs\\figures\\三模型每日预测对比图_白昼.png"
     ],
     "reports": [
       "outputs\\reports\\run_summary.json"
+    ],
+    "models": [
+      "models\\problem3_PureLSTM.pth",
+      "models\\problem3_FusionModel.pth",
+      "models\\problem3_BiFusionModel.pth"
     ]
   }
 }
