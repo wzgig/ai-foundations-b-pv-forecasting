@@ -83,7 +83,18 @@ cd ..\problem2_baseline_forecasting
 python .\problem2_baseline_three_model_forecast.py
 ```
 
-首次运行会训练模型，耗时较长。后续运行会优先复用签名匹配的 checkpoint。
+首次运行会训练模型，耗时较长。后续运行会优先复用签名匹配的 checkpoint。预测表采用严格日前口径：`起报时间` 为输入日 00:00，`预报时间` 覆盖目标测试日 96 个 15 分钟点，`实际功率` 与模型预测使用同一目标日对齐。
+
+如需临时缩短训练或强制重训，可在 PowerShell 中设置环境变量后运行：
+
+```powershell
+$env:PV_FORECAST_EPOCHS="10"
+$env:PV_FORECAST_PATIENCE="3"
+$env:PV_FORCE_RETRAIN="1"
+python .\problem2_baseline_three_model_forecast.py
+```
+
+正式结果建议使用默认训练参数；只改绘图、表格或报告逻辑时不要设置 `PV_FORCE_RETRAIN`，这样会直接复用 checkpoint。
 
 主要输出：
 
@@ -182,7 +193,7 @@ outputs/reports/run_summary.json
 2. 在当前脚本目录的 `models/` 下查找对应 checkpoint。
 3. 如果 checkpoint 存在且训练签名完全匹配，直接加载模型，跳过训练。
 4. 如果 checkpoint 不存在或签名不匹配，重新训练并保存新的 checkpoint。
-5. 如果想强制重训，在对应脚本的 `train_model(...)` 调用中加入或改为 `force_retrain=True`。
+5. 如果想强制重训，可在对应脚本的 `train_model(...)` 调用中加入或改为 `force_retrain=True`；问题 2 也支持通过环境变量 `PV_FORCE_RETRAIN=1` 临时强制重训。
 
 这意味着：只改绘图、输出、结果分析代码时，正常情况下不会重新训练；只要模型结构、输入维度和训练参数不变，就会复用已保存模型。
 

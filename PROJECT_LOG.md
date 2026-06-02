@@ -2,6 +2,37 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-02 问题 2 基准预测脚本运行测试与优化
+
+### 调整目标
+
+- 实际运行 `problem2_baseline_three_model_forecast.py`，复现并解决阻塞运行的问题。
+- 修正问题 2 预测明细表的时间对齐口径，避免模型预测、实际功率和预报时间错日。
+- 在保持 checkpoint 复用的前提下提升输出图像、运行摘要和结果可读性。
+
+### 主要改动
+
+- 运行环境补齐 PyTorch：当前 Python 3.12 环境缺少 `torch`，已安装 `torch 2.12.0` 后完成脚本回归。
+- 优化问题 2 主脚本：
+  - 删除局部 `SimHei`、`sns.set_theme()` 和重复导入，统一使用 `_shared/pv_project.py` 的中文期刊绘图配置。
+  - 增加 `PV_FORECAST_EPOCHS`、`PV_FORECAST_PATIENCE`、`PV_FORECAST_BATCH_SIZE`、`PV_FORCE_RETRAIN` 等运行参数入口。
+  - 预测输出后裁剪到物理可行的非负功率区间。
+  - 预测表改为 `起报时间=目标日前一日 00:00`，`预报时间=目标测试日 96 个 15 分钟点`，实际功率直接与 `test_Y` 同日对齐。
+  - `run_summary.json` 新增测试日期范围、训练参数、checkpoint 复用状态、白昼标量误差和模型文件清单。
+  - 三模型指标热力图按列归一化着色并保留原始数值标注，日内曲线改用 0-24 小时数值轴，避免 Matplotlib datetime 轴出现小时偏移。
+  - 生成静态 PNG 与 Plotly HTML 交互曲线，统一写入 `outputs/figures/`。
+- 更新 `2025/RUN_GUIDE.md` 和 `2025/CODE_INDEX.md`，记录问题 2 时间对齐口径和运行参数。
+
+### 验证结果
+
+- `python -u 2025\02_problem_solutions\problem2_baseline_forecasting\problem2_baseline_three_model_forecast.py`：通过，三模型均复用 checkpoint。
+- 问题 2 当前白昼指标：
+  - PureLSTM：`E_rmse=0.1141`，`C_R=88.59%`，`Q_R=96.05%`。
+  - FusionModel：`E_rmse=0.0833`，`C_R=91.67%`，`Q_R=98.07%`。
+  - BiFusionModel：`E_rmse=0.0967`，`C_R=90.33%`，`Q_R=97.99%`。
+- `python 2025\tools\project_health_check.py`：通过。
+- `python -m unittest discover -s tests -q`：通过，6 个测试全部成功。
+
 ## 2026-06-02 输出模块整理与中文期刊绘图规范
 
 ### 调整目标

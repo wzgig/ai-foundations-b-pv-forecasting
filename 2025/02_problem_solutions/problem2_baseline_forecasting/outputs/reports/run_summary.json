@@ -1,0 +1,93 @@
+{
+  "script": "problem2_baseline_three_model_forecast.py",
+  "generated_at": "2026-06-02T10:13:14.505034+00:00",
+  "metadata": {
+    "problem": "problem2_baseline_forecasting",
+    "models": [
+      "PureLSTM",
+      "FusionModel",
+      "BiFusionModel"
+    ],
+    "train_samples": 25252,
+    "test_days": 28,
+    "test_date_first_in_problem_order": "2019-02-22",
+    "test_date_last_in_problem_order": "2018-11-30",
+    "test_date_min": "2018-08-25",
+    "test_date_max": "2019-05-31",
+    "input_length": 96,
+    "forecast_length": 96,
+    "capacity_kw": 6600,
+    "training": {
+      "epochs": 50,
+      "batch_size": 64,
+      "patience": 5,
+      "learning_rate": 0.001,
+      "force_retrain": false,
+      "checkpoint_reused": {
+        "PureLSTM": true,
+        "FusionModel": true,
+        "BiFusionModel": true
+      }
+    },
+    "daylight_scalar_metrics": {
+      "PureLSTM": {
+        "rmse_mw": 0.7533273140821545,
+        "mae_mw": 0.5377146014368204,
+        "mape_percent": 44.32624300465083
+      },
+      "FusionModel": {
+        "rmse_mw": 0.5495036920920825,
+        "mae_mw": 0.38354784822972166,
+        "mape_percent": 31.69955584688212
+      },
+      "BiFusionModel": {
+        "rmse_mw": 0.6380613727756778,
+        "mae_mw": 0.45899743406775434,
+        "mape_percent": 37.686414737569045
+      }
+    },
+    "table_time_alignment": "issue_time is previous-day 00:00; forecast_time covers the target test day",
+    "elapsed_seconds": 26.95985770225525
+  },
+  "artifacts": {
+    "predictions": [
+      "outputs\\predictions\\prediction_PureLSTM.csv",
+      "outputs\\predictions\\prediction_FusionModel.csv",
+      "outputs\\predictions\\prediction_BiFusionModel.csv",
+      "outputs\\predictions\\三模型预测结果对比表.csv"
+    ],
+    "metrics": [
+      "outputs\\metrics\\三模型白昼指标对比.csv"
+    ],
+    "figures": [
+      "outputs\\figures\\PureLSTM_daylight_forecast_curve.png",
+      "outputs\\figures\\PureLSTM_daylight_error_distribution.png",
+      "outputs\\figures\\PureLSTM_actual_vs_predicted_scatter.png",
+      "outputs\\figures\\PureLSTM_professional_forecast_sample0.png",
+      "outputs\\figures\\PureLSTM_error_analysis_matrix.png",
+      "outputs\\figures\\PureLSTM_interactive_forecast_sample0.html",
+      "outputs\\figures\\FusionModel_daylight_forecast_curve.png",
+      "outputs\\figures\\FusionModel_daylight_error_distribution.png",
+      "outputs\\figures\\FusionModel_actual_vs_predicted_scatter.png",
+      "outputs\\figures\\FusionModel_professional_forecast_sample0.png",
+      "outputs\\figures\\FusionModel_error_analysis_matrix.png",
+      "outputs\\figures\\FusionModel_interactive_forecast_sample0.html",
+      "outputs\\figures\\BiFusionModel_daylight_forecast_curve.png",
+      "outputs\\figures\\BiFusionModel_daylight_error_distribution.png",
+      "outputs\\figures\\BiFusionModel_actual_vs_predicted_scatter.png",
+      "outputs\\figures\\BiFusionModel_professional_forecast_sample0.png",
+      "outputs\\figures\\BiFusionModel_error_analysis_matrix.png",
+      "outputs\\figures\\BiFusionModel_interactive_forecast_sample0.html",
+      "outputs\\figures\\三模型评估指标热力图_白昼时段.png",
+      "outputs\\figures\\三模型每日预测对比图_白昼.png"
+    ],
+    "reports": [
+      "outputs\\reports\\run_summary.json"
+    ],
+    "models": [
+      "models\\problem2_PureLSTM.pth",
+      "models\\problem2_FusionModel.pth",
+      "models\\problem2_BiFusionModel.pth"
+    ]
+  }
+}

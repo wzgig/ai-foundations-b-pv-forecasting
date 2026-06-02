@@ -6,22 +6,20 @@ Created on 2025/5/25 09:13
 """
 import sys
 import time
+import datetime
+import os
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.integrate import odeint
-from sklearn.preprocessing import MinMaxScaler
-from matplotlib import rcParams
-
-# ================== 新增库导入 ==================
-import matplotlib.dates as mdates
 from scipy import stats
-import plotly.express as px
 import plotly.graph_objects as go
 import seaborn as sns
-# ===============================================
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SHARED_DIR = next(
@@ -32,8 +30,13 @@ sys.path.insert(0, str(SHARED_DIR))
 
 from pv_project import (  # noqa: E402
     ExperimentArtifacts,
+    apply_journal_axes,
+    apply_journal_figure,
     build_torch_checkpoint_signature,
     configure_matplotlib,
+    daylight_metrics,
+    journal_palette,
+    make_tail_test_dates,
     resolve_input,
     save_torch_checkpoint,
     set_random_seed,
@@ -45,31 +48,38 @@ from pv_project import (  # noqa: E402
 
 set_working_directory(__file__)
 configure_matplotlib()
-set_random_seed()
+set_random_seed(torch_module=torch)
 SCRIPT_START_TIME = time.time()
 ARTIFACTS = ExperimentArtifacts(__file__)
 SHOW_PLOTS = False
-#
-# rcParams['font.family'] = 'SimHei'
-# rcParams['axes.unicode_minus'] = False
 
-import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['SimHei']  # 设置中文支持字体
-plt.rcParams['axes.unicode_minus'] = False   # 修复负号显示问题
+INPUT_LENGTH = 96
+FORECAST_LENGTH = 96
+TEST_MONTHS = (2, 5, 8, 11)
+TEST_TAIL_DAYS = 7
+CAPACITY_KW = 6600
+DAYLIGHT_POWER_THRESHOLD = 0.05
 
-# ================ 全局样式设置 ==================
-# plt.style.use('seaborn-whitegrid')  # 注释此行，删除无效样式调用
-sns.set_theme(style='whitegrid')  # 保留Seaborn的白色网格样式配置
-rcParams.update({
-    'figure.figsize': (10, 5),
-    'axes.titlesize': 14,
-    'axes.labelsize': 12,
-    'xtick.labelsize': 10,
-    'ytick.labelsize': 10,
-    'grid.linestyle': '--',
-    'figure.dpi': 150
-})
-# ===============================================
+BATCH_SIZE = int(os.getenv("PV_FORECAST_BATCH_SIZE", "64"))
+TRAINING_EPOCHS = int(os.getenv("PV_FORECAST_EPOCHS", "50"))
+TRAINING_PATIENCE = int(os.getenv("PV_FORECAST_PATIENCE", "5"))
+LEARNING_RATE = float(os.getenv("PV_FORECAST_LR", "0.001"))
+FORCE_RETRAIN = os.getenv("PV_FORCE_RETRAIN", "0").strip().lower() in {"1", "true", "yes"}
+
+MODEL_LABELS = {
+    "PureLSTM": "PureLSTM",
+    "FusionModel": "FusionModel",
+    "BiFusionModel": "BiFusionModel",
+}
+METRIC_LABELS = {
+    "E_rmse": "归一化均方根误差",
+    "E_mae": "归一化平均绝对误差",
+    "E_me": "归一化平均误差",
+    "r": "相关系数",
+    "C_R": "准确率/%",
+    "Q_R": "合格率/%",
+}
+PALETTE = journal_palette(8)
 df = pd.read_csv(resolve_input("station00.csv", __file__))
 df['date_time'] = pd.to_datetime(df['date_time'])
 
@@ -79,19 +89,20 @@ df['day'] = df['date_time'].dt.day
 df['date'] = df['date_time'].dt.date
 
 # 指定测试集：2、5、8、11 月最后 7 天
-unique_dates = df['date'].drop_duplicates().reset_index(drop=True)
-test_months = [2, 5, 8, 11]
-test_dates = []
-for m in test_months:
-    month_dates = unique_dates[unique_dates.map(lambda d: d.month) == m]
-    if len(month_dates) >= 7:
-        test_dates.extend(month_dates[-7:].tolist())
+test_dates = make_tail_test_dates(
+    df,
+    date_col="date_time",
+    months=TEST_MONTHS,
+    tail_days=TEST_TAIL_DAYS,
+)
+if not test_dates:
+    raise ValueError("未找到可用于问题2测试集的目标日期，请检查 station00.csv 的时间范围。")
 
 df['set'] = df['date'].apply(lambda d: 'test' if d in test_dates else 'train')
-df['is_daytime'] = df['power'] > 0.05
+df['is_daytime'] = df['power'] > DAYLIGHT_POWER_THRESHOLD
 
 # 构造滑动窗口样本
-input_length, forecast_length = 96, 96
+input_length, forecast_length = INPUT_LENGTH, FORECAST_LENGTH
 values = df['power'].values
 date_times = df['date_time'].values
 set_flags = df['set'].values
@@ -104,25 +115,13 @@ for i in range(len(df) - input_length - forecast_length):
         train_Y.append(values[i + input_length: i + input_length + forecast_length])
         train_timestamps.append(date_times[i + input_length])
 
-train_X = np.array(train_X)
-train_Y = np.array(train_Y)
+train_X = np.array(train_X, dtype=np.float32)
+train_Y = np.array(train_Y, dtype=np.float32)
+if len(train_X) == 0:
+    raise ValueError("训练样本为空，请检查训练/测试日期划分。")
 
-# 替代错误的 test_X/Y 构造逻辑 —— 使用每日严格样本（共28天）
-import datetime
-
-# 标注白昼和日期
-df['is_daytime'] = df['power'] > 0.05
-df['date'] = df['date_time'].dt.date
-df['month'] = df['date_time'].dt.month
-
-# 仅第 2、5、8、11 月的最后 7 天为测试集
-test_months = [2, 5, 8, 11]
-unique_dates = df['date'].drop_duplicates().reset_index(drop=True)
-target_test_days = []
-
-for m in test_months:
-    month_dates = unique_dates[unique_dates.map(lambda d: d.month) == m]
-    target_test_days.extend(month_dates[-7:].tolist())
+# 使用每日严格样本：前一日 96 点作为输入，目标日 96 点作为输出。
+target_test_days = test_dates
 
 strict_test_X, strict_test_Y, strict_test_timestamps = [], [], []
 
@@ -137,14 +136,12 @@ for test_day in target_test_days:
         strict_test_timestamps.append(pd.Timestamp(test_day))
 
 # 替换变量
-test_X = np.array(strict_test_X)
-test_Y = np.array(strict_test_Y)
+test_X = np.array(strict_test_X, dtype=np.float32)
+test_Y = np.array(strict_test_Y, dtype=np.float32)
 test_timestamps = np.array(strict_test_timestamps)
-# 确保 test_X/Y 是 28 天的严格样本
+if len(test_X) == 0:
+    raise ValueError("测试样本为空，请检查测试日期前一日是否具备完整 96 点输入。")
 
-import torch
-import torch.nn as nn
-set_random_seed(torch_module=torch)
 
 class LSTMBranch(nn.Module):
     def __init__(self, input_len, hidden_dim=64, num_layers=2):
@@ -281,12 +278,6 @@ class BiFusionModel(nn.Module):
         feat = torch.cat([bilstm_feat, tcn_feat, trans_feat], dim=1)
         return self.fc(feat)
 
-import torch
-import torch.nn as nn
-import numpy as np
-from torch.utils.data import DataLoader, TensorDataset
-
-
 def train_model(
     model,
     train_X,
@@ -305,8 +296,12 @@ def train_model(
 
     # 数据归一化
     max_power = float(train_X.max())
+    if max_power <= 0:
+        raise ValueError("训练集功率最大值必须大于 0，无法归一化训练。")
+
     checkpoint_name = checkpoint_name or model.__class__.__name__
     checkpoint_path = torch_checkpoint_path(checkpoint_name)
+    ARTIFACTS.record("models", checkpoint_path)
     checkpoint_signature = build_torch_checkpoint_signature(
         model,
         train_X,
@@ -327,15 +322,17 @@ def train_model(
             device=device,
         )
         if loaded:
-            print(f"已复用训练好的模型：{checkpoint_path}")
-            return model, float(checkpoint_max_power or max_power)
+            print(f"已复用训练好的模型：{checkpoint_path}", flush=True)
+            return model, float(checkpoint_max_power or max_power), True
 
     train_X, train_Y = train_X / max_power, train_Y / max_power
 
     # 创建验证集
-    val_size = int(len(train_X) * val_split)
+    val_size = max(1, int(len(train_X) * val_split))
     idx = np.random.permutation(len(train_X))
     val_idx, train_idx = idx[:val_size], idx[val_size:]
+    if len(train_idx) == 0:
+        raise ValueError("训练集过小，无法划分验证集。")
 
     # 转换为PyTorch张量
     X_train = torch.tensor(train_X[train_idx], dtype=torch.float32)
@@ -376,7 +373,7 @@ def train_model(
         # 计算平均损失
         train_loss = total_loss / len(train_loader.dataset)
         val_loss /= len(val_loader.dataset)
-        print(f"Epoch {epoch + 1}: Train={train_loss:.4f}, Val={val_loss:.4f}")
+        print(f"Epoch {epoch + 1}: Train={train_loss:.4f}, Val={val_loss:.4f}", flush=True)
 
         # 早停机制
         if val_loss < best_loss:
@@ -390,11 +387,11 @@ def train_model(
                 max_power=max_power,
                 best_val_loss=best_loss,
             )
-            print(f"模型保存于 {checkpoint_path}")
+            print(f"模型保存于 {checkpoint_path}", flush=True)
         else:
             counter += 1
             if counter >= patience:
-                print(f"早停触发，最佳验证损失: {best_loss:.4f}")
+                print(f"早停触发，最佳验证损失: {best_loss:.4f}", flush=True)
                 break
 
     # 加载最佳模型
@@ -407,13 +404,30 @@ def train_model(
     )
     if not loaded:
         raise RuntimeError(f"未能加载最佳模型检查点：{checkpoint_path}")
-    return model, max_power
+    return model, max_power, False
 
 # ----------------------- 预测与评估 -----------------------
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+
+def daylight_arrays(true_values, pred_values, timestamps, source_df):
+    """Return flattened daylight true/pred arrays aligned with target days."""
+
+    all_true, all_pred = [], []
+    for idx, ts in enumerate(pd.to_datetime(list(timestamps))):
+        day_mask = (source_df['date_time'] >= ts) & (source_df['date_time'] < ts + pd.Timedelta(days=1))
+        is_daytime = source_df.loc[day_mask, 'is_daytime'].values[:FORECAST_LENGTH]
+        if len(is_daytime) != FORECAST_LENGTH:
+            raise ValueError(f"{ts.date()} 的测试日数据不足 {FORECAST_LENGTH} 点。")
+        all_true.extend(np.asarray(true_values[idx])[is_daytime])
+        all_pred.extend(np.asarray(pred_values[idx])[is_daytime])
+
+    if not all_true:
+        raise ValueError("白昼样本为空，无法计算问题2评价指标。")
+    return np.asarray(all_true, dtype=float), np.asarray(all_pred, dtype=float)
+
 
 def evaluate_model(model, test_X, test_Y, test_timestamps, df, max_power):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
     model.eval()
 
     # 标准化输入
@@ -422,26 +436,17 @@ def evaluate_model(model, test_X, test_Y, test_timestamps, df, max_power):
     # 执行预测
     with torch.no_grad():
         preds = model(X_tensor).cpu().numpy() * max_power  # 反归一化
+    preds = np.clip(preds, 0.0, max_power)
     true = test_Y
 
     # 评估白昼指标（只在白昼时间段评估误差）
-    day_indices = []
-    for ts in test_timestamps:
-        day_mask = (df['date_time'] >= ts) & (df['date_time'] < ts + pd.Timedelta(days=1))
-        is_daytime = df.loc[day_mask, 'is_daytime'].values
-        day_indices.append(is_daytime)
-
-    all_preds, all_true = [], []
-    for pred, real, mask in zip(preds, true, day_indices):
-        mask = mask[:96]  # 确保掩码长度一致
-        all_preds.extend(pred[mask])
-        all_true.extend(real[mask])
+    all_true, all_preds = daylight_arrays(true, preds, test_timestamps, df)
 
     rmse = np.sqrt(mean_squared_error(all_true, all_preds))
     mae = mean_absolute_error(all_true, all_preds)
     mape = np.mean(np.abs((np.array(all_true) - np.array(all_preds)) / (np.array(all_true) + 1e-5))) * 100
 
-    print(f"白昼 RMSE: {rmse:.4f}  MAE: {mae:.4f}  MAPE: {mape:.2f}%")
+    print(f"白昼 RMSE: {rmse:.4f}  MAE: {mae:.4f}  MAPE: {mape:.2f}%", flush=True)
 
     return preds, rmse, mae, mape
 
@@ -455,48 +460,49 @@ def compute_all_metrics(true_values, pred_values, timestamps, df, capacity_kW=66
     :param df: 原始 dataframe（用于白昼判断）
     :param capacity_kW: 单位为千瓦（默认 6600）
     """
-    C = capacity_kW / 1000.0  # 转为 MW
-    all_true, all_pred = [], []
+    metrics = daylight_metrics(
+        true_values,
+        pred_values,
+        timestamps,
+        df,
+        capacity_kw=capacity_kW,
+    )
 
-    for i, ts in enumerate(timestamps):
-        mask = (df['date_time'] >= ts) & (df['date_time'] < ts + pd.Timedelta(days=1))
-        is_day = df.loc[mask, 'is_daytime'].values[:96]
-        pred = pred_values[i][is_day]
-        true = true_values[i][is_day]
+    print(f"【附件1考核指标】基于装机容量 {capacity_kW / 1000.0:.2f} MW", flush=True)
+    print(f"E_rmse: {metrics['E_rmse']:.4f}", flush=True)
+    print(f"E_mae : {metrics['E_mae']:.4f}", flush=True)
+    print(f"E_me  : {metrics['E_me']:.4f}", flush=True)
+    print(f"r     : {metrics['r']:.4f}", flush=True)
+    print(f"C_R   : {metrics['C_R']:.2f}%", flush=True)
+    print(f"Q_R   : {metrics['Q_R']:.2f}%", flush=True)
 
-        all_true.extend(true)
-        all_pred.extend(pred)
+    return metrics
 
-    all_true = np.array(all_true)
-    all_pred = np.array(all_pred)
 
-    # 附件1公式指标计算
-    err = (all_true - all_pred) / C
-    abs_err = np.abs(err)
+def target_day_daylight_mask(ts, source_df):
+    """Return the 96-point daylight mask for one target day."""
 
-    E_rmse = np.sqrt(np.mean(err**2))
-    E_mae = np.mean(abs_err)
-    E_me = np.mean(err)
-    r = np.corrcoef(all_true, all_pred)[0, 1]
-    C_R = (1 - E_rmse) * 100
-    Q_R = np.mean(abs_err < 0.25) * 100
+    target_start = pd.to_datetime(ts)
+    mask = (source_df['date_time'] >= target_start) & (
+        source_df['date_time'] < target_start + pd.Timedelta(days=1)
+    )
+    is_daytime = source_df.loc[mask, 'is_daytime'].values[:FORECAST_LENGTH]
+    if len(is_daytime) != FORECAST_LENGTH:
+        raise ValueError(f"{target_start.date()} 的目标日数据不足 {FORECAST_LENGTH} 点。")
+    return is_daytime
 
-    print(f"【附件1考核指标】基于装机容量 {C:.2f} MW")
-    print(f"E_rmse: {E_rmse:.4f}")
-    print(f"E_mae : {E_mae:.4f}")
-    print(f"E_me  : {E_me:.4f}")
-    print(f"r     : {r:.4f}")
-    print(f"C_R   : {C_R:.2f}%")
-    print(f"Q_R   : {Q_R:.2f}%")
 
-    return {
-        'E_rmse': E_rmse,
-        'E_mae': E_mae,
-        'E_me': E_me,
-        'r': r,
-        'C_R': C_R,
-        'Q_R': Q_R
-    }
+def intraday_hour_axis(length=FORECAST_LENGTH):
+    """Use numeric hours to avoid Matplotlib datetime timezone shifts."""
+
+    return np.arange(length, dtype=float) * 24.0 / length
+
+
+def format_intraday_axis(ax):
+    ax.set_xlim(0, 24)
+    ticks = np.arange(0, 25, 3)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels([f"{int(hour):02d}:00" for hour in ticks])
 # ----------------------- 使用示例 -----------------------
 # 训练模型
 # model = FusionModel(input_len=96)
@@ -505,14 +511,12 @@ def compute_all_metrics(true_values, pred_values, timestamps, df, capacity_kW=66
 # # 评估测试集
 # preds, rmse, mae, mape = evaluate_model(model, test_X, test_Y, test_timestamps, df, max_power)
 
-import pandas as pd
-
 def export_prediction_table(preds, test_Y, test_timestamps, df, method_name='融合模型预测', output_file='prediction_table.csv'):
     """
     将模型预测结果展开为标准提交表格格式
     :param preds: 模型预测值 (N, 96)
     :param test_Y: 实际值 (N, 96)
-    :param test_timestamps: 起报时间列表（应为目标日 00:00:00）
+    :param test_timestamps: 目标日 00:00:00 列表；起报时间按前一日 00:00:00 记录
     :param df: 原始 DataFrame，含真实功率
     :param method_name: 列标题中方法名
     :param output_file: 保存文件路径
@@ -522,27 +526,21 @@ def export_prediction_table(preds, test_Y, test_timestamps, df, method_name='融
     df['date_time'] = pd.to_datetime(df['date_time'])
 
     for i, ts in enumerate(test_timestamps):
-        start_time = pd.to_datetime(ts)
-        for j in range(96):
-            forecast_time = start_time + pd.Timedelta(days=1) + pd.Timedelta(minutes=15 * j)
-
-            # 查找实际功率
-            real_val_row = df[df['date_time'] == forecast_time]
-            if not real_val_row.empty:
-                actual_power = real_val_row['power'].values[0]
-            else:
-                actual_power = np.nan  # 若没有记录，用 nan 占位
+        target_start = pd.to_datetime(ts).replace(hour=0, minute=0, second=0)
+        issue_time = target_start - pd.Timedelta(days=1)
+        for j in range(FORECAST_LENGTH):
+            forecast_time = target_start + pd.Timedelta(minutes=15 * j)
 
             records.append({
-                "起报时间": start_time.replace(hour=0, minute=0, second=0),
+                "起报时间": issue_time,
                 "预报时间": forecast_time,
-                "实际功率 (MW)": actual_power,
+                "实际功率 (MW)": float(test_Y[i, j]),
                 f"{method_name} (MW)": preds[i, j]
             })
 
     df_pred = pd.DataFrame(records)
     target = ARTIFACTS.write_csv("predictions", output_file, df_pred, index=False)
-    print(f"预测结果已保存至 {target}")
+    print(f"预测结果已保存至 {target}", flush=True)
     return target
 
 
@@ -553,165 +551,198 @@ def export_prediction_table(preds, test_Y, test_timestamps, df, method_name='融
 
 # metrics = compute_all_metrics(test_Y, preds, test_timestamps, df, capacity_kW=6600)
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 def visualize_predictions(preds, test_Y, test_timestamps, df, model_name="model"):
     model_slug = slugify_checkpoint_name(model_name)
-    # 设置全局绘图风格
-    # plt.style.use('seaborn-whitegrid')  # 删除这一行或注释掉
-    sns.set_theme(style='whitegrid')  # seaborn本身即可设定风格
-
-    sns.set_context("notebook", font_scale=1.1)
-    # 原代码开头添加字体配置
-    import matplotlib.pyplot as plt
-    plt.rcParams['font.sans-serif'] = ['SimHei']  # 设置中文字体
-    plt.rcParams['axes.unicode_minus'] = False  # 解决负号问题
 
     # ---------- 1. 可视化第一个样本的白昼时段功率曲线 ----------
     sample_index = 0
     ts = test_timestamps[sample_index]
-    mask = (df['date_time'] >= ts) & (df['date_time'] < ts + pd.Timedelta(days=1))
-    is_daytime = df.loc[mask, 'is_daytime'].values[:96]
-    time_axis = df.loc[mask, 'date_time'].values[:96][is_daytime]
+    is_daytime = target_day_daylight_mask(ts, df)
+    time_axis = intraday_hour_axis()
 
-    sample_pred = preds[sample_index][is_daytime]
-    sample_true = test_Y[sample_index][is_daytime]
+    sample_pred = preds[sample_index]
+    sample_true = test_Y[sample_index]
+    daylight_rmse = np.sqrt(mean_squared_error(sample_true[is_daytime], sample_pred[is_daytime]))
 
-    plt.figure(figsize=(12, 5))
-    plt.plot(time_axis, sample_true, label='真实功率', linewidth=2, color='royalblue')
-    plt.plot(time_axis, sample_pred, label='预测功率', linewidth=2, linestyle='--', color='darkorange')
-    plt.fill_between(time_axis, sample_true, sample_pred, color='gray', alpha=0.3, label='误差区域')
-    plt.title(f'白昼时段预测曲线（起报时间：{ts}）')
-    plt.xlabel('时间')
-    plt.ylabel('功率 (MW)')
-    plt.legend()
-    plt.tight_layout()
-    plt.grid(True)
-    ARTIFACTS.save_figure(f"{model_slug}_daylight_forecast_curve.png", show=SHOW_PLOTS)
+    fig, ax = plt.subplots(figsize=(9.2, 4.6))
+    ax.plot(time_axis, sample_true, label='实测功率', color=PALETTE[0], linewidth=2.1)
+    ax.plot(time_axis, sample_pred, label='预测功率', color=PALETTE[1], linewidth=2.0, linestyle='--')
+    ax.fill_between(time_axis, sample_true, sample_pred, color="#8c8c8c", alpha=0.18, label='绝对误差')
+    ax.text(
+        0.02,
+        0.95,
+        f'白昼RMSE={daylight_rmse:.2f} MW',
+        transform=ax.transAxes,
+        va='top',
+        fontsize=9.5,
+        bbox=dict(facecolor='white', edgecolor='#bdbdbd', linewidth=0.6, alpha=0.9),
+    )
+    ax.set_title(f'{MODEL_LABELS.get(model_name, model_name)} 目标日预测曲线（{pd.Timestamp(ts).date()}）')
+    ax.set_xlabel('日内时刻')
+    ax.set_ylabel('功率/MW')
+    format_intraday_axis(ax)
+    ax.legend(loc='upper left', ncol=3)
+    apply_journal_axes(ax)
+    fig.tight_layout()
+    ARTIFACTS.save_figure(f"{model_slug}_daylight_forecast_curve.png", fig=fig, show=SHOW_PLOTS)
 
     # ---------- 2. 所有白昼误差分布图 ----------
-    all_true, all_pred = [], []
-    for i, ts in enumerate(test_timestamps):
-        mask = (df['date_time'] >= ts) & (df['date_time'] < ts + pd.Timedelta(days=1))
-        is_daytime = df.loc[mask, 'is_daytime'].values[:96]
-        all_true.extend(test_Y[i][is_daytime])
-        all_pred.extend(preds[i][is_daytime])
-    errors = np.array(all_pred) - np.array(all_true)
+    all_true, all_pred = daylight_arrays(test_Y, preds, test_timestamps, df)
+    errors = all_pred - all_true
 
-    plt.figure(figsize=(10, 4))
-    sns.histplot(errors, kde=True, bins=50, color='teal')
-    plt.axvline(x=0, color='red', linestyle='--')
-    plt.title('预测误差分布（白昼时段）')
-    plt.xlabel('误差 (预测 - 实际) (MW)')
-    plt.ylabel('频数')
-    plt.tight_layout()
-    ARTIFACTS.save_figure(f"{model_slug}_daylight_error_distribution.png", show=SHOW_PLOTS)
+    fig, ax = plt.subplots(figsize=(8.4, 4.2))
+    sns.histplot(errors, kde=True, bins=42, color=PALETTE[2], edgecolor='white', linewidth=0.4, ax=ax)
+    ax.axvline(x=0, color=PALETTE[3], linestyle='--', linewidth=1.5, label='零误差')
+    ax.axvline(x=np.mean(errors), color=PALETTE[1], linestyle='-', linewidth=1.5, label='均值')
+    ax.set_title(f'{MODEL_LABELS.get(model_name, model_name)} 白昼预测误差分布')
+    ax.set_xlabel('预测误差/MW')
+    ax.set_ylabel('频数')
+    ax.legend(loc='upper right')
+    apply_journal_axes(ax)
+    fig.tight_layout()
+    ARTIFACTS.save_figure(f"{model_slug}_daylight_error_distribution.png", fig=fig, show=SHOW_PLOTS)
 
     # ---------- 3. 散点图：预测值 vs 实际值 ----------
-    plt.figure(figsize=(6, 6))
-    sns.scatterplot(x=all_true, y=all_pred, alpha=0.5, edgecolor=None)
-    max_val = max(max(all_true), max(all_pred))
-    plt.plot([0, max_val], [0, max_val], linestyle='--', color='red', label='理想预测线')
-    plt.xlabel('实际功率 (MW)')
-    plt.ylabel('预测功率 (MW)')
-    plt.title('预测 vs 实际（白昼）')
-    plt.legend()
-    plt.tight_layout()
-    plt.grid(True)
-    ARTIFACTS.save_figure(f"{model_slug}_actual_vs_predicted_scatter.png", show=SHOW_PLOTS)
+    fig, ax = plt.subplots(figsize=(5.4, 5.2))
+    sns.scatterplot(x=all_true, y=all_pred, alpha=0.42, s=24, edgecolor=None, color=PALETTE[0], ax=ax)
+    max_val = max(float(np.max(all_true)), float(np.max(all_pred)))
+    ax.plot([0, max_val], [0, max_val], linestyle='--', color=PALETTE[3], label='理想预测线')
+    ax.set_xlabel('实测功率/MW')
+    ax.set_ylabel('预测功率/MW')
+    ax.set_title(f'{MODEL_LABELS.get(model_name, model_name)} 白昼预测一致性')
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax.legend(loc='upper left')
+    apply_journal_axes(ax)
+    fig.tight_layout()
+    ARTIFACTS.save_figure(f"{model_slug}_actual_vs_predicted_scatter.png", fig=fig, show=SHOW_PLOTS)
 
 
 def plot_professional_forecast(preds, test_Y, test_timestamps, df, sample_index=0, model_name="model"):
-    """专业级预测曲线可视化"""
-    plt.figure(figsize=(14, 6))
+    """单日白昼预测曲线与样本级误差统计。"""
+    fig, ax = plt.subplots(figsize=(9.6, 4.8))
 
     # 数据准备
     ts = test_timestamps[sample_index]
-    mask = (df['date_time'] >= ts) & (df['date_time'] < ts + pd.Timedelta(days=1))
-    is_daytime = df.loc[mask, 'is_daytime'].values[:96]
-    time_axis = pd.to_datetime(df.loc[mask, 'date_time'].values[:96][is_daytime])
+    is_daytime = target_day_daylight_mask(ts, df)
+    time_axis = intraday_hour_axis()
 
-    sample_true = test_Y[sample_index][is_daytime]
-    sample_pred = preds[sample_index][is_daytime]
-    time_str = ts.strftime("%Y-%m-%d")
-
-    # 动态时间轴格式化
-    ax = plt.gca()
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
-    ax.xaxis.set_major_locator(mdates.HourLocator(interval=3))
+    sample_true = test_Y[sample_index]
+    sample_pred = preds[sample_index]
+    time_str = pd.Timestamp(ts).strftime("%Y-%m-%d")
 
     # 增强可视化元素
-    plt.plot(time_axis, sample_true, label='实际功率',
-             color='#2c7bb6', lw=2, marker='o', markersize=6, zorder=3)
-    plt.plot(time_axis, sample_pred, label='预测功率',
-             color='#d7191c', lw=2, linestyle='--', zorder=2)
+    ax.plot(time_axis, sample_true, label='实测功率',
+            color=PALETTE[0], lw=2, marker='o', markersize=3.5, zorder=3)
+    ax.plot(time_axis, sample_pred, label='预测功率',
+            color=PALETTE[1], lw=2, linestyle='--', zorder=2)
 
     # 误差带填充
-    plt.fill_between(time_axis, sample_pred, sample_true,
-                     where=sample_pred > sample_true,
-                     facecolor='#fdae61', alpha=0.3, label='正向误差')
-    plt.fill_between(time_axis, sample_pred, sample_true,
-                     where=sample_pred <= sample_true,
-                     facecolor='#abdda4', alpha=0.3, label='负向误差')
+    ax.fill_between(time_axis, sample_pred, sample_true,
+                    where=sample_pred > sample_true,
+                    facecolor=PALETTE[4], alpha=0.24, label='高估区间')
+    ax.fill_between(time_axis, sample_pred, sample_true,
+                    where=sample_pred <= sample_true,
+                    facecolor=PALETTE[2], alpha=0.20, label='低估区间')
 
     # 统计标注
-    rmse = np.sqrt(mean_squared_error(sample_true, sample_pred))
-    mae = mean_absolute_error(sample_true, sample_pred)
-    plt.text(0.02, 0.95, f'RMSE: {rmse:.2f} MW\nMAE: {mae:.2f} MW',
-             transform=ax.transAxes, fontsize=12,
-             bbox=dict(facecolor='white', alpha=0.8))
+    rmse = np.sqrt(mean_squared_error(sample_true[is_daytime], sample_pred[is_daytime]))
+    mae = mean_absolute_error(sample_true[is_daytime], sample_pred[is_daytime])
+    ax.text(
+        0.02,
+        0.95,
+        f'RMSE={rmse:.2f} MW\nMAE={mae:.2f} MW',
+        transform=ax.transAxes,
+        fontsize=9.5,
+        va='top',
+        bbox=dict(facecolor='white', edgecolor='#bdbdbd', linewidth=0.6, alpha=0.9),
+    )
 
     # 图例与装饰
-    plt.title(f'专业预测可视化 - {time_str}', pad=20)
-    plt.xlabel('时间 (15分钟间隔)')
-    plt.ylabel('功率 (MW)')
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
-    plt.grid(True, alpha=0.4)
-    plt.tight_layout()
+    ax.set_title(f'{MODEL_LABELS.get(model_name, model_name)} 单日预测细节（目标日：{time_str}）')
+    ax.set_xlabel('日内时刻')
+    ax.set_ylabel('功率/MW')
+    format_intraday_axis(ax)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18), ncol=4)
+    apply_journal_axes(ax)
+    fig.tight_layout()
     model_slug = slugify_checkpoint_name(model_name)
     ARTIFACTS.save_figure(
         f"{model_slug}_professional_forecast_sample{sample_index}.png",
+        fig=fig,
         show=SHOW_PLOTS,
     )
 
 
-def plot_error_analysis(preds, test_Y, model_name="model"):
-    """多维误差分析矩阵"""
+def plot_error_analysis(preds, test_Y, test_timestamps, df, model_name="model"):
+    """多维误差分析矩阵，热力图保留全天时段，统计图仅使用白昼样本。"""
     errors = preds - test_Y
-    errors_flat = errors.flatten()
+    daylight_true, daylight_pred = daylight_arrays(test_Y, preds, test_timestamps, df)
+    errors_flat = daylight_pred - daylight_true
+    heatmap_errors = errors.copy()
+    for i, ts in enumerate(test_timestamps):
+        mask = (df['date_time'] >= ts) & (df['date_time'] < ts + pd.Timedelta(days=1))
+        is_daytime = df.loc[mask, 'is_daytime'].values[:FORECAST_LENGTH]
+        heatmap_errors[i, ~is_daytime] = np.nan
 
-    fig = plt.figure(figsize=(16, 12), constrained_layout=True)
+    fig = plt.figure(figsize=(10.8, 8.2), constrained_layout=True)
     gs = fig.add_gridspec(3, 2)
 
     # 误差分布
     ax1 = fig.add_subplot(gs[0, 0])
-    sns.histplot(x=errors_flat, kde=True, ax=ax1, bins=30,
-                 color='#2c7bb6', edgecolor='white')
-    ax1.axvline(np.mean(errors_flat), color='red', linestyle='--')
-    ax1.set_title("误差分布分析", fontsize=14, pad=15)
+    sns.histplot(x=errors_flat, kde=True, ax=ax1, bins=36,
+                 color=PALETTE[0], edgecolor='white', linewidth=0.4)
+    ax1.axvline(np.mean(errors_flat), color=PALETTE[3], linestyle='--', linewidth=1.4)
+    ax1.set_title("白昼误差分布")
+    ax1.set_xlabel("预测误差/MW")
+    ax1.set_ylabel("频数")
 
     # 误差热力图
     ax2 = fig.add_subplot(gs[0, 1])
-    sns.heatmap(errors[:28], cmap="coolwarm", center=0,
-                ax=ax2, cbar_kws={'label': '误差 (MW)'})
-    ax2.set_title("误差时间分布模式 (前28个样本)", fontsize=14)
+    sns.heatmap(heatmap_errors, cmap="RdBu_r", center=0,
+                ax=ax2, cbar_kws={'label': '误差/MW'}, xticklabels=12, yticklabels=4)
+    ax2.set_title("测试日白昼误差热力图")
+    ax2.set_xlabel("日内 15 min 序号")
+    ax2.set_ylabel("测试日序号")
 
     # Q-Q图
     ax3 = fig.add_subplot(gs[1, 0])
     stats.probplot(errors_flat, dist="norm", plot=ax3)
-    ax3.get_lines()[0].set_markerfacecolor('#2c7bb6')
-    ax3.title.set_text('正态性检验 Q-Q 图')
+    ax3.get_lines()[0].set_markerfacecolor(PALETTE[0])
+    ax3.get_lines()[0].set_markeredgecolor(PALETTE[0])
+    ax3.get_lines()[1].set_color(PALETTE[3])
+    ax3.title.set_text('误差正态性 Q-Q 图')
 
     # 残差分析
     ax4 = fig.add_subplot(gs[1, 1])
-    sns.residplot(x=test_Y.flatten(), y=preds.flatten(),
-                  lowess=True, color='#2c7bb6',
-                  line_kws={'color': 'red'}, ax=ax4)
-    ax4.set_title("残差分析图", fontsize=14)
+    sns.residplot(x=daylight_true, y=daylight_pred,
+                  lowess=True, color=PALETTE[0],
+                  scatter_kws={'alpha': 0.35, 's': 20},
+                  line_kws={'color': PALETTE[3], 'linewidth': 1.6}, ax=ax4)
+    ax4.set_title("白昼残差趋势")
+    ax4.set_xlabel("实测功率/MW")
+    ax4.set_ylabel("残差/MW")
+
+    # 误差随日内时刻变化
+    ax5 = fig.add_subplot(gs[2, :])
+    daytime_error_frame = pd.DataFrame(heatmap_errors).melt(var_name="step", value_name="error").dropna()
+    sns.lineplot(
+        data=daytime_error_frame,
+        x="step",
+        y="error",
+        estimator="mean",
+        errorbar=("ci", 95),
+        color=PALETTE[1],
+        ax=ax5,
+    )
+    ax5.axhline(0, color=PALETTE[3], linestyle="--", linewidth=1.2)
+    ax5.set_title("白昼平均误差日内变化")
+    ax5.set_xlabel("日内 15 min 序号")
+    ax5.set_ylabel("平均误差/MW")
 
     # 综合统计
-    plt.suptitle("多维误差分析报告", y=1.02, fontsize=16)
+    fig.suptitle(f"{MODEL_LABELS.get(model_name, model_name)} 多维误差诊断", fontsize=13)
+    apply_journal_figure(fig)
     model_slug = slugify_checkpoint_name(model_name)
     ARTIFACTS.save_figure(f"{model_slug}_error_analysis_matrix.png", fig=fig, show=SHOW_PLOTS)
 
@@ -765,77 +796,128 @@ if __name__ == "__main__":
     model_dict = {
         "PureLSTM": PureLSTM(input_len=96),
         "FusionModel": FusionModel(input_len=96),
-        "BiFusionModel": BiFusionModel(input_len=96)  # 你需要预先定义这个模型结构
+        "BiFusionModel": BiFusionModel(input_len=96),
     }
 
     predictions = {}
     metrics_all = {}
+    reused_checkpoints = {}
+    scalar_metrics = {}
+
+    print(
+        f"问题2样本概况：训练窗口 {len(train_X)} 个，严格测试日 {len(test_timestamps)} 天，"
+        f"epochs={TRAINING_EPOCHS}, batch_size={BATCH_SIZE}, patience={TRAINING_PATIENCE}",
+        flush=True,
+    )
 
     for name, model in model_dict.items():
-        print(f"\n===== 正在训练模型：{name} =====")
-        model, max_power = train_model(model, train_X, train_Y, checkpoint_name=f"problem2_{name}")
+        print(f"\n===== 正在训练/加载模型：{name} =====", flush=True)
+        model, max_power, reused = train_model(
+            model,
+            train_X,
+            train_Y,
+            batch_size=BATCH_SIZE,
+            epochs=TRAINING_EPOCHS,
+            lr=LEARNING_RATE,
+            patience=TRAINING_PATIENCE,
+            checkpoint_name=f"problem2_{name}",
+            force_retrain=FORCE_RETRAIN,
+        )
         preds, rmse, mae, mape = evaluate_model(model, test_X, test_Y, test_timestamps, df, max_power)
-        metrics = compute_all_metrics(test_Y, preds, test_timestamps, df)
+        metrics = compute_all_metrics(test_Y, preds, test_timestamps, df, capacity_kW=CAPACITY_KW)
         predictions[name] = preds
         metrics_all[name] = metrics
+        reused_checkpoints[name] = reused
+        scalar_metrics[name] = {"rmse_mw": rmse, "mae_mw": mae, "mape_percent": mape}
 
         # 每个模型分别导出预测表格
         export_prediction_table(preds, test_Y, test_timestamps, df, method_name=f"{name}预测功率", output_file=f"prediction_{name}.csv")
 
         # 每个模型分别可视化
-        print(f"\n>> 可视化：{name}")
+        print(f"\n>> 可视化：{name}", flush=True)
         visualize_predictions(preds, test_Y, test_timestamps, df, model_name=name)
         plot_professional_forecast(preds, test_Y, test_timestamps, df, model_name=name)
-        plot_error_analysis(preds, test_Y, model_name=name)
+        plot_error_analysis(preds, test_Y, test_timestamps, df, model_name=name)
+        interactive_forecast_plot(preds, test_Y, test_timestamps, df, model_name=name)
 
     # ======= 指标对比表格 =======
     df_metrics = pd.DataFrame(metrics_all).T
+    df_metrics.index.name = "模型"
     print("\n三模型评估指标对比：")
-    print(df_metrics.round(4))
+    print(df_metrics.round(4), flush=True)
     ARTIFACTS.write_csv("metrics", "三模型白昼指标对比.csv", df_metrics, index=True)
 
-    # 可视化热图
-    plt.figure(figsize=(10, 6))
-    sns.heatmap(df_metrics, annot=True, fmt=".3f", cmap="YlGnBu")
-    plt.title("三模型评估指标热力图 (白昼时段)")
-    plt.tight_layout()
-    ARTIFACTS.save_figure("三模型评估指标热力图_白昼时段.png", show=SHOW_PLOTS)
+    # 可视化热图：不同指标量纲差异较大，颜色按列归一化，标注保留原始数值。
+    normalized_metrics = (df_metrics - df_metrics.min(axis=0)) / (
+        df_metrics.max(axis=0) - df_metrics.min(axis=0)
+    ).replace(0, np.nan)
+    normalized_metrics = normalized_metrics.fillna(0.5)
+    annot_metrics = df_metrics.rename(columns=METRIC_LABELS).round(3).astype(str)
+    fig, ax = plt.subplots(figsize=(9.2, 4.6))
+    sns.heatmap(
+        normalized_metrics.rename(columns=METRIC_LABELS),
+        annot=annot_metrics,
+        fmt="",
+        cmap="YlGnBu",
+        linewidths=0.6,
+        linecolor="white",
+        cbar_kws={"label": "列内归一化水平"},
+        ax=ax,
+    )
+    ax.set_title("三模型白昼评价指标对比")
+    ax.set_xlabel("评价指标")
+    ax.set_ylabel("模型")
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=28, ha="right")
+    apply_journal_axes(ax, grid=False)
+    fig.tight_layout()
+    ARTIFACTS.save_figure("三模型评估指标热力图_白昼时段.png", fig=fig, show=SHOW_PLOTS)
 
     # ======= 三模型每日对比图 (默认 index = 0) =======
     day_idx = 0
     ts = test_timestamps[day_idx]
-    plt.figure(figsize=(12, 6))
-    for name in predictions:
+    is_daytime = target_day_daylight_mask(ts, df)
+    time_axis = intraday_hour_axis()
+
+    fig, ax = plt.subplots(figsize=(9.4, 4.8))
+    for idx, name in enumerate(predictions):
         pred = predictions[name][day_idx]
-        mask = (df['date_time'] >= ts) & (df['date_time'] < ts + pd.Timedelta(days=1))
-        is_daytime = df.loc[mask, 'is_daytime'].values[:96]
-        time_axis = df.loc[mask, 'date_time'].values[:96][is_daytime]
-        plt.plot(time_axis, pred[is_daytime], label=f"{name}预测")
+        ax.plot(time_axis, pred, label=f"{name}预测", color=PALETTE[idx + 1], linewidth=1.9)
 
     # 添加真实值
     true = test_Y[day_idx]
-    plt.plot(time_axis, true[is_daytime], label="真实功率", linestyle='--', linewidth=2, color='black')
-    plt.title(f"每日预测对比图（白昼） | 起报时间：{ts.date()}")
-    plt.xlabel("时间")
-    plt.ylabel("功率 (MW)")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    ARTIFACTS.save_figure("三模型每日预测对比图_白昼.png", show=SHOW_PLOTS)
+    ax.plot(time_axis, true, label="实测功率", linestyle='--', linewidth=2.2, color="#222222")
+    ax.text(
+        0.98,
+        0.95,
+        f"白昼样本数={int(is_daytime.sum())}",
+        transform=ax.transAxes,
+        va="top",
+        ha="right",
+        fontsize=9.5,
+        bbox=dict(facecolor="white", edgecolor="#bdbdbd", linewidth=0.6, alpha=0.9),
+    )
+    ax.set_title(f"三模型单日预测对比（目标日：{pd.Timestamp(ts).date()}）")
+    ax.set_xlabel("日内时刻")
+    ax.set_ylabel("功率/MW")
+    format_intraday_axis(ax)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18), ncol=4)
+    apply_journal_axes(ax)
+    fig.tight_layout()
+    ARTIFACTS.save_figure("三模型每日预测对比图_白昼.png", fig=fig, show=SHOW_PLOTS)
 
     # ======= 统一输出预测对比表格 =======
     records = []
     for i, ts in enumerate(test_timestamps):
-        start_time = pd.to_datetime(ts)
-        for j in range(96):
-            forecast_time = start_time + pd.Timedelta(days=1) + pd.Timedelta(minutes=15 * j)
-            real_val_row = df[df['date_time'] == forecast_time]
-            actual_power = real_val_row['power'].values[0] if not real_val_row.empty else np.nan
+        target_start = pd.to_datetime(ts).replace(hour=0, minute=0, second=0)
+        issue_time = target_start - pd.Timedelta(days=1)
+        for j in range(FORECAST_LENGTH):
+            forecast_time = target_start + pd.Timedelta(minutes=15 * j)
 
             row = {
-                "起报时间": start_time.replace(hour=0, minute=0, second=0),
+                "起报时间": issue_time,
                 "预报时间": forecast_time,
-                "实际功率": actual_power
+                "实际功率": float(test_Y[i, j]),
             }
             for name in predictions:
                 row[f"{name}预测功率"] = predictions[name][i, j]
@@ -843,7 +925,7 @@ if __name__ == "__main__":
 
     df_all_preds = pd.DataFrame(records)
     all_preds_path = ARTIFACTS.write_csv("predictions", "三模型预测结果对比表.csv", df_all_preds, index=False)
-    print(f"\n已保存统一预测对比表格为：{all_preds_path}")
+    print(f"\n已保存统一预测对比表格为：{all_preds_path}", flush=True)
 
     ARTIFACTS.write_summary(
         {
@@ -851,6 +933,23 @@ if __name__ == "__main__":
             "models": list(model_dict.keys()),
             "train_samples": len(train_X),
             "test_days": len(test_timestamps),
+            "test_date_first_in_problem_order": str(pd.to_datetime(test_timestamps[0]).date()),
+            "test_date_last_in_problem_order": str(pd.to_datetime(test_timestamps[-1]).date()),
+            "test_date_min": str(pd.to_datetime(test_timestamps).min().date()),
+            "test_date_max": str(pd.to_datetime(test_timestamps).max().date()),
+            "input_length": INPUT_LENGTH,
+            "forecast_length": FORECAST_LENGTH,
+            "capacity_kw": CAPACITY_KW,
+            "training": {
+                "epochs": TRAINING_EPOCHS,
+                "batch_size": BATCH_SIZE,
+                "patience": TRAINING_PATIENCE,
+                "learning_rate": LEARNING_RATE,
+                "force_retrain": FORCE_RETRAIN,
+                "checkpoint_reused": reused_checkpoints,
+            },
+            "daylight_scalar_metrics": scalar_metrics,
+            "table_time_alignment": "issue_time is previous-day 00:00; forecast_time covers the target test day",
             "elapsed_seconds": time.time() - SCRIPT_START_TIME,
         }
     )

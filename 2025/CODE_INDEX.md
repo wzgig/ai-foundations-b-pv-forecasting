@@ -43,7 +43,7 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `02_problem_solutions/problem2_baseline_forecasting/problem2_baseline_three_model_forecast.py` | 问题 2 主入口，使用历史功率序列训练/复用 PureLSTM、FusionModel、BiFusionModel，并输出预测表、指标表和图像。 |
+| `02_problem_solutions/problem2_baseline_forecasting/problem2_baseline_three_model_forecast.py` | 问题 2 主入口，使用历史功率序列训练/复用 PureLSTM、FusionModel、BiFusionModel；预测表按“输入日前一日、目标测试日 96 点”对齐，并输出指标表、期刊风格 PNG、交互 HTML、模型 checkpoint 和运行摘要。 |
 
 ### 问题 3：气象场景与模型改进
 
