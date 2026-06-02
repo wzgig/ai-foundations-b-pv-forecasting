@@ -42,7 +42,7 @@ class ProjectHealthTests(unittest.TestCase):
             / "2025"
             / "02_problem_solutions"
             / "problem3_scenario_analysis"
-            / "问题3_场景划分分析_IEEE风格.py"
+            / "problem3_scenario_ieee_analysis.py"
         )
 
         self.assertEqual(

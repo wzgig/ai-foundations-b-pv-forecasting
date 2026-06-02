@@ -48,12 +48,12 @@ python -m unittest discover -s tests -q
 
 ```powershell
 cd 2025\02_problem_solutions\problem1_data_analysis
-python .\1.py
-python .\2.py
-python .\3.py
+python .\theoretical_power_baseline.py
+python .\theoretical_power_calculation.py
+python .\theoretical_power_diagnostics.py
 ```
 
-MATLAB 脚本如 `a.m`、`b.m`、`c.m`、`e.m`、`f.m`、`g.m`、`k.m`、`z.m` 是同一问题下的物理建模和绘图补充。如果只复现 Python 深度学习主线，可以先跳过 MATLAB。
+MATLAB 脚本如 `matlab_theoretical_power_solarposition.m`、`matlab_theoretical_power_manual_angles.m`、`matlab_theoretical_power_cleaned_plots.m`、`matlab_physical_model_residual_analysis.m` 等是同一问题下的物理建模和绘图补充。如果只复现 Python 深度学习主线，可以先跳过 MATLAB。
 
 ### 步骤 2：问题 2 基准日前预测
 
@@ -61,7 +61,7 @@ MATLAB 脚本如 `a.m`、`b.m`、`c.m`、`e.m`、`f.m`、`g.m`、`k.m`、`z.m` �
 
 ```powershell
 cd ..\problem2_baseline_forecasting
-python ".\7添加绘图与输出三个指标的对比表格.py"
+python .\problem2_baseline_three_model_forecast.py
 ```
 
 首次运行会训练模型，耗时较长。后续运行会优先复用签名匹配的 checkpoint。
@@ -86,7 +86,7 @@ outputs/reports/run_summary.json
 
 ```powershell
 cd ..\problem3_scenario_analysis
-python ".\9问题3初步.py"
+python .\problem3_weather_feature_forecast.py
 ```
 
 主要输出：
@@ -110,10 +110,10 @@ outputs/reports/run_summary.json
 推荐在确认问题 2、问题 3 的预测结果已经生成后再运行：
 
 ```powershell
-python ".\问题3_场景划分分析_IEEE风格.py"
-python ".\问题3_整合分析脚本.py"
-python ".\问题3延伸.py"
-python ".\三模型绘图.py"
+python .\problem3_scenario_ieee_analysis.py
+python .\problem3_integrated_scenario_analysis.py
+python .\problem3_extended_scenario_analysis.py
+python .\problem3_three_model_curve_plot.py
 ```
 
 注意：这些二次分析脚本是早期交付脚本，当前目录中保留了历史结果 CSV，因此即使没有重新训练也能运行。如果你要让它们严格使用刚刚重新训练得到的新结果，应先核对或同步下面两类表：
@@ -134,7 +134,7 @@ python ".\三模型绘图.py"
 
 ```powershell
 cd ..\problem4_feature_ablation
-python ".\10问题4.py"
+python .\problem4_feature_ablation_forecast.py
 ```
 
 当前脚本默认只运行 `FusionModel`。如需同时运行 `PureLSTM` 或 `BiFusionModel`，需要在脚本底部的 `model_dict` 中取消对应注释。

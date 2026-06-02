@@ -1,6 +1,6 @@
 # 代码审计与优化记录
 
-更新时间：2026-06-01
+更新时间：2026-06-02
 
 ## 审计范围
 
@@ -15,29 +15,29 @@
 
 位置：`02_problem_solutions/problem1_data_analysis/`
 
-- Python 脚本 `1.py`、`2.py`、`3.py` 读取单站点 Excel 数据，计算太阳角、等效辐照度、大气透射率和理论功率，并与实际功率对比。
-- MATLAB 脚本 `a.m`、`b.m`、`c.m`、`e.m`、`f.m`、`g.m`、`k.m`、`z.m` 负责类似的物理建模、统计分析和绘图。
+- Python 脚本 `theoretical_power_baseline.py`、`theoretical_power_calculation.py`、`theoretical_power_diagnostics.py` 读取单站点 Excel 数据，计算太阳角、等效辐照度、大气透射率和理论功率，并与实际功率对比。
+- MATLAB 脚本 `matlab_theoretical_power_solarposition.m`、`matlab_theoretical_power_manual_angles.m`、`matlab_theoretical_power_cleaned_plots.m`、`matlab_physical_model_residual_analysis.m` 等负责类似的物理建模、统计分析和绘图。
 
 ### 问题 2：基础日前预测
 
 位置：`02_problem_solutions/problem2_baseline_forecasting/`
 
-- 核心脚本 `7添加绘图与输出三个指标的对比表格.py` 使用 PureLSTM、FusionModel、BiFusionModel 三类模型进行日前预测。
+- 核心脚本 `problem2_baseline_three_model_forecast.py` 使用 PureLSTM、FusionModel、BiFusionModel 三类模型进行日前预测。
 - 输出单模型预测 CSV、三模型统一预测对比表、白昼指标表和日曲线/热力图。
 
 ### 问题 3：气象场景与模型改进
 
 位置：`02_problem_solutions/problem3_scenario_analysis/`
 
-- `9问题3初步.py` 在问题 2 的模型基础上加入多维气象输入。
-- `问题3_场景划分分析_IEEE风格.py`、`问题3_整合分析脚本.py`、`问题3延伸.py` 对比问题 2 和问题 3 的 FusionModel 结果，按光照、温度、湿度、风速和季节做场景划分，并分析 RMSE 提升来源。
-- `三模型绘图.py` 从问题 3 预测结果表提取典型日曲线并输出对比图。
+- `problem3_weather_feature_forecast.py` 在问题 2 的模型基础上加入多维气象输入。
+- `problem3_scenario_ieee_analysis.py`、`problem3_integrated_scenario_analysis.py`、`problem3_extended_scenario_analysis.py` 对比问题 2 和问题 3 的 FusionModel 结果，按光照、温度、湿度、风速和季节做场景划分，并分析 RMSE 提升来源。
+- `problem3_three_model_curve_plot.py` 从问题 3 预测结果表提取典型日曲线并输出对比图。
 
 ### 问题 4：输入特征消融
 
 位置：`02_problem_solutions/problem4_feature_ablation/`
 
-- `10问题4.py` 比较 NWP、LMD、混合输入三种配置下的模型表现，输出白昼误差、附件指标和特征维度相关图。
+- `problem4_feature_ablation_forecast.py` 比较 NWP、LMD、混合输入三种配置下的模型表现，输出白昼误差、附件指标和特征维度相关图。
 
 ### 完整建模工作区
 
@@ -45,9 +45,9 @@
 
 该目录保留了从早期实验到最终对比的脚本快照。部分文件是课程实验过程中的阶段版本，例如：
 
-- `2第二问基础.py` 与 `4第二问模型加入数据预处理以及超参数优化.py` 当前内容完全一致。
-- `9问题3初步.py` 与问题 3 交付目录中的同名脚本保持一致。
-- `10问题4.py` 与问题 4 交付目录中的同名脚本保持一致。
+- `workspace_ceemdan_lda_fusion_baseline.py` 与 `workspace_ceemdan_lda_fusion_preprocessing.py` 当前内容完全一致。
+- `problem3_weather_feature_forecast.py` 与问题 3 交付目录中的同名脚本保持一致。
+- `problem4_feature_ablation_forecast.py` 与问题 4 交付目录中的同名脚本保持一致。
 
 ## 本轮已完成的优化
 
@@ -62,7 +62,7 @@
 - 问题 3、问题 4 的归一化逻辑改为只在训练集拟合，再变换全量数据，避免测试集信息泄漏。
 - 问题 3 场景分析中的 `pd.groupby(...).apply(..., include_groups=False)` 改为显式循环，兼容更多 pandas 版本。
 - 问题 3 的 SHAP 分析改为可选依赖，未安装 `shap` 时会跳过解释性图，不影响前面的场景分析输出。
-- `三模型绘图.py` 改为读取实际存在的 `问题3三模型预测结果对比表.csv`，并输出到脚本目录下的 `三模型绘图.png`。
+- `problem3_three_model_curve_plot.py` 改为读取实际存在的 `问题3三模型预测结果对比表.csv`，并输出到脚本目录下的 `三模型绘图.png`。
 
 ## 2026-06-02 模型训练缓存专项检查
 
@@ -104,6 +104,22 @@
   - 每次完整运行写入 `outputs/reports/run_summary.json`，记录脚本、模型、样本规模、耗时和产物清单。
 - `project_health_check.py` 新增受管理训练脚本检查，防止这些入口重新出现裸 `plt.show()`、`fig.show()`、直接 `.to_csv()` 或直接 `.savefig()`。
 - 单元测试新增输出管理器检查和训练脚本输出约束检查。
+
+## 2026-06-02 脚本语义化命名
+
+### 发现的问题
+
+- 早期脚本大量使用数字编号和临时中文名，无法从文件名判断功能。
+- 文档、健康检查脚本和测试中仍引用旧入口名，重命名后需要同步更新。
+
+### 已完成的改进
+
+- 问题 1 Python 脚本改为 `theoretical_power_baseline.py`、`theoretical_power_calculation.py`、`theoretical_power_diagnostics.py`。
+- 问题 2、问题 3、问题 4 主训练入口改为 `problem2_baseline_three_model_forecast.py`、`problem3_weather_feature_forecast.py`、`problem4_feature_ablation_forecast.py`。
+- 问题 3 二次分析脚本改为 `problem3_scenario_ieee_analysis.py`、`problem3_integrated_scenario_analysis.py`、`problem3_extended_scenario_analysis.py`、`problem3_three_model_curve_plot.py`。
+- 工作区脚本统一使用 `workspace_...` 前缀，保留其历史实验快照属性。
+- 新增 `CODE_INDEX.md`，逐个记录代码文件名称和用途。
+- 同步更新 `README.md`、`2025/README.md`、`RUN_GUIDE.md`、`project_health_check.py` 和 `tests/test_project_health.py` 中的入口引用。
 
 ## 当前检查结果
 

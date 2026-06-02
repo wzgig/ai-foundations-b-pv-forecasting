@@ -58,13 +58,13 @@ python 2025\tools\project_health_check.py
 python -m unittest discover -s tests -q
 ```
 
-完整运行顺序、模型复用逻辑、输出目录和结果查看方式见 `2025/RUN_GUIDE.md`。
+完整运行顺序、模型复用逻辑、输出目录和结果查看方式见 `2025/RUN_GUIDE.md`。每个代码文件的现用名称和用途见 `2025/CODE_INDEX.md`。
 
 运行某个实验时，优先进入对应目录，例如：
 
 ```powershell
 cd 2025\02_problem_solutions\problem2_baseline_forecasting
-python .\7添加绘图与输出三个指标的对比表格.py
+python .\problem2_baseline_three_model_forecast.py
 ```
 
 ## 代码维护说明
@@ -74,5 +74,7 @@ python .\7添加绘图与输出三个指标的对比表格.py
 2026-06-02 已完成模型训练缓存专项优化：问题 2-4 的主训练脚本会按实验/模型保存独立 PyTorch checkpoint，并在训练前复用签名匹配的已有模型，避免每次修改绘图或分析代码都重新训练。需要强制重新训练时，可在 `train_model(..., force_retrain=True)` 中开启。
 
 2026-06-02 已完成输出产物标准化：问题 2-4 的主训练脚本和 `01_modeling_workspace` 对应副本会把预测表、指标表、图片和运行摘要统一写入脚本目录下的 `outputs/predictions/`、`outputs/metrics/`、`outputs/figures/`、`outputs/reports/`，不再只弹出绘图窗口或把 CSV 散落在脚本目录。
+
+2026-06-02 已完成脚本语义化命名：将早期的数字编号、临时中文名脚本统一改为按问题和功能命名，例如 `problem2_baseline_three_model_forecast.py`、`problem3_weather_feature_forecast.py`、`problem4_feature_ablation_forecast.py` 和 `theoretical_power_diagnostics.py`。
 
 后续如果继续重构，建议优先把重复的 PyTorch 模型定义和训练循环抽取为统一模块。

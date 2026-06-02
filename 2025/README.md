@@ -28,6 +28,7 @@
 ├── tools/
 │   └── project_health_check.py
 ├── CODE_AUDIT.md
+├── CODE_INDEX.md
 ├── README.md
 └── requirements.txt
 ```
@@ -72,7 +73,7 @@
 
 ## 复现建议
 
-完整运行顺序、保存逻辑和结果查看方式见 `RUN_GUIDE.md`。
+完整运行顺序、保存逻辑和结果查看方式见 `RUN_GUIDE.md`。每个代码文件的现用名称和用途见 `CODE_INDEX.md`。
 
 安装依赖：
 
@@ -90,7 +91,7 @@ python 2025\tools\project_health_check.py
 
 ```powershell
 cd 2025\02_problem_solutions\problem3_scenario_analysis
-python .\问题3_场景划分分析_IEEE风格.py
+python .\problem3_scenario_ieee_analysis.py
 ```
 
 模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。问题 2-4 的主脚本会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`。

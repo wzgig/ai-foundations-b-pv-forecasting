@@ -20,12 +20,12 @@ DIRECT_INPUT_PATTERN = re.compile(r"(?:read_csv|read_excel|readtable)\(\s*['\"](
 ASSIGN_PATTERN = re.compile(r"(?m)^\s*([A-Za-z_]\w*)\s*=\s*['\"]([^'\"]+)['\"]")
 VARIABLE_INPUT_PATTERN = re.compile(r"(?:read_csv|read_excel|readtable)\(\s*([A-Za-z_]\w*)")
 MANAGED_OUTPUT_SCRIPTS = {
-    Path("01_modeling_workspace/pvod_full_experiment/7添加绘图与输出三个指标的对比表格.py"),
-    Path("01_modeling_workspace/pvod_full_experiment/9问题3初步.py"),
-    Path("01_modeling_workspace/pvod_full_experiment/10问题4.py"),
-    Path("02_problem_solutions/problem2_baseline_forecasting/7添加绘图与输出三个指标的对比表格.py"),
-    Path("02_problem_solutions/problem3_scenario_analysis/9问题3初步.py"),
-    Path("02_problem_solutions/problem4_feature_ablation/10问题4.py"),
+    Path("01_modeling_workspace/pvod_full_experiment/problem2_baseline_three_model_forecast.py"),
+    Path("01_modeling_workspace/pvod_full_experiment/problem3_weather_feature_forecast.py"),
+    Path("01_modeling_workspace/pvod_full_experiment/problem4_feature_ablation_forecast.py"),
+    Path("02_problem_solutions/problem2_baseline_forecasting/problem2_baseline_three_model_forecast.py"),
+    Path("02_problem_solutions/problem3_scenario_analysis/problem3_weather_feature_forecast.py"),
+    Path("02_problem_solutions/problem4_feature_ablation/problem4_feature_ablation_forecast.py"),
 }
 DIRECT_OUTPUT_PATTERNS = {
     "direct_csv_write": re.compile(r"\.to_csv\s*\("),

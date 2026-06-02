@@ -2,6 +2,28 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-02 代码文件语义化命名
+
+### 调整目标
+
+- 将早期数字编号、临时中文名脚本改为按问题和功能命名，方便后续运行、检索和维护。
+- 同步更新运行指南、代码审计、README、健康检查脚本和测试中的脚本入口引用。
+- 新增代码索引，说明每个现用代码文件的职责。
+
+### 主要改动
+
+- 问题 1 脚本改为 `theoretical_power_baseline.py`、`theoretical_power_calculation.py`、`theoretical_power_diagnostics.py`，MATLAB 脚本改为 `matlab_...` 功能名。
+- 问题 2-4 主入口改为 `problem2_baseline_three_model_forecast.py`、`problem3_weather_feature_forecast.py`、`problem4_feature_ablation_forecast.py`。
+- 问题 3 场景与绘图脚本改为 `problem3_scenario_ieee_analysis.py`、`problem3_integrated_scenario_analysis.py`、`problem3_extended_scenario_analysis.py`、`problem3_three_model_curve_plot.py`。
+- `01_modeling_workspace/pvod_full_experiment/` 下历史实验脚本统一使用 `workspace_...` 前缀。
+- 新增 `2025/CODE_INDEX.md` 记录所有代码文件的现用名称和用途。
+- 更新 `2025/RUN_GUIDE.md`、`2025/CODE_AUDIT.md`、`2025/README.md`、根目录 `README.md`、`2025/tools/project_health_check.py` 和 `tests/test_project_health.py`。
+
+### 验证结果
+
+- `python 2025\tools\project_health_check.py`：通过。
+- `python -m unittest discover -s tests -q`：通过，6 个测试成功。
+
 ## 2026-06-02 运行顺序与结果查看文档
 
 ### 调整目标
