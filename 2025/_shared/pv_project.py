@@ -11,8 +11,10 @@ from __future__ import annotations
 import os
 import random
 import re
+import json
 from pathlib import Path
 from typing import Any, Iterable, Sequence
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -243,6 +245,203 @@ def write_csv(df: pd.DataFrame, path: str | os.PathLike[str], **kwargs) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(target, encoding=UTF8_SIG, **kwargs)
+
+
+def output_dir(
+    file: str | os.PathLike[str],
+    *parts: str | os.PathLike[str],
+    base: str = "outputs",
+) -> Path:
+    """Return a stable per-script output directory and create it."""
+
+    target = script_dir(file) / base
+    for part in parts:
+        target /= Path(part)
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
+def output_path(
+    file: str | os.PathLike[str],
+    *parts: str | os.PathLike[str],
+    base: str = "outputs",
+) -> Path:
+    """Return a path under a script's output folder and create its parent."""
+
+    if not parts:
+        return output_dir(file, base=base)
+    target = script_dir(file) / base
+    for part in parts:
+        target /= Path(part)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    return target
+
+
+def save_figure(
+    fig: Any,
+    path: str | os.PathLike[str],
+    *,
+    dpi: int = 300,
+    close: bool = True,
+    show: bool = False,
+    **kwargs: Any,
+) -> Path:
+    """Save a matplotlib figure with consistent defaults."""
+
+    import matplotlib.pyplot as plt
+
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    figure = fig if fig is not None else plt.gcf()
+    figure.savefig(target, dpi=dpi, bbox_inches=kwargs.pop("bbox_inches", "tight"), **kwargs)
+    if show:
+        plt.show()
+    if close:
+        plt.close(figure)
+    return target
+
+
+def save_plotly_html(
+    fig: Any,
+    path: str | os.PathLike[str],
+    *,
+    include_plotlyjs: str = "cdn",
+    auto_open: bool = False,
+) -> Path:
+    """Save a Plotly figure as HTML without opening a browser."""
+
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fig.write_html(target, include_plotlyjs=include_plotlyjs, auto_open=auto_open)
+    return target
+
+
+def _json_default(value: Any) -> Any:
+    if isinstance(value, (np.integer,)):
+        return int(value)
+    if isinstance(value, (np.floating,)):
+        return float(value)
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, (pd.Timestamp, datetime)):
+        return value.isoformat()
+    if isinstance(value, Path):
+        return str(value)
+    return str(value)
+
+
+def write_json(data: Any, path: str | os.PathLike[str]) -> Path:
+    """Write JSON with parent directory creation and readable UTF-8 output."""
+
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2, default=_json_default),
+        encoding="utf-8",
+    )
+    return target
+
+
+class ExperimentArtifacts:
+    """Collect tables, figures, predictions, and run summaries for one script."""
+
+    def __init__(self, file: str | os.PathLike[str], base: str = "outputs") -> None:
+        self.file = Path(file).resolve()
+        self.script_directory = self.file.parent
+        self.base = base
+        self.root = output_dir(self.file, base=base)
+        self.artifacts: dict[str, list[str]] = {
+            "predictions": [],
+            "metrics": [],
+            "figures": [],
+            "reports": [],
+        }
+
+    def directory(self, category: str) -> Path:
+        target = self.root / category
+        target.mkdir(parents=True, exist_ok=True)
+        return target
+
+    def path(self, category: str, filename: str | os.PathLike[str]) -> Path:
+        candidate = Path(filename)
+        if candidate.is_absolute():
+            target = candidate
+        elif candidate.parent != Path("."):
+            target = self.root / candidate
+        else:
+            target = self.directory(category) / candidate
+        target.parent.mkdir(parents=True, exist_ok=True)
+        return target
+
+    def record(self, category: str, path: str | os.PathLike[str]) -> Path:
+        target = Path(path)
+        try:
+            recorded = str(target.resolve().relative_to(self.script_directory))
+        except ValueError:
+            recorded = str(target)
+        self.artifacts.setdefault(category, [])
+        if recorded not in self.artifacts[category]:
+            self.artifacts[category].append(recorded)
+        return target
+
+    def write_csv(
+        self,
+        category: str,
+        filename: str | os.PathLike[str],
+        df: pd.DataFrame,
+        **kwargs: Any,
+    ) -> Path:
+        target = self.path(category, filename)
+        write_csv(df, target, **kwargs)
+        return self.record(category, target)
+
+    def save_figure(
+        self,
+        filename: str | os.PathLike[str],
+        fig: Any = None,
+        *,
+        category: str = "figures",
+        show: bool = False,
+        close: bool = True,
+        dpi: int = 300,
+        **kwargs: Any,
+    ) -> Path:
+        target = self.path(category, filename)
+        save_figure(fig, target, show=show, close=close, dpi=dpi, **kwargs)
+        return self.record(category, target)
+
+    def save_plotly_html(
+        self,
+        filename: str | os.PathLike[str],
+        fig: Any,
+        *,
+        category: str = "figures",
+        include_plotlyjs: str = "cdn",
+        auto_open: bool = False,
+    ) -> Path:
+        target = self.path(category, filename)
+        save_plotly_html(
+            fig,
+            target,
+            include_plotlyjs=include_plotlyjs,
+            auto_open=auto_open,
+        )
+        return self.record(category, target)
+
+    def write_summary(
+        self,
+        metadata: dict[str, Any],
+        filename: str = "run_summary.json",
+    ) -> Path:
+        payload = {
+            "script": self.file.name,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "metadata": metadata,
+            "artifacts": self.artifacts,
+        }
+        target = self.path("reports", filename)
+        write_json(payload, target)
+        return self.record("reports", target)
 
 
 def slugify_checkpoint_name(name: str) -> str:

@@ -33,6 +33,7 @@ SHARED_DIR = next(
 sys.path.insert(0, str(SHARED_DIR))
 
 from pv_project import (  # noqa: E402
+    ExperimentArtifacts,
     build_torch_checkpoint_signature,
     configure_matplotlib,
     minmax_scale_train_only,
@@ -40,6 +41,7 @@ from pv_project import (  # noqa: E402
     save_torch_checkpoint,
     set_random_seed,
     set_working_directory,
+    slugify_checkpoint_name,
     torch_checkpoint_path,
     try_load_torch_checkpoint,
 )
@@ -47,6 +49,8 @@ from pv_project import (  # noqa: E402
 set_working_directory(__file__)
 configure_matplotlib()
 set_random_seed()
+ARTIFACTS = ExperimentArtifacts(__file__)
+SHOW_PLOTS = False
 #
 # rcParams['font.family'] = 'SimHei'
 # rcParams['axes.unicode_minus'] = False
@@ -550,8 +554,9 @@ def export_prediction_table(preds, test_Y, test_timestamps, df, method_name='融
             })
 
     df_pred = pd.DataFrame(records)
-    df_pred.to_csv(output_file, index=False, encoding='utf-8-sig')
-    print(f"预测结果已保存至 {output_file}")
+    target = ARTIFACTS.write_csv("predictions", output_file, df_pred, index=False)
+    print(f"预测结果已保存至 {target}")
+    return target
 
 
 # 使用方法
@@ -564,7 +569,8 @@ def export_prediction_table(preds, test_Y, test_timestamps, df, method_name='融
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def visualize_predictions(preds, test_Y, test_timestamps, df):
+def visualize_predictions(preds, test_Y, test_timestamps, df, model_name="model"):
+    model_slug = slugify_checkpoint_name(model_name)
     # 设置全局绘图风格
     # plt.style.use('seaborn-whitegrid')  # 删除这一行或注释掉
     sns.set_theme(style='whitegrid')  # seaborn本身即可设定风格
@@ -595,7 +601,7 @@ def visualize_predictions(preds, test_Y, test_timestamps, df):
     plt.legend()
     plt.tight_layout()
     plt.grid(True)
-    plt.show()
+    ARTIFACTS.save_figure(f"{model_slug}_daylight_forecast_curve.png", show=SHOW_PLOTS)
 
     # ---------- 2. 所有白昼误差分布图 ----------
     all_true, all_pred = [], []
@@ -613,7 +619,7 @@ def visualize_predictions(preds, test_Y, test_timestamps, df):
     plt.xlabel('误差 (预测 - 实际) (MW)')
     plt.ylabel('频数')
     plt.tight_layout()
-    plt.show()
+    ARTIFACTS.save_figure(f"{model_slug}_daylight_error_distribution.png", show=SHOW_PLOTS)
 
     # ---------- 3. 散点图：预测值 vs 实际值 ----------
     plt.figure(figsize=(6, 6))
@@ -626,10 +632,10 @@ def visualize_predictions(preds, test_Y, test_timestamps, df):
     plt.legend()
     plt.tight_layout()
     plt.grid(True)
-    plt.show()
+    ARTIFACTS.save_figure(f"{model_slug}_actual_vs_predicted_scatter.png", show=SHOW_PLOTS)
 
 
-def plot_professional_forecast(preds, test_Y, test_timestamps, df, sample_index=0):
+def plot_professional_forecast(preds, test_Y, test_timestamps, df, sample_index=0, model_name="model"):
     """专业级预测曲线可视化"""
     plt.figure(figsize=(14, 6))
 
@@ -676,10 +682,14 @@ def plot_professional_forecast(preds, test_Y, test_timestamps, df, sample_index=
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
     plt.grid(True, alpha=0.4)
     plt.tight_layout()
-    plt.show()
+    model_slug = slugify_checkpoint_name(model_name)
+    ARTIFACTS.save_figure(
+        f"{model_slug}_professional_forecast_sample{sample_index}.png",
+        show=SHOW_PLOTS,
+    )
 
 
-def plot_error_analysis(preds, test_Y):
+def plot_error_analysis(preds, test_Y, model_name="model"):
     """多维误差分析矩阵"""
     errors = preds - test_Y
     errors_flat = errors.flatten()
@@ -715,10 +725,11 @@ def plot_error_analysis(preds, test_Y):
 
     # 综合统计
     plt.suptitle("多维误差分析报告", y=1.02, fontsize=16)
-    plt.show()
+    model_slug = slugify_checkpoint_name(model_name)
+    ARTIFACTS.save_figure(f"{model_slug}_error_analysis_matrix.png", fig=fig, show=SHOW_PLOTS)
 
 
-def interactive_forecast_plot(preds, test_Y, test_timestamps, df, sample_index=0):
+def interactive_forecast_plot(preds, test_Y, test_timestamps, df, sample_index=0, model_name="model"):
     """交互式可视化（需安装plotly）"""
     ts = test_timestamps[sample_index]
     mask = (df['date_time'] >= ts) & (df['date_time'] < ts + pd.Timedelta(days=1))
@@ -756,7 +767,11 @@ def interactive_forecast_plot(preds, test_Y, test_timestamps, df, sample_index=0
             )
         ]
     )
-    fig.show()
+    model_slug = slugify_checkpoint_name(model_name)
+    ARTIFACTS.save_plotly_html(
+        f"{model_slug}_interactive_forecast_sample{sample_index}.html",
+        fig,
+    )
 
 
 def run_input_mode_experiments(df, model_dict, modes=['nwp', 'lmd', 'mixed']):
@@ -825,9 +840,10 @@ def run_input_mode_experiments(df, model_dict, modes=['nwp', 'lmd', 'mixed']):
                                     method_name=f"{name}_{mode}", output_file=f"Q4_pred_{name}_{mode}.csv")
 
             # 可选：开启以下三行可视化
-            visualize_predictions(preds, test_Y, test_timestamps, df)
-            plot_professional_forecast(preds, test_Y, test_timestamps, df)
-            plot_error_analysis(preds, test_Y)
+            run_name = f"{name}_{mode}"
+            visualize_predictions(preds, test_Y, test_timestamps, df, model_name=run_name)
+            plot_professional_forecast(preds, test_Y, test_timestamps, df, model_name=run_name)
+            plot_error_analysis(preds, test_Y, model_name=run_name)
 
     # 输出热力图对比
     df_results = pd.DataFrame(results).T
@@ -838,10 +854,10 @@ def run_input_mode_experiments(df, model_dict, modes=['nwp', 'lmd', 'mixed']):
     sns.heatmap(df_results, annot=True, fmt=".3f", cmap="YlGnBu")
     plt.title("问题4：三种输入配置+多模型精度对比（白昼指标）")
     plt.tight_layout()
-    plt.show()
+    ARTIFACTS.save_figure("Q4_模型输入对比结果热力图.png", show=SHOW_PLOTS)
 
-    df_results.to_csv("Q4_模型输入对比结果.csv", encoding='utf-8-sig')
-    print("结果已保存：Q4_模型输入对比结果.csv")
+    results_path = ARTIFACTS.write_csv("metrics", "Q4_模型输入对比结果.csv", df_results, index=True)
+    print(f"结果已保存：{results_path}")
 
     return df_results
 
@@ -866,7 +882,7 @@ def visualize_q4_results(df_results):
     sns.heatmap(df_results[metrics], annot=True, fmt=".3f", cmap="YlOrBr")
     plt.title("三输入 + 多模型空间降尺度预测指标热力图")
     plt.tight_layout()
-    plt.show()
+    ARTIFACTS.save_figure("三输入_多模型空间降尺度预测指标热力图.png", show=SHOW_PLOTS)
 
     # ========== 图2：雷达图（每个模型下不同输入） ==========
     from math import pi
@@ -888,7 +904,8 @@ def visualize_q4_results(df_results):
         ax.set_title(f"{model}模型 - 输入对比雷达图", y=1.1)
         plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
         plt.tight_layout()
-        plt.show()
+        model_slug = slugify_checkpoint_name(model)
+        ARTIFACTS.save_figure(f"{model_slug}_输入对比雷达图.png", show=SHOW_PLOTS)
 
     # ========== 图3：误差柱状图（各输入配置下模型对比） ==========
     for metric in ['RMSE', 'MAPE', 'E_rmse']:
@@ -901,7 +918,8 @@ def visualize_q4_results(df_results):
         plt.ylabel(metric)
         plt.legend()
         plt.tight_layout()
-        plt.show()
+        metric_slug = slugify_checkpoint_name(metric)
+        ARTIFACTS.save_figure(f"{metric_slug}_指标对比_不同输入模式.png", show=SHOW_PLOTS)
 
     # ========== 图4：输入维度 vs 性能趋势图 ==========
     input_dims = {'nwp': 8, 'lmd': 6, 'mixed': 14}
@@ -917,7 +935,8 @@ def visualize_q4_results(df_results):
         plt.grid(True)
         plt.legend()
         plt.tight_layout()
-        plt.show()
+        metric_slug = slugify_checkpoint_name(metric)
+        ARTIFACTS.save_figure(f"{metric_slug}_vs_输入特征维度.png", show=SHOW_PLOTS)
 
 
 if __name__ == "__main__":
@@ -935,3 +954,12 @@ end_time = time.time()
 elapsed_time = end_time - start_time
 
 print(f"代码执行时间: {elapsed_time:.4f} 秒")
+ARTIFACTS.write_summary(
+    {
+        "problem": "problem4_feature_ablation",
+        "models": list(model_dict.keys()) if "model_dict" in globals() else [],
+        "input_modes": ["nwp", "lmd", "mixed"],
+        "result_rows": len(df_results) if "df_results" in globals() else 0,
+        "elapsed_seconds": elapsed_time,
+    }
+)

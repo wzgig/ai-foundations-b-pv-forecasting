@@ -2,6 +2,32 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-02 输出产物标准化与绘图保存优化
+
+### 问题判断
+
+- 问题 2、问题 3、问题 4 的主训练脚本已经能保存模型 checkpoint，但大量图像仍只通过 `plt.show()` 或 `fig.show()` 展示，训练结束后容易丢失。
+- 预测表、指标表直接写在脚本目录，和源代码、旧实验结果混在一起，不利于多轮实验对比。
+- 缺少统一运行摘要，后续很难快速确认一次运行到底生成了哪些 CSV、PNG、HTML 和报告。
+
+### 主要改动
+
+- 在 `2025/_shared/pv_project.py` 中新增 `ExperimentArtifacts` 输出管理器，以及 `save_figure`、`save_plotly_html`、`write_json`、`output_dir`、`output_path` 等工具。
+- 优化问题 2、问题 3、问题 4 的主脚本和 `01_modeling_workspace` 中对应副本：
+  - 预测明细统一写入 `outputs/predictions/`。
+  - 指标表统一写入 `outputs/metrics/`。
+  - Matplotlib 图统一保存为 `outputs/figures/*.png`。
+  - Plotly 交互图统一保存为 `outputs/figures/*.html`。
+  - 每次完整运行写入 `outputs/reports/run_summary.json`，记录模型、样本规模、耗时和产物清单。
+- 默认关闭弹窗式绘图展示，避免长训练流程被图窗阻塞；需要人工查看时可从 `outputs/figures/` 打开结果。
+- `project_health_check.py` 新增受管理训练脚本检查，防止这些主入口重新出现裸 `plt.show()`、`fig.show()`、直接 `.to_csv()` 或直接 `.savefig()`。
+- 单元测试新增输出管理器测试和训练脚本输出约束测试。
+
+### 验证结果
+
+- `python 2025\tools\project_health_check.py`：通过。
+- `python -m unittest discover -s tests -q`：通过，6 个测试成功。
+
 ## 2026-06-02 模型训练缓存专项优化
 
 ### 问题判断

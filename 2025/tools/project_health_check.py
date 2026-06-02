@@ -19,6 +19,20 @@ ROOT = Path(__file__).resolve().parents[1]
 DIRECT_INPUT_PATTERN = re.compile(r"(?:read_csv|read_excel|readtable)\(\s*['\"]([^'\"]+)['\"]")
 ASSIGN_PATTERN = re.compile(r"(?m)^\s*([A-Za-z_]\w*)\s*=\s*['\"]([^'\"]+)['\"]")
 VARIABLE_INPUT_PATTERN = re.compile(r"(?:read_csv|read_excel|readtable)\(\s*([A-Za-z_]\w*)")
+MANAGED_OUTPUT_SCRIPTS = {
+    Path("01_modeling_workspace/pvod_full_experiment/7添加绘图与输出三个指标的对比表格.py"),
+    Path("01_modeling_workspace/pvod_full_experiment/9问题3初步.py"),
+    Path("01_modeling_workspace/pvod_full_experiment/10问题4.py"),
+    Path("02_problem_solutions/problem2_baseline_forecasting/7添加绘图与输出三个指标的对比表格.py"),
+    Path("02_problem_solutions/problem3_scenario_analysis/9问题3初步.py"),
+    Path("02_problem_solutions/problem4_feature_ablation/10问题4.py"),
+}
+DIRECT_OUTPUT_PATTERNS = {
+    "direct_csv_write": re.compile(r"\.to_csv\s*\("),
+    "matplotlib_show": re.compile(r"\bplt\.show\s*\("),
+    "plotly_show": re.compile(r"\bfig\.show\s*\("),
+    "direct_savefig": re.compile(r"\.savefig\s*\("),
+}
 
 
 def iter_code_files() -> list[Path]:
@@ -93,6 +107,56 @@ def unresolved_relative_inputs(paths: list[Path]) -> list[dict[str, str]]:
     return issues
 
 
+def managed_output_issues() -> list[dict[str, str]]:
+    """Flag final training scripts that bypass the shared output manager."""
+
+    issues: list[dict[str, str]] = []
+    for relative_path in sorted(MANAGED_OUTPUT_SCRIPTS):
+        path = ROOT / relative_path
+        if not path.exists():
+            issues.append(
+                {
+                    "script": str(relative_path),
+                    "issue": "missing_managed_script",
+                    "line": "",
+                }
+            )
+            continue
+
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        if "ExperimentArtifacts(" not in text:
+            issues.append(
+                {
+                    "script": str(relative_path),
+                    "issue": "missing_experiment_artifacts",
+                    "line": "",
+                }
+            )
+        if "write_summary(" not in text:
+            issues.append(
+                {
+                    "script": str(relative_path),
+                    "issue": "missing_run_summary",
+                    "line": "",
+                }
+            )
+
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                continue
+            for issue_name, pattern in DIRECT_OUTPUT_PATTERNS.items():
+                if pattern.search(line):
+                    issues.append(
+                        {
+                            "script": str(relative_path),
+                            "issue": issue_name,
+                            "line": str(line_number),
+                        }
+                    )
+    return issues
+
+
 def build_report() -> dict[str, object]:
     files = iter_code_files()
     python_files = [path for path in files if path.suffix == ".py"]
@@ -104,13 +168,14 @@ def build_report() -> dict[str, object]:
         "python_parse_errors": parse_python_files(python_files),
         "duplicate_code_groups": duplicate_code_groups(files),
         "unresolved_relative_inputs": unresolved_relative_inputs(files),
+        "managed_output_issues": managed_output_issues(),
     }
 
 
 def main() -> int:
     report = build_report()
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 1 if report["python_parse_errors"] else 0
+    return 1 if report["python_parse_errors"] or report["managed_output_issues"] else 0
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -70,6 +71,39 @@ class ProjectHealthTests(unittest.TestCase):
 
         path = module.torch_checkpoint_path("problem4 FusionModel:mixed")
         self.assertEqual(path.as_posix(), "models/problem4_FusionModel_mixed.pth")
+
+    def test_experiment_artifacts_write_under_script_outputs(self):
+        shared_path = PROJECT_ROOT / "2025" / "_shared" / "pv_project.py"
+        spec = importlib.util.spec_from_file_location("pv_project", shared_path)
+        module = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / "experiment.py"
+            script.write_text("# test script\n", encoding="utf-8")
+
+            artifacts = module.ExperimentArtifacts(script)
+            csv_path = artifacts.write_csv(
+                "metrics",
+                "metrics.csv",
+                module.pd.DataFrame({"value": [1]}),
+                index=False,
+            )
+            summary_path = artifacts.write_summary({"ok": True})
+
+            self.assertEqual(csv_path.parent.name, "metrics")
+            csv_text = csv_path.read_text(encoding=module.UTF8_SIG).replace("\r\n", "\n").strip()
+            self.assertEqual(csv_text, "value\n1")
+            self.assertEqual(summary_path.parent.name, "reports")
+            metrics_records = [path.replace("\\", "/") for path in artifacts.artifacts["metrics"]]
+            self.assertIn("outputs/metrics/metrics.csv", metrics_records)
+
+    def test_managed_training_scripts_use_output_manager(self):
+        health = load_health_module()
+        report = health.build_report()
+
+        self.assertEqual(report["managed_output_issues"], [])
 
 
 if __name__ == "__main__":

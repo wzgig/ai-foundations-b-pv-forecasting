@@ -5,6 +5,7 @@ Created on 2025/5/25 09:13
 @author: Prince
 """
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -30,12 +31,14 @@ SHARED_DIR = next(
 sys.path.insert(0, str(SHARED_DIR))
 
 from pv_project import (  # noqa: E402
+    ExperimentArtifacts,
     build_torch_checkpoint_signature,
     configure_matplotlib,
     resolve_input,
     save_torch_checkpoint,
     set_random_seed,
     set_working_directory,
+    slugify_checkpoint_name,
     torch_checkpoint_path,
     try_load_torch_checkpoint,
 )
@@ -43,6 +46,9 @@ from pv_project import (  # noqa: E402
 set_working_directory(__file__)
 configure_matplotlib()
 set_random_seed()
+SCRIPT_START_TIME = time.time()
+ARTIFACTS = ExperimentArtifacts(__file__)
+SHOW_PLOTS = False
 #
 # rcParams['font.family'] = 'SimHei'
 # rcParams['axes.unicode_minus'] = False
@@ -535,8 +541,9 @@ def export_prediction_table(preds, test_Y, test_timestamps, df, method_name='融
             })
 
     df_pred = pd.DataFrame(records)
-    df_pred.to_csv(output_file, index=False, encoding='utf-8-sig')
-    print(f"预测结果已保存至 {output_file}")
+    target = ARTIFACTS.write_csv("predictions", output_file, df_pred, index=False)
+    print(f"预测结果已保存至 {target}")
+    return target
 
 
 # 使用方法
@@ -549,7 +556,8 @@ def export_prediction_table(preds, test_Y, test_timestamps, df, method_name='融
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def visualize_predictions(preds, test_Y, test_timestamps, df):
+def visualize_predictions(preds, test_Y, test_timestamps, df, model_name="model"):
+    model_slug = slugify_checkpoint_name(model_name)
     # 设置全局绘图风格
     # plt.style.use('seaborn-whitegrid')  # 删除这一行或注释掉
     sns.set_theme(style='whitegrid')  # seaborn本身即可设定风格
@@ -580,7 +588,7 @@ def visualize_predictions(preds, test_Y, test_timestamps, df):
     plt.legend()
     plt.tight_layout()
     plt.grid(True)
-    plt.show()
+    ARTIFACTS.save_figure(f"{model_slug}_daylight_forecast_curve.png", show=SHOW_PLOTS)
 
     # ---------- 2. 所有白昼误差分布图 ----------
     all_true, all_pred = [], []
@@ -598,7 +606,7 @@ def visualize_predictions(preds, test_Y, test_timestamps, df):
     plt.xlabel('误差 (预测 - 实际) (MW)')
     plt.ylabel('频数')
     plt.tight_layout()
-    plt.show()
+    ARTIFACTS.save_figure(f"{model_slug}_daylight_error_distribution.png", show=SHOW_PLOTS)
 
     # ---------- 3. 散点图：预测值 vs 实际值 ----------
     plt.figure(figsize=(6, 6))
@@ -611,10 +619,10 @@ def visualize_predictions(preds, test_Y, test_timestamps, df):
     plt.legend()
     plt.tight_layout()
     plt.grid(True)
-    plt.show()
+    ARTIFACTS.save_figure(f"{model_slug}_actual_vs_predicted_scatter.png", show=SHOW_PLOTS)
 
 
-def plot_professional_forecast(preds, test_Y, test_timestamps, df, sample_index=0):
+def plot_professional_forecast(preds, test_Y, test_timestamps, df, sample_index=0, model_name="model"):
     """专业级预测曲线可视化"""
     plt.figure(figsize=(14, 6))
 
@@ -661,10 +669,14 @@ def plot_professional_forecast(preds, test_Y, test_timestamps, df, sample_index=
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
     plt.grid(True, alpha=0.4)
     plt.tight_layout()
-    plt.show()
+    model_slug = slugify_checkpoint_name(model_name)
+    ARTIFACTS.save_figure(
+        f"{model_slug}_professional_forecast_sample{sample_index}.png",
+        show=SHOW_PLOTS,
+    )
 
 
-def plot_error_analysis(preds, test_Y):
+def plot_error_analysis(preds, test_Y, model_name="model"):
     """多维误差分析矩阵"""
     errors = preds - test_Y
     errors_flat = errors.flatten()
@@ -700,10 +712,11 @@ def plot_error_analysis(preds, test_Y):
 
     # 综合统计
     plt.suptitle("多维误差分析报告", y=1.02, fontsize=16)
-    plt.show()
+    model_slug = slugify_checkpoint_name(model_name)
+    ARTIFACTS.save_figure(f"{model_slug}_error_analysis_matrix.png", fig=fig, show=SHOW_PLOTS)
 
 
-def interactive_forecast_plot(preds, test_Y, test_timestamps, df, sample_index=0):
+def interactive_forecast_plot(preds, test_Y, test_timestamps, df, sample_index=0, model_name="model"):
     """交互式可视化（需安装plotly）"""
     ts = test_timestamps[sample_index]
     mask = (df['date_time'] >= ts) & (df['date_time'] < ts + pd.Timedelta(days=1))
@@ -741,7 +754,11 @@ def interactive_forecast_plot(preds, test_Y, test_timestamps, df, sample_index=0
             )
         ]
     )
-    fig.show()
+    model_slug = slugify_checkpoint_name(model_name)
+    ARTIFACTS.save_plotly_html(
+        f"{model_slug}_interactive_forecast_sample{sample_index}.html",
+        fig,
+    )
 
 
 if __name__ == "__main__":
@@ -767,21 +784,22 @@ if __name__ == "__main__":
 
         # 每个模型分别可视化
         print(f"\n>> 可视化：{name}")
-        visualize_predictions(preds, test_Y, test_timestamps, df)
-        plot_professional_forecast(preds, test_Y, test_timestamps, df)
-        plot_error_analysis(preds, test_Y)
+        visualize_predictions(preds, test_Y, test_timestamps, df, model_name=name)
+        plot_professional_forecast(preds, test_Y, test_timestamps, df, model_name=name)
+        plot_error_analysis(preds, test_Y, model_name=name)
 
     # ======= 指标对比表格 =======
     df_metrics = pd.DataFrame(metrics_all).T
     print("\n三模型评估指标对比：")
     print(df_metrics.round(4))
+    ARTIFACTS.write_csv("metrics", "三模型白昼指标对比.csv", df_metrics, index=True)
 
     # 可视化热图
     plt.figure(figsize=(10, 6))
     sns.heatmap(df_metrics, annot=True, fmt=".3f", cmap="YlGnBu")
     plt.title("三模型评估指标热力图 (白昼时段)")
     plt.tight_layout()
-    plt.show()
+    ARTIFACTS.save_figure("三模型评估指标热力图_白昼时段.png", show=SHOW_PLOTS)
 
     # ======= 三模型每日对比图 (默认 index = 0) =======
     day_idx = 0
@@ -803,7 +821,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.show()
+    ARTIFACTS.save_figure("三模型每日预测对比图_白昼.png", show=SHOW_PLOTS)
 
     # ======= 统一输出预测对比表格 =======
     records = []
@@ -824,5 +842,15 @@ if __name__ == "__main__":
             records.append(row)
 
     df_all_preds = pd.DataFrame(records)
-    df_all_preds.to_csv("三模型预测结果对比表.csv", index=False, encoding='utf-8-sig')
-    print("\n已保存统一预测对比表格为：三模型预测结果对比表.csv")
+    all_preds_path = ARTIFACTS.write_csv("predictions", "三模型预测结果对比表.csv", df_all_preds, index=False)
+    print(f"\n已保存统一预测对比表格为：{all_preds_path}")
+
+    ARTIFACTS.write_summary(
+        {
+            "problem": "problem2_baseline_forecasting",
+            "models": list(model_dict.keys()),
+            "train_samples": len(train_X),
+            "test_days": len(test_timestamps),
+            "elapsed_seconds": time.time() - SCRIPT_START_TIME,
+        }
+    )

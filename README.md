@@ -71,4 +71,6 @@ python .\7添加绘图与输出三个指标的对比表格.py
 
 2026-06-02 已完成模型训练缓存专项优化：问题 2-4 的主训练脚本会按实验/模型保存独立 PyTorch checkpoint，并在训练前复用签名匹配的已有模型，避免每次修改绘图或分析代码都重新训练。需要强制重新训练时，可在 `train_model(..., force_retrain=True)` 中开启。
 
+2026-06-02 已完成输出产物标准化：问题 2-4 的主训练脚本和 `01_modeling_workspace` 对应副本会把预测表、指标表、图片和运行摘要统一写入脚本目录下的 `outputs/predictions/`、`outputs/metrics/`、`outputs/figures/`、`outputs/reports/`，不再只弹出绘图窗口或把 CSV 散落在脚本目录。
+
 后续如果继续重构，建议优先把重复的 PyTorch 模型定义和训练循环抽取为统一模块。

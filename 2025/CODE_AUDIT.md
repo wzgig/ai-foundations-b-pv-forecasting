@@ -85,6 +85,26 @@
 - 早期建模工作区脚本已从共享 `best_model.pth` 改为按模型类名保存，并在训练前优先复用已有权重。
 - 回归测试新增检查：Python 脚本中不再硬编码 `best_model.pth`。
 
+## 2026-06-02 输出产物标准化
+
+### 发现的问题
+
+- 问题 2、问题 3、问题 4 的主脚本大量使用 `plt.show()` 或 `fig.show()`，长时间训练结束后图像如果没有手动保存就会丢失。
+- 预测 CSV 和指标 CSV 直接写在脚本目录下，随着多次实验运行会和源代码、旧结果混在一起。
+- 训练脚本没有统一的运行摘要，后续很难快速知道一次运行生成了哪些预测表、指标表和图像。
+
+### 已完成的改进
+
+- 在 `pv_project.py` 中新增 `ExperimentArtifacts`、`save_figure`、`save_plotly_html`、`write_json`、`output_dir` 和 `output_path`，统一管理实验产物。
+- 问题 2、问题 3、问题 4 的主脚本和 `01_modeling_workspace` 中对应副本已改为：
+  - 预测明细写入 `outputs/predictions/`。
+  - 指标表写入 `outputs/metrics/`。
+  - Matplotlib 图保存为 `outputs/figures/*.png`。
+  - Plotly 交互图保存为 `outputs/figures/*.html`。
+  - 每次完整运行写入 `outputs/reports/run_summary.json`，记录脚本、模型、样本规模、耗时和产物清单。
+- `project_health_check.py` 新增受管理训练脚本检查，防止这些入口重新出现裸 `plt.show()`、`fig.show()`、直接 `.to_csv()` 或直接 `.savefig()`。
+- 单元测试新增输出管理器检查和训练脚本输出约束检查。
+
 ## 当前检查结果
 
 运行命令：
@@ -98,7 +118,8 @@ python -m unittest discover -s tests -q
 
 - Python 语法检查：通过。
 - 相对输入文件检查：通过，当前未发现找不到的相对输入。
-- 单元检查：4 个测试通过。
+- 受管理训练脚本输出检查：通过。
+- 单元检查：6 个测试通过。
 
 ## 后续建议
 
