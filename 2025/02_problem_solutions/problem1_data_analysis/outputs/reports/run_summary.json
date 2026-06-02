@@ -1,0 +1,65 @@
+{
+  "script": "theoretical_power_diagnostics.py",
+  "generated_at": "2026-06-02T03:36:23.251430+00:00",
+  "metadata": {
+    "input_file": "D:\\Qiuhua Wang\\个人资料\\电气\\人工智能基础B\\电气工程及其自动化+2307+202310080241+王子成+标题\\2025\\02_problem_solutions\\problem1_data_analysis\\Solar station site 5 (Nominal capacity-110MW).xlsx",
+    "rows": 70176,
+    "dropped_rows": 0,
+    "time_start": "2019-01-01T00:00:00",
+    "time_end": "2020-12-31T23:45:00",
+    "interval_hours": 0.25,
+    "font": "Microsoft YaHei",
+    "typical_day": "2019-06-15",
+    "typical_day_selection": "requested",
+    "daylight_threshold_mw": 0.5,
+    "nominal_capacity_mw": 110.0,
+    "model_note": "P_theo uses measured DNI/GHI after plane-of-array transposition, temperature correction, nonnegative clipping, and nominal-capacity cap. P_theo_atmospheric keeps the previous extra atmospheric-transmission attenuation for comparison.",
+    "metrics": [
+      {
+        "Model": "Measured-irradiance theoretical power",
+        "PredictionColumn": "P_theo",
+        "Samples": 33503,
+        "RMSE_MW": 7.076943222322843,
+        "MAE_MW": 4.002162159464707,
+        "ME_MW": -0.9929772814483833,
+        "Mean_Relative_Error": -0.011620560769643322,
+        "Median_Relative_Error": -0.001432838350280129,
+        "MAPE": 0.20356240553574578,
+        "NRMSE_Capacity": 0.0643358474756622,
+        "Correlation": 0.9645415302582869
+      },
+      {
+        "Model": "Legacy atmospheric-transmission variant",
+        "PredictionColumn": "P_theo_atmospheric",
+        "Samples": 31256,
+        "RMSE_MW": 17.988943450567135,
+        "MAE_MW": 13.987434919035003,
+        "ME_MW": -13.67829324786013,
+        "Mean_Relative_Error": -0.9598069845969713,
+        "Median_Relative_Error": -0.7472925123418214,
+        "MAPE": 0.4469499914196386,
+        "NRMSE_Capacity": 0.16353584955061032,
+        "Correlation": 0.9581782334895425
+      }
+    ]
+  },
+  "artifacts": {
+    "predictions": [
+      "outputs\\predictions\\problem1_theoretical_power_timeseries.csv"
+    ],
+    "metrics": [
+      "outputs\\metrics\\problem1_monthly_power_stats.csv",
+      "outputs\\metrics\\problem1_daylight_error_metrics.csv",
+      "outputs\\metrics\\problem1_relative_error_statistics.csv"
+    ],
+    "figures": [
+      "outputs\\figures\\problem1_monthly_power_comparison.png",
+      "outputs\\figures\\problem1_monthly_efficiency.png",
+      "outputs\\figures\\problem1_typical_day_power_comparison.png",
+      "outputs\\figures\\problem1_daylight_relative_error_distribution.png",
+      "outputs\\figures\\problem1_daily_mean_power_comparison.png",
+      "outputs\\figures\\problem1_actual_vs_theoretical_scatter.png"
+    ],
+    "reports": []
+  }
+}

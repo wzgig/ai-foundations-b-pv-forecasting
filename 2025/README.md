@@ -47,7 +47,7 @@
 
 按题目拆分的交付材料。
 
-- `problem1_data_analysis/`：理论功率建模、物理量分析、MATLAB/Python 探索脚本和单站点 Excel 数据。
+- `problem1_data_analysis/`：理论功率建模、物理量分析、MATLAB/Python 探索脚本、单站点 Excel 数据和 Python 诊断输出。
 - `problem2_baseline_forecasting/`：三模型日前预测、白昼指标、统一预测表和可视化图。
 - `problem3_scenario_analysis/`：气象场景划分、特征重要性、提升来源分析和典型场景图。
 - `problem4_feature_ablation/`：不同输入特征组合的预测对比、雷达图、热力图和指标图。
@@ -96,7 +96,7 @@ python .\problem3_scenario_ieee_analysis.py
 
 模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。问题 2-4 的主脚本会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`。
 
-问题 2-4 的主脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存 `run_summary.json`。这些脚本默认不弹出图窗，适合长时间训练后自动保留所有结果。
+问题 1 的理论功率诊断脚本以及问题 2-4 的主脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测或理论功率明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存 `run_summary.json`。这些脚本默认不弹出图窗，适合长时间运行后自动保留所有结果。
 
 ## 维护约定
 

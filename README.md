@@ -75,6 +75,8 @@ python .\problem2_baseline_three_model_forecast.py
 
 2026-06-02 已完成输出产物标准化：问题 2-4 的主训练脚本和 `01_modeling_workspace` 对应副本会把预测表、指标表、图片和运行摘要统一写入脚本目录下的 `outputs/predictions/`、`outputs/metrics/`、`outputs/figures/`、`outputs/reports/`，不再只弹出绘图窗口或把 CSV 散落在脚本目录。
 
+2026-06-02 已完成问题 1 理论功率诊断优化：`theoretical_power_diagnostics.py` 会把理论功率时序、月统计、白昼误差指标、诊断图和运行摘要统一写入 `problem1_data_analysis/outputs/`，并保留原大气修正口径作为对照。
+
 2026-06-02 已完成脚本语义化命名：将早期的数字编号、临时中文名脚本统一改为按问题和功能命名，例如 `problem2_baseline_three_model_forecast.py`、`problem3_weather_feature_forecast.py`、`problem4_feature_ablation_forecast.py` 和 `theoretical_power_diagnostics.py`。
 
 后续如果继续重构，建议优先把重复的 PyTorch 模型定义和训练循环抽取为统一模块。

@@ -53,6 +53,23 @@ python .\theoretical_power_calculation.py
 python .\theoretical_power_diagnostics.py
 ```
 
+`theoretical_power_diagnostics.py` 默认采用保存结果的批处理模式，不再弹出图窗阻塞运行。它会把问题 1 的诊断产物写入当前目录的 `outputs/`：
+
+```text
+outputs/predictions/problem1_theoretical_power_timeseries.csv
+outputs/metrics/problem1_monthly_power_stats.csv
+outputs/metrics/problem1_daylight_error_metrics.csv
+outputs/metrics/problem1_relative_error_statistics.csv
+outputs/figures/problem1_*.png
+outputs/reports/run_summary.json
+```
+
+其中 `P_theo` 是推荐的实测辐照度理论功率口径；`P_theo_atmospheric` 保留原大气透射率修正口径，用于解释旧模型的系统性偏差。若要临时查看交互图窗，可运行：
+
+```powershell
+python .\theoretical_power_diagnostics.py --show
+```
+
 MATLAB 脚本如 `matlab_theoretical_power_solarposition.m`、`matlab_theoretical_power_manual_angles.m`、`matlab_theoretical_power_cleaned_plots.m`、`matlab_physical_model_residual_analysis.m` 等是同一问题下的物理建模和绘图补充。如果只复现 Python 深度学习主线，可以先跳过 MATLAB。
 
 ### 步骤 2：问题 2 基准日前预测
@@ -183,11 +200,11 @@ problem4_FusionModel_mixed.pth
 
 ## 5. 输出保存逻辑
 
-问题 2、问题 3、问题 4 的主脚本使用统一输出结构：
+问题 1 的理论功率诊断脚本以及问题 2、问题 3、问题 4 的主脚本使用统一输出结构：
 
 ```text
 outputs/
-  predictions/   预测明细和统一预测对比表
+  predictions/   理论功率/预测明细和统一预测对比表
   metrics/       指标汇总表
   figures/       PNG 静态图和 HTML 交互图
   reports/       run_summary.json
@@ -225,6 +242,13 @@ outputs/reports/run_summary.json
 
 ### 再看指标表
 
+问题 1：
+
+```text
+outputs/metrics/problem1_daylight_error_metrics.csv
+outputs/metrics/problem1_monthly_power_stats.csv
+```
+
 问题 2、问题 3：
 
 ```text
@@ -245,6 +269,12 @@ outputs/metrics/Q4_模型输入对比结果.csv
 - `C_R`、`Q_R`：课程附件中的考核指标，通常越高越好。
 
 ### 再看预测明细
+
+问题 1：
+
+```text
+outputs/predictions/problem1_theoretical_power_timeseries.csv
+```
 
 问题 2：
 

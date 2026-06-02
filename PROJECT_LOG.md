@@ -2,6 +2,32 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-02 问题 1 理论功率诊断脚本优化
+
+### 问题判断
+
+- `theoretical_power_diagnostics.py` 连续使用 `plt.show()`，在批处理或非交互运行时容易阻塞，且图像不会自动保存。
+- 默认典型日 `2023-06-15` 不在当前数据范围 `2019-01-01` 至 `2020-12-31` 内，会生成空的日内曲线图。
+- 原脚本在使用实测 `DNI/GHI` 得到等效辐照度后，又额外乘以大气透射率，导致理论功率被重复衰减，和实测功率存在系统性偏低。
+
+### 主要改动
+
+- 重构 `2025/02_problem_solutions/problem1_data_analysis/theoretical_power_diagnostics.py`：
+  - 改为函数化入口和向量化太阳角、入射角、等效辐照度计算。
+  - 默认保存图像和表格，不再弹窗阻塞；需要交互查看时可显式传入 `--show`。
+  - 将主结果 `P_theo` 调整为实测辐照度经倾斜面换算、温度修正、非负裁剪和 110 MW 装机容量上限后的理论功率。
+  - 保留原大气透射率口径为 `P_theo_atmospheric`，用于解释旧模型的系统性低估。
+  - 自动写出逐时序结果、月统计、白昼误差指标、相对误差统计、6 张 PNG 图和 `outputs/reports/run_summary.json`。
+- 同步更新 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md` 和 `2025/CODE_INDEX.md` 中的问题 1 运行与输出说明。
+
+### 验证结果
+
+- `python 2025\02_problem_solutions\problem1_data_analysis\theoretical_power_diagnostics.py`：通过，生成 11 个标准输出产物。
+- 推荐口径白昼指标：RMSE 约 `7.077 MW`，MAE 约 `4.002 MW`，相关系数约 `0.965`。
+- 原大气修正口径白昼指标：RMSE 约 `17.989 MW`，MAE 约 `13.987 MW`，相关系数约 `0.958`。
+- `python 2025\tools\project_health_check.py`：通过。
+- `python -m unittest discover -s tests -q`：通过，6 个测试成功。
+
 ## 2026-06-02 代码文件语义化命名
 
 ### 调整目标

@@ -26,7 +26,7 @@
 | --- | --- |
 | `02_problem_solutions/problem1_data_analysis/theoretical_power_baseline.py` | 问题 1 的基础理论功率计算入口，读取单站点 Excel 并进行初步建模与对比。 |
 | `02_problem_solutions/problem1_data_analysis/theoretical_power_calculation.py` | 问题 1 的理论功率计算版本，侧重太阳角、等效辐照度、大气透射率等物理量计算。 |
-| `02_problem_solutions/problem1_data_analysis/theoretical_power_diagnostics.py` | 问题 1 的诊断与可视化版本，用于检查理论功率和实际功率差异。 |
+| `02_problem_solutions/problem1_data_analysis/theoretical_power_diagnostics.py` | 问题 1 的诊断与可视化版本，用于检查理论功率和实际功率差异，并生成 `outputs/` 下的时序表、指标表、诊断图和运行摘要。 |
 | `02_problem_solutions/problem1_data_analysis/matlab_theoretical_power_solarposition.m` | MATLAB 太阳位置法理论功率建模脚本。 |
 | `02_problem_solutions/problem1_data_analysis/matlab_theoretical_power_manual_angles.m` | MATLAB 手动太阳角计算版本。 |
 | `02_problem_solutions/problem1_data_analysis/matlab_theoretical_power_cleaned_plots.m` | MATLAB 清理版理论功率绘图脚本。 |
