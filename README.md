@@ -58,6 +58,8 @@ python 2025\tools\project_health_check.py
 python -m unittest discover -s tests -q
 ```
 
+完整运行顺序、模型复用逻辑、输出目录和结果查看方式见 `2025/RUN_GUIDE.md`。
+
 运行某个实验时，优先进入对应目录，例如：
 
 ```powershell
