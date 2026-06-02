@@ -85,6 +85,22 @@
 - 早期建模工作区脚本已从共享 `best_model.pth` 改为按模型类名保存，并在训练前优先复用已有权重。
 - 回归测试新增检查：Python 脚本中不再硬编码 `best_model.pth`。
 
+## 2026-06-02 问题 4 输入特征消融专项检查
+
+### 发现的问题
+
+- 旧版问题 4 虽然比较 NWP、LMD 与混合输入，但样本构造仍偏连续滑窗，预测表难以清晰表达严格日前起报口径。
+- `FusionModel` 分支实际只读取输入首列，未充分利用多变量天气特征，削弱了输入特征消融结论的可信度。
+- LMD 风向仍以角度原值进入模型，和 NWP 风向分解方式不一致；目标归一化曾误用输入最大值，存在尺度口径不严谨问题。
+
+### 已完成的改进
+
+- `problem4_feature_ablation_forecast.py` 改为“前一日实测功率 + 目标日天气序列”预测目标日 96 点功率，预测表统一写入 `起报时间` 与 `预报时间`。
+- NWP 与 LMD 风向均分解为 `x/y` 分量，三种输入模式维度记录到 `run_summary.json`，并支持 `PV_Q4_MODES`、`PV_Q4_MODELS` 和 `PV_Q4_SAVE_RUN_DIAGNOSTICS`。
+- `FusionModel` 的 LSTM、TCN、MLP 分支已使用完整多变量输入，checkpoint 签名包含架构版本、输入模式、输入维度和特征列表。
+- 正式目录和 `01_modeling_workspace/pvod_full_experiment/` 同名脚本已同步，输出统一进入 `models/` 与 `outputs/` 分层目录。
+- 当前默认运行结果中 `FusionModel_mixed` 最优：`E_rmse=0.0465`、`C_R=95.35%`、`Q_R=99.84%`。
+
 ## 2026-06-02 输出产物标准化
 
 ### 发现的问题

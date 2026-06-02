@@ -50,7 +50,7 @@
 - `problem1_data_analysis/`：理论功率建模、物理量分析、MATLAB/Python 探索脚本、单站点 Excel 数据和 Python 诊断输出。
 - `problem2_baseline_forecasting/`：三模型日前预测、白昼指标、统一预测表和可视化图。
 - `problem3_scenario_analysis/`：气象场景划分、特征重要性、提升来源分析和典型场景图。
-- `problem4_feature_ablation/`：不同输入特征组合的预测对比、雷达图、热力图和指标图。
+- `problem4_feature_ablation/`：不同输入特征组合的严格日前预测对比、雷达图、热力图、指标图和运行摘要。
 
 ### `03_figures/`
 
@@ -95,9 +95,11 @@ cd 2025\02_problem_solutions\problem3_scenario_analysis
 python .\problem3_scenario_ieee_analysis.py
 ```
 
-模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。问题 2-4 的主脚本会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`，问题 2 和问题 3 也支持通过 `PV_FORCE_RETRAIN=1` 临时强制重训。
+模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。问题 2-4 的主脚本会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`，问题 2-4 也支持通过 `PV_FORCE_RETRAIN=1` 临时强制重训。
 
 问题 1 的理论功率脚本、问题 2-4 的主脚本和问题 3 二次分析脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测或理论功率明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存运行摘要。问题 3 主训练脚本保留 `run_summary.json`，二次分析脚本写入各自独立的 `problem3_*_summary.json`。这些脚本默认不弹出图窗，适合长时间运行后自动保留所有结果。
+
+问题 4 主脚本默认运行 `FusionModel` 的 `nwp`、`lmd`、`mixed` 三种输入消融。可用 `PV_Q4_MODES` 选择输入模式、`PV_Q4_MODELS` 选择模型、`PV_Q4_SAVE_RUN_DIAGNOSTICS=0` 临时跳过逐运行诊断图刷新。
 
 ## 维护约定
 

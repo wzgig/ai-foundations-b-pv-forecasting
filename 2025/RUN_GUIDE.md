@@ -165,14 +165,23 @@ python .\problem3_three_model_curve_plot.py
 
 ### 步骤 5：问题 4 输入特征消融
 
-问题 4 比较 `nwp`、`lmd`、`mixed` 三种输入配置下的模型表现。
+问题 4 比较 `nwp`、`lmd`、`mixed` 三种输入配置下的模型表现。当前正式脚本采用严格日前口径：前一日实测 `power_scaled` 与目标日天气特征序列共同作为输入，预测目标日 96 个 15 分钟功率点；预测表中 `起报时间` 为目标日前一日 00:00，`预报时间` 覆盖目标日 00:00-23:45。
 
 ```powershell
 cd ..\problem4_feature_ablation
 python .\problem4_feature_ablation_forecast.py
 ```
 
-当前脚本默认只运行 `FusionModel`。如需同时运行 `PureLSTM` 或 `BiFusionModel`，需要在脚本底部的 `model_dict` 中取消对应注释。
+当前脚本默认运行 `FusionModel`，并依次比较 `nwp`、`lmd`、`mixed`。如需临时筛选输入模式、模型或跳过逐运行诊断图刷新，可使用环境变量：
+
+```powershell
+$env:PV_Q4_MODES="nwp,lmd,mixed"
+$env:PV_Q4_MODELS="FusionModel"
+$env:PV_Q4_SAVE_RUN_DIAGNOSTICS="0"
+python .\problem4_feature_ablation_forecast.py
+```
+
+`PV_Q4_MODES` 支持 `nwp`、`lmd`、`mixed` 或 `all`；`PV_Q4_MODELS` 支持 `PureLSTM`、`FusionModel`、`BiFusionModel` 或 `all`。问题 4 同样支持 `PV_FORECAST_EPOCHS`、`PV_FORECAST_PATIENCE`、`PV_FORECAST_BATCH_SIZE`、`PV_FORECAST_HIDDEN_DIM` 和 `PV_FORCE_RETRAIN`。
 
 主要输出：
 
@@ -183,12 +192,16 @@ outputs/predictions/Q4_pred_FusionModel_lmd.csv
 outputs/predictions/Q4_pred_FusionModel_mixed.csv
 outputs/metrics/Q4_模型输入对比结果.csv
 outputs/figures/Q4_模型输入对比结果热力图.png
-outputs/figures/三输入_多模型空间降尺度预测指标热力图.png
 outputs/figures/*_输入对比雷达图.png
 outputs/figures/*_指标对比_不同输入模式.png
 outputs/figures/*_vs_输入特征维度.png
+outputs/figures/*_daylight_forecast_curve.png
+outputs/figures/*_error_analysis_matrix.png
+outputs/figures/*_interactive_forecast_sample0.html
 outputs/reports/run_summary.json
 ```
+
+当前默认结果中，`FusionModel_mixed` 的综合表现最好：`E_rmse=0.0465`、`C_R=95.35%`、`Q_R=99.84%`。完整指标以 `outputs/metrics/Q4_模型输入对比结果.csv` 为准。
 
 ## 4. 模型保存与复用逻辑
 
@@ -198,7 +211,7 @@ outputs/reports/run_summary.json
 2. 在当前脚本目录的 `models/` 下查找对应 checkpoint。
 3. 如果 checkpoint 存在且训练签名完全匹配，直接加载模型，跳过训练。
 4. 如果 checkpoint 不存在或签名不匹配，重新训练并保存新的 checkpoint。
-5. 如果想强制重训，可在对应脚本的 `train_model(...)` 调用中加入或改为 `force_retrain=True`；问题 2 也支持通过环境变量 `PV_FORCE_RETRAIN=1` 临时强制重训。
+5. 如果想强制重训，可在对应脚本的 `train_model(...)` 调用中加入或改为 `force_retrain=True`；问题 2-4 也支持通过环境变量 `PV_FORCE_RETRAIN=1` 临时强制重训。
 
 这意味着：只改绘图、输出、结果分析代码时，正常情况下不会重新训练；只要模型结构、输入维度和训练参数不变，就会复用已保存模型。
 

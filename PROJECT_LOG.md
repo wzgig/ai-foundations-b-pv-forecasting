@@ -2,6 +2,38 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-02 问题 4 输入特征消融脚本运行测试与优化
+
+### 调整目标
+
+- 实际运行 `problem4_feature_ablation_forecast.py`，修复旧脚本长时间训练、预测口径不严谨和输出图表分散的问题。
+- 将问题 4 明确为“前一日实测功率 + 目标日天气特征序列”预测目标日 96 点功率，对比 NWP、LMD 和 NWP+LMD 三类输入。
+- 同步正式入口和 `01_modeling_workspace/pvod_full_experiment/problem4_feature_ablation_forecast.py`，保证备用入口不再保留旧实现。
+
+### 主要改动
+
+- 重构 `problem4_feature_ablation_forecast.py`：
+  - 构造严格日前样本，预测表统一为 `起报时间=目标日前一日 00:00`、`预报时间=目标日 96 个 15 分钟点`。
+  - 对 NWP 与 LMD 风向分别分解为 `wind_x/wind_y`，三类输入维度分别为 `nwp=9`、`lmd=8`、`mixed=16`。
+  - 修复旧版 `FusionModel` 只读取首列输入的问题，LSTM、TCN 和 MLP 分支现在使用完整多变量序列。
+  - 训练目标按 `train_Y.max()` 归一化，避免误用输入最大值；checkpoint 签名纳入架构版本、输入模式、输入维度和特征列表。
+  - 新增本地 MSVC runtime 目录兜底，避免 Windows 环境下 PyTorch `c10.dll` 初始化失败。
+  - 新增 `PV_Q4_MODES`、`PV_Q4_MODELS`、`PV_Q4_SAVE_RUN_DIAGNOSTICS` 和通用 `PV_FORECAST_*` 环境变量入口。
+  - 输出统一写入 `models/` 与 `outputs/predictions/`、`outputs/metrics/`、`outputs/figures/`、`outputs/reports/`。
+- 优化结果呈现：
+  - 生成输入消融热力图、误差柱状图、准确率/合格率随输入维度变化图、雷达图、逐模式预测曲线、误差分布、散点图、误差分析矩阵和交互式 HTML。
+  - 热力图按“误差越小、相关/准确/合格率越高”归一化着色，保留原始指标数值标注。
+  - 已清理旧版问题4遗留的重复专业曲线图和旧命名热力图。
+
+### 验证结果
+
+- `python 2025\02_problem_solutions\problem4_feature_ablation\problem4_feature_ablation_forecast.py`：通过，三种输入模式均复用 `models/problem4_FusionModel_*.pth` checkpoint，约 95.5 秒完成完整诊断刷新。
+- 问题 4 当前默认白昼指标：
+  - `FusionModel_nwp`：`E_rmse=0.0879`，`C_R=91.21%`，`Q_R=96.94%`。
+  - `FusionModel_lmd`：`E_rmse=0.0584`，`C_R=94.16%`，`Q_R=99.68%`。
+  - `FusionModel_mixed`：`E_rmse=0.0465`，`C_R=95.35%`，`Q_R=99.84%`，当前综合表现最好。
+- 已视觉抽查 `Q4_模型输入对比结果热力图.png`、`FusionModel_mixed_daylight_forecast_curve.png`、`FusionModel_mixed_error_analysis_matrix.png` 和 `C_R_vs_输入特征维度.png`，图像非空且无明显遮挡。
+
 ## 2026-06-02 问题 3 气象特征预测脚本运行测试与优化
 
 ### 调整目标

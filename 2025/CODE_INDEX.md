@@ -59,7 +59,7 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `02_problem_solutions/problem4_feature_ablation/problem4_feature_ablation_forecast.py` | 问题 4 主入口，比较 NWP、LMD、mixed 三类输入配置下的预测效果。 |
+| `02_problem_solutions/problem4_feature_ablation/problem4_feature_ablation_forecast.py` | 问题 4 主入口，以前一日实测功率和目标日天气序列构造严格日前样本，比较 NWP、LMD、mixed 三类输入配置下的预测效果，并输出 checkpoint、预测表、指标、期刊风格图和运行摘要。 |
 
 ## 建模工作区代码
 
@@ -69,7 +69,7 @@
 | --- | --- |
 | `problem2_baseline_three_model_forecast.py` | 问题 2 主脚本在建模工作区中的同步副本。 |
 | `problem3_weather_feature_forecast.py` | 问题 3 主训练脚本在建模工作区中的同步副本。 |
-| `problem4_feature_ablation_forecast.py` | 问题 4 主脚本在建模工作区中的同步副本。 |
+| `problem4_feature_ablation_forecast.py` | 问题 4 主脚本在建模工作区中的同步副本，保持与正式入口一致的严格日前输入和输出逻辑。 |
 | `workspace_fusion_baseline_forecast.py` | 早期 FusionModel 基线日前预测实验。 |
 | `workspace_fusion_visual_diagnostics.py` | FusionModel 预测结果可视化与诊断实验。 |
 | `workspace_object_oriented_fusion_pipeline.py` | 面向对象方式组织的数据处理、训练和预测流程实验。 |
