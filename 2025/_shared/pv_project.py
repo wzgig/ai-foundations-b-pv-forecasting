@@ -22,6 +22,24 @@ import pandas as pd
 
 UTF8_SIG = "utf-8-sig"
 DEFAULT_SEED = 42
+JOURNAL_FONTS = [
+    "SimSun",
+    "Microsoft YaHei",
+    "SimHei",
+    "Noto Sans CJK SC",
+    "Source Han Sans SC",
+    "WenQuanYi Micro Hei",
+]
+JOURNAL_PALETTE = [
+    "#1f77b4",
+    "#d62728",
+    "#2ca02c",
+    "#ff7f0e",
+    "#9467bd",
+    "#17becf",
+    "#8c564b",
+    "#7f7f7f",
+]
 
 
 def locate_2025_root(start: str | os.PathLike[str]) -> Path:
@@ -98,18 +116,95 @@ def resolve_input(
     raise FileNotFoundError(f"Cannot find {filename!r}. Searched: {searched}")
 
 
-def configure_matplotlib(fonts: Sequence[str] | None = None, dpi: int = 150) -> None:
-    """Configure plotting defaults for Chinese labels and paper-style figures."""
+def _available_matplotlib_font(candidates: Sequence[str]) -> str:
+    """Return the first installed font from a candidate list."""
+
+    from matplotlib import font_manager
+
+    available = {font.name for font in font_manager.fontManager.ttflist}
+    for font_name in candidates:
+        if font_name in available:
+            return font_name
+    return "DejaVu Sans"
+
+
+def configure_matplotlib(fonts: Sequence[str] | None = None, dpi: int = 300) -> str:
+    """Configure Chinese journal-style plotting defaults.
+
+    The defaults target printable paper figures: high DPI, restrained grids,
+    black axes, colorblind-aware line colors, and robust Chinese font fallback.
+    """
 
     import matplotlib.pyplot as plt
     import seaborn as sns
 
-    font_candidates = list(fonts or ["SimHei", "Microsoft YaHei", "Noto Sans CJK SC"])
-    plt.rcParams["font.sans-serif"] = font_candidates
-    plt.rcParams["font.family"] = font_candidates
-    plt.rcParams["axes.unicode_minus"] = False
-    plt.rcParams["figure.dpi"] = dpi
-    sns.set_theme(style="whitegrid")
+    font_candidates = list(fonts or JOURNAL_FONTS)
+    selected_font = _available_matplotlib_font(font_candidates)
+    plt.rcParams.update(
+        {
+            "font.family": "sans-serif",
+            "font.sans-serif": [selected_font, *font_candidates],
+            "axes.unicode_minus": False,
+            "figure.dpi": dpi,
+            "savefig.dpi": 600,
+            "figure.facecolor": "white",
+            "axes.facecolor": "white",
+            "axes.edgecolor": "#222222",
+            "axes.linewidth": 0.9,
+            "axes.titlesize": 12,
+            "axes.titleweight": "bold",
+            "axes.labelsize": 10.5,
+            "xtick.labelsize": 9.5,
+            "ytick.labelsize": 9.5,
+            "legend.fontsize": 9.5,
+            "lines.linewidth": 1.8,
+            "lines.markersize": 5,
+            "grid.color": "#d9d9d9",
+            "grid.linestyle": "--",
+            "grid.linewidth": 0.55,
+            "grid.alpha": 0.55,
+            "legend.frameon": False,
+            "legend.handlelength": 2.2,
+            "mathtext.fontset": "stix",
+        }
+    )
+    sns.set_theme(
+        style="whitegrid",
+        palette=JOURNAL_PALETTE,
+        rc={
+            "font.sans-serif": [selected_font, *font_candidates],
+            "axes.edgecolor": "#222222",
+            "axes.linewidth": 0.9,
+        },
+    )
+    return selected_font
+
+
+def journal_palette(n: int | None = None) -> list[str]:
+    """Return the shared color palette used for paper figures."""
+
+    if n is None:
+        return list(JOURNAL_PALETTE)
+    repeats = (n + len(JOURNAL_PALETTE) - 1) // len(JOURNAL_PALETTE)
+    return (JOURNAL_PALETTE * repeats)[:n]
+
+
+def apply_journal_axes(ax: Any, *, grid: bool = True) -> None:
+    """Apply final publication-style cleanup to one Matplotlib axes."""
+
+    ax.grid(grid, axis="both")
+    ax.set_axisbelow(True)
+    for spine in ax.spines.values():
+        spine.set_color("#222222")
+        spine.set_linewidth(0.9)
+    ax.tick_params(direction="out", length=3.5, width=0.8, colors="#222222")
+
+
+def apply_journal_figure(fig: Any) -> None:
+    """Apply publication-style cleanup to all axes in a figure."""
+
+    for ax in fig.axes:
+        apply_journal_axes(ax)
 
 
 def set_random_seed(seed: int = DEFAULT_SEED, torch_module=None) -> None:
@@ -281,7 +376,7 @@ def save_figure(
     fig: Any,
     path: str | os.PathLike[str],
     *,
-    dpi: int = 300,
+    dpi: int = 600,
     close: bool = True,
     show: bool = False,
     **kwargs: Any,
@@ -293,6 +388,7 @@ def save_figure(
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     figure = fig if fig is not None else plt.gcf()
+    apply_journal_figure(figure)
     figure.savefig(target, dpi=dpi, bbox_inches=kwargs.pop("bbox_inches", "tight"), **kwargs)
     if show:
         plt.show()
@@ -403,7 +499,7 @@ class ExperimentArtifacts:
         category: str = "figures",
         show: bool = False,
         close: bool = True,
-        dpi: int = 300,
+        dpi: int = 600,
         **kwargs: Any,
     ) -> Path:
         target = self.path(category, filename)
@@ -433,15 +529,16 @@ class ExperimentArtifacts:
         metadata: dict[str, Any],
         filename: str = "run_summary.json",
     ) -> Path:
+        target = self.path("reports", filename)
+        self.record("reports", target)
         payload = {
             "script": self.file.name,
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "metadata": metadata,
             "artifacts": self.artifacts,
         }
-        target = self.path("reports", filename)
         write_json(payload, target)
-        return self.record("reports", target)
+        return target
 
 
 def slugify_checkpoint_name(name: str) -> str:

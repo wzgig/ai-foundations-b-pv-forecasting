@@ -20,6 +20,13 @@ DIRECT_INPUT_PATTERN = re.compile(r"(?:read_csv|read_excel|readtable)\(\s*['\"](
 ASSIGN_PATTERN = re.compile(r"(?m)^\s*([A-Za-z_]\w*)\s*=\s*['\"]([^'\"]+)['\"]")
 VARIABLE_INPUT_PATTERN = re.compile(r"(?:read_csv|read_excel|readtable)\(\s*([A-Za-z_]\w*)")
 MANAGED_OUTPUT_SCRIPTS = {
+    Path("02_problem_solutions/problem1_data_analysis/theoretical_power_baseline.py"),
+    Path("02_problem_solutions/problem1_data_analysis/theoretical_power_calculation.py"),
+    Path("02_problem_solutions/problem1_data_analysis/theoretical_power_diagnostics.py"),
+    Path("02_problem_solutions/problem3_scenario_analysis/problem3_extended_scenario_analysis.py"),
+    Path("02_problem_solutions/problem3_scenario_analysis/problem3_integrated_scenario_analysis.py"),
+    Path("02_problem_solutions/problem3_scenario_analysis/problem3_scenario_ieee_analysis.py"),
+    Path("02_problem_solutions/problem3_scenario_analysis/problem3_three_model_curve_plot.py"),
     Path("01_modeling_workspace/pvod_full_experiment/problem2_baseline_three_model_forecast.py"),
     Path("01_modeling_workspace/pvod_full_experiment/problem3_weather_feature_forecast.py"),
     Path("01_modeling_workspace/pvod_full_experiment/problem4_feature_ablation_forecast.py"),

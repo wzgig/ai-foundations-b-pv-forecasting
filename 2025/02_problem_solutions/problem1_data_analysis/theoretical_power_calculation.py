@@ -1,97 +1,168 @@
 # -*- coding: utf-8 -*-
-"""
-Created on 2025/5/24 10:21
+"""Problem 1 full theoretical-power calculation.
 
-@author: Prince
+This script is the calculation-focused companion to
+``theoretical_power_diagnostics.py``.  It reuses the same physical model,
+exports the full computed physical quantities, and creates compact journal-style
+calculation figures under ``outputs/``.
 """
+
+from __future__ import annotations
+
+import sys
 from pathlib import Path
 
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
-from math import sin, cos, tan, acos, atan2, radians, degrees, exp, pi
-from datetime import datetime
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+SHARED_DIR = next(
+    parent / "_shared" for parent in (SCRIPT_DIR, *SCRIPT_DIR.parents)
+    if (parent / "_shared").exists()
+)
+sys.path.insert(0, str(SHARED_DIR))
 
-# ========== 1. 数据读取与预处理 ==========
-file_path = SCRIPT_DIR / 'Solar station site 5 (Nominal capacity-110MW).xlsx'
-df = pd.read_excel(file_path)
-df.columns = ['Time', 'TSI', 'DNI', 'GHI', 'Air_Temp', 'Pressure', 'RH', 'Power']
-df['Time'] = pd.to_datetime(df['Time'])
-df['DayOfYear'] = df['Time'].dt.dayofyear
-df['Hour'] = df['Time'].dt.hour + df['Time'].dt.minute / 60
+from pv_project import ExperimentArtifacts, configure_matplotlib, resolve_input, set_working_directory  # noqa: E402
+from theoretical_power_diagnostics import (  # noqa: E402
+    DAYLIGHT_THRESHOLD_MW,
+    INPUT_FILENAME,
+    PhysicalParams,
+    add_error_columns,
+    add_theoretical_power,
+    compute_model_metrics,
+    load_station_data,
+)
 
-# ========== 2. 地理与物理参数 ==========
-latitude = 31.1708218  # 地点纬度
-longitude = 115.0159244  # 地点经度
-beta = latitude  # 面板倾角设为纬度
-phi_p = 180  # 面板朝向，南
-eta_ref = 0.18
-gamma = 0.0045
-kappa = 0.03
-A = 611111.11  # 光伏板面积 m²
-rho_g = 0.2  # 地面反射率
-tau_a = 0.15  # AOD经验值
-U_o = 0.3  # 臭氧柱厚
-P0 = 1013.25  # 标准大气压 hPa
 
-# ========== 3. 太阳角度计算函数 ==========
-def solar_angles(day_of_year, hour, latitude):
-    B = 2 * pi * (day_of_year - 81) / 364
-    EoT = 9.87 * sin(2 * B) - 7.53 * cos(B) - 1.5 * sin(B)
-    TC = 4 * (longitude - 120) + EoT  # 假设标准经度为120°
-    LST = hour + TC / 60  # 本地太阳时
+def plot_physical_components(df: pd.DataFrame) -> plt.Figure:
+    daily = (
+        df.set_index("Time")[["Geff", "transmission", "eta", "P_theo"]]
+        .resample("D")
+        .mean()
+        .dropna()
+    )
+    fig, axes = plt.subplots(2, 2, figsize=(10, 6.5), constrained_layout=True)
+    axes = axes.ravel()
 
-    decl = 23.45 * sin(2 * pi * (284 + day_of_year) / 365)
-    omega = 15 * (LST - 12)
+    axes[0].plot(daily.index, daily["Geff"], color="#1f77b4")
+    axes[0].set_title("等效辐照度")
+    axes[0].set_ylabel("W/m²")
 
-    theta_z = degrees(acos(
-        sin(radians(latitude)) * sin(radians(decl)) +
-        cos(radians(latitude)) * cos(radians(decl)) * cos(radians(omega))
-    ))
+    axes[1].plot(daily.index, daily["transmission"], color="#2ca02c")
+    axes[1].set_title("大气透射率对照量")
+    axes[1].set_ylabel("比值")
 
-    phi_s = degrees(atan2(
-        -sin(radians(omega)),
-        tan(radians(decl)) * cos(radians(latitude)) - sin(radians(latitude)) * cos(radians(omega))
-    ))
-    phi_s = (phi_s + 360) % 360
-    return theta_z, phi_s
+    axes[2].plot(daily.index, daily["eta"], color="#ff7f0e")
+    axes[2].set_title("组件效率")
+    axes[2].set_ylabel("效率")
+    axes[2].set_xlabel("日期")
 
-# ========== 4. 太阳角度批量计算 ==========
-df['theta_z'], df['phi_s'] = zip(*df.apply(lambda row: solar_angles(row['DayOfYear'], row['Hour'], latitude), axis=1))
+    axes[3].plot(daily.index, daily["P_theo"], color="#d62728")
+    axes[3].set_title("理论功率")
+    axes[3].set_ylabel("MW")
+    axes[3].set_xlabel("日期")
+    for ax in axes:
+        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=4))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+        ax.tick_params(axis="x", rotation=25)
+    return fig
 
-# ========== 5. 入射角与辐照度分解 ==========
-df['cos_theta_i'] = np.cos(np.radians(df['theta_z'])) * np.cos(np.radians(beta)) + \
-                    np.sin(np.radians(df['theta_z'])) * np.sin(np.radians(beta)) * \
-                    np.cos(np.radians(df['phi_s'] - phi_p))
-df['cos_theta_i'] = df['cos_theta_i'].clip(lower=0)
 
-df['DHI'] = df['GHI'] - df['DNI'] * np.cos(np.radians(df['theta_z']))
-df['DHI'] = df['DHI'].clip(lower=0)
+def plot_calculation_scatter(df: pd.DataFrame) -> plt.Figure:
+    daylight = df[df["P_theo"] > DAYLIGHT_THRESHOLD_MW]
+    fig, ax = plt.subplots(figsize=(5.8, 5.8))
+    ax.scatter(daylight["Power_actual"], daylight["P_theo"], s=8, alpha=0.22, edgecolors="none")
+    limit = max(float(daylight["Power_actual"].max()), float(daylight["P_theo"].max()))
+    ax.plot([0, limit], [0, limit], linestyle="--", color="#333333", label="1:1 参考线")
+    ax.set_xlim(0, limit * 1.03)
+    ax.set_ylim(0, limit * 1.03)
+    ax.set_title("理论功率计算值与实测值")
+    ax.set_xlabel("实测功率 / MW")
+    ax.set_ylabel("理论功率 / MW")
+    ax.legend()
+    fig.tight_layout()
+    return fig
 
-df['Geff'] = df['DNI'] * df['cos_theta_i'] + \
-             df['DHI'] * (1 + np.cos(np.radians(beta))) / 2 + \
-             rho_g * df['GHI'] * (1 - np.cos(np.radians(beta))) / 2
 
-# ========== 6. 大气透射率模型 ==========
-df['ma'] = 1 / (np.cos(np.radians(df['theta_z'])) + 0.50572 * (96.07995 - df['theta_z']) ** -1.6364)
+def main() -> int:
+    set_working_directory(__file__)
+    font = configure_matplotlib()
+    params = PhysicalParams()
+    artifacts = ExperimentArtifacts(__file__)
 
-df['Tr'] = np.exp(-0.0903 * (df['Pressure'] / P0) ** 0.84 * (1 + np.cos(np.radians(df['theta_z']))) ** -1.01)
-df['Ta'] = np.exp(-tau_a * (0.6777 + 0.1464 * tau_a - 0.00626 * tau_a ** 2) * df['ma'])
-df['To'] = 1 - (0.011 * U_o * df['ma']) / (1 + 0.006 * (U_o * df['ma']) ** 1.5)
+    input_path = resolve_input(INPUT_FILENAME, __file__)
+    df, dropped_rows = load_station_data(input_path)
+    result = add_error_columns(add_theoretical_power(df, params))
+    metrics = pd.DataFrame(
+        [
+            compute_model_metrics(
+                result,
+                "P_theo",
+                "Measured-irradiance theoretical power",
+                params,
+                DAYLIGHT_THRESHOLD_MW,
+            ),
+            compute_model_metrics(
+                result,
+                "P_theo_atmospheric",
+                "Legacy atmospheric-transmission variant",
+                params,
+                DAYLIGHT_THRESHOLD_MW,
+            ),
+        ]
+    )
 
-df['Uw'] = 0.1 * df['RH'] * np.exp(0.07 * df['Air_Temp'])
-df['Tw'] = 1 - 0.077 * (df['Uw'] * df['ma']) ** 0.3
+    output_columns = [
+        "Time",
+        "Power",
+        "Power_actual",
+        "P_theo",
+        "P_theo_atmospheric",
+        "Error_MW",
+        "Rel_Error",
+        "GHI",
+        "DNI",
+        "DHI",
+        "Geff",
+        "eta",
+        "theta_z",
+        "phi_s",
+        "cos_theta_i",
+        "air_mass",
+        "transmission",
+    ]
+    artifacts.write_csv(
+        "predictions",
+        "problem1_calculation_theoretical_power_components.csv",
+        result[output_columns],
+        index=False,
+    )
+    artifacts.write_csv("metrics", "problem1_calculation_error_metrics.csv", metrics, index=False)
+    artifacts.save_figure("problem1_calculation_physical_components.png", plot_physical_components(result))
+    artifacts.save_figure("problem1_calculation_actual_vs_theoretical.png", plot_calculation_scatter(result))
+    artifacts.write_summary(
+        {
+            "input_file": str(input_path),
+            "rows": int(len(result)),
+            "dropped_rows": int(dropped_rows),
+            "font": font,
+            "daylight_threshold_mw": DAYLIGHT_THRESHOLD_MW,
+            "metrics": metrics.to_dict(orient="records"),
+        }
+    )
 
-df['Tg'] = np.exp(-0.0117 * df['ma'] ** 0.3139)
+    primary = metrics.iloc[0]
+    print("问题1完整理论功率计算完成")
+    print(
+        f"RMSE={primary['RMSE_MW']:.3f} MW, "
+        f"MAE={primary['MAE_MW']:.3f} MW, "
+        f"相关系数={primary['Correlation']:.3f}"
+    )
+    print(f"输出目录: {artifacts.root}")
+    return 0
 
-df['Geff_star'] = df['Tr'] * df['Ta'] * df['To'] * df['Tw'] * df['Tg'] * df['Geff']
 
-# ========== 7. 组件效率与理论功率 ==========
-df['eta'] = eta_ref * (1 - gamma * (df['Air_Temp'] + kappa * df['GHI'] - 25))
-df['P_theo'] = df['eta'] * df['Geff_star'] * A / 1e6  # 单位换算为MW
-
-# ========== 8. 输出核心结果 ==========
-result = df[['Time', 'Power', 'P_theo']].copy()
-result.dropna(inplace=True)
-print(result.head(10))  # 预览前10行结果
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -53,7 +53,7 @@ python .\theoretical_power_calculation.py
 python .\theoretical_power_diagnostics.py
 ```
 
-`theoretical_power_diagnostics.py` 默认采用保存结果的批处理模式，不再弹出图窗阻塞运行。它会把问题 1 的诊断产物写入当前目录的 `outputs/`：
+问题 1 的三个 Python 脚本默认采用保存结果的批处理模式，不再弹出图窗阻塞运行。它们会把理论功率时序、指标、图像和运行摘要写入当前目录的 `outputs/`。其中 `theoretical_power_diagnostics.py` 的核心产物包括：
 
 ```text
 outputs/predictions/problem1_theoretical_power_timeseries.csv
@@ -71,6 +71,8 @@ python .\theoretical_power_diagnostics.py --show
 ```
 
 MATLAB 脚本如 `matlab_theoretical_power_solarposition.m`、`matlab_theoretical_power_manual_angles.m`、`matlab_theoretical_power_cleaned_plots.m`、`matlab_physical_model_residual_analysis.m` 等是同一问题下的物理建模和绘图补充。如果只复现 Python 深度学习主线，可以先跳过 MATLAB。
+
+MATLAB 绘图脚本可复用 `_shared/matlab/` 下的 `configure_journal_plot.m`、`project_output_path.m` 和 `save_project_figure.m`。已整理的探索性导出脚本会把图像写到自身目录的 `outputs/figures/`。
 
 ### 步骤 2：问题 2 基准日前预测
 
@@ -143,7 +145,7 @@ python .\problem3_three_model_curve_plot.py
 2025/02_problem_solutions/problem3_scenario_analysis/outputs/predictions/3三模型预测结果对比表.csv
 ```
 
-如果只是查看本仓库已保存的交付结果，可以直接运行这些二次分析脚本；如果你要做新的严格实验记录，建议以 `outputs/` 下的新表为准。
+这些二次分析脚本也统一写入 `problem3_scenario_analysis/outputs/`，包括场景分组图、特征重要性图、典型场景对比图、场景提升表和 `run_summary.json`。如果只是查看本仓库已保存的交付结果，可以直接运行这些二次分析脚本；如果你要做新的严格实验记录，建议以 `outputs/` 下的新表为准。
 
 ### 步骤 5：问题 4 输入特征消融
 
@@ -200,7 +202,7 @@ problem4_FusionModel_mixed.pth
 
 ## 5. 输出保存逻辑
 
-问题 1 的理论功率诊断脚本以及问题 2、问题 3、问题 4 的主脚本使用统一输出结构：
+正式问题脚本使用统一输出结构：
 
 ```text
 outputs/
@@ -247,6 +249,8 @@ outputs/reports/run_summary.json
 ```text
 outputs/metrics/problem1_daylight_error_metrics.csv
 outputs/metrics/problem1_monthly_power_stats.csv
+outputs/metrics/problem1_baseline_error_metrics.csv
+outputs/metrics/problem1_calculation_error_metrics.csv
 ```
 
 问题 2、问题 3：
@@ -274,6 +278,8 @@ outputs/metrics/Q4_模型输入对比结果.csv
 
 ```text
 outputs/predictions/problem1_theoretical_power_timeseries.csv
+outputs/predictions/problem1_baseline_theoretical_power_timeseries.csv
+outputs/predictions/problem1_calculation_theoretical_power_components.csv
 ```
 
 问题 2：

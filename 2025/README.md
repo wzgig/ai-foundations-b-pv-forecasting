@@ -64,8 +64,9 @@
 
 公共工程工具：
 
-- `pv_project.py`：Python 路径解析、中文绘图配置、随机种子、训练集归一化、分箱、指标、CSV/JSON 写出、实验产物管理和 PyTorch checkpoint 工具。
+- `pv_project.py`：Python 路径解析、中文期刊绘图配置、随机种子、训练集归一化、分箱、指标、CSV/JSON 写出、实验产物管理和 PyTorch checkpoint 工具。
 - `matlab/resolve_project_input.m`：MATLAB 脚本的数据文件定位工具。
+- `matlab/configure_journal_plot.m`、`matlab/project_output_path.m`、`matlab/save_project_figure.m`：MATLAB 期刊绘图和统一输出保存工具。
 
 ### `tools/`
 
@@ -96,7 +97,7 @@ python .\problem3_scenario_ieee_analysis.py
 
 模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。问题 2-4 的主脚本会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`。
 
-问题 1 的理论功率诊断脚本以及问题 2-4 的主脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测或理论功率明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存 `run_summary.json`。这些脚本默认不弹出图窗，适合长时间运行后自动保留所有结果。
+问题 1 的理论功率脚本、问题 2-4 的主脚本和问题 3 二次分析脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测或理论功率明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存 `run_summary.json`。这些脚本默认不弹出图窗，适合长时间运行后自动保留所有结果。
 
 ## 维护约定
 

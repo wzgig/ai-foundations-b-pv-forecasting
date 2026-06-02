@@ -2,6 +2,45 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-02 输出模块整理与中文期刊绘图规范
+
+### 调整目标
+
+- 查看并梳理当前项目代码文件的输出方式，减少 CSV、PNG 和报告散落在脚本目录中的情况。
+- 将正式问题脚本统一纳入 `outputs/predictions/`、`outputs/metrics/`、`outputs/figures/`、`outputs/reports/`。
+- 将绘图默认值提升为适合中文高水平期刊排版的样式：中文字体兜底、600 dpi 保存、白底、黑色坐标轴、弱网格、统一配色和紧凑图例。
+
+### 主要改动
+
+- 增强 `2025/_shared/pv_project.py`：
+  - `configure_matplotlib()` 改为中文期刊风格配置，并自动选择本机可用中文字体。
+  - 新增共享配色和图形后处理函数，所有经 `ExperimentArtifacts.save_figure()` 保存的图会统一整理坐标轴和网格。
+  - `run_summary.json` 的 artifacts 现在会包含自身的 reports 记录。
+- 整理问题 1 Python 脚本：
+  - `theoretical_power_baseline.py` 和 `theoretical_power_calculation.py` 改为输出表格、指标、图像和运行摘要。
+  - `theoretical_power_diagnostics.py` 改为复用共享期刊绘图配置。
+- 整理问题 3 二次分析脚本：
+  - `problem3_scenario_ieee_analysis.py`、`problem3_integrated_scenario_analysis.py`、`problem3_extended_scenario_analysis.py`、`problem3_three_model_curve_plot.py` 的图和表统一写入 `outputs/`。
+  - 修复 `problem3_integrated_scenario_analysis.py` 中用 `plot_tree` 绘制随机森林的原有错误，改为真正的决策树分类器。
+  - 修复 seaborn 新版本的 `palette` 弃用警告。
+- 增加 MATLAB 输出与绘图公共工具：
+  - `configure_journal_plot.m`
+  - `project_output_path.m`
+  - `save_project_figure.m`
+  - `exploratory_station01_export_figures.m` 改为通过共享保存函数写入 `outputs/figures/`。
+- 扩展 `project_health_check.py`：正式问题脚本现在都会检查是否使用输出管理器、是否写入 run summary、是否出现裸 `plt.show()`、`fig.show()`、`.savefig()` 或 `.to_csv()`。
+
+### 验证结果
+
+- `python -m py_compile`：关键 Python 文件通过。
+- `python 2025\02_problem_solutions\problem1_data_analysis\theoretical_power_baseline.py`：通过。
+- `python 2025\02_problem_solutions\problem1_data_analysis\theoretical_power_calculation.py`：通过。
+- `python 2025\02_problem_solutions\problem1_data_analysis\theoretical_power_diagnostics.py`：通过。
+- `python 2025\02_problem_solutions\problem3_scenario_analysis\problem3_extended_scenario_analysis.py`：通过。
+- `python 2025\02_problem_solutions\problem3_scenario_analysis\problem3_integrated_scenario_analysis.py`：通过。
+- `python 2025\02_problem_solutions\problem3_scenario_analysis\problem3_three_model_curve_plot.py`：通过。
+- `python 2025\02_problem_solutions\problem3_scenario_analysis\problem3_scenario_ieee_analysis.py`：通过，当前环境未安装 `shap`，SHAP 分支按脚本逻辑跳过。
+
 ## 2026-06-02 问题 1 理论功率诊断脚本优化
 
 ### 问题判断

@@ -1,16 +1,10 @@
 clear; clc; tic;
 
-%% 设置中文绘图风格
-set(0, 'defaultAxesFontName', 'Microsoft YaHei');
-set(0, 'defaultTextFontName', 'Microsoft YaHei');
-set(0, 'defaultAxesFontSize', 14);
-set(0, 'defaultLineLineWidth', 1.8);
-set(0, 'defaultFigureColor', 'w');
-
 %% 读取数据
 scriptDir = fileparts(mfilename('fullpath'));
 projectRoot = fileparts(fileparts(scriptDir));
 addpath(fullfile(projectRoot, '_shared', 'matlab'));
+configure_journal_plot();
 filename = resolve_project_input('station01.csv', scriptDir);
 T = readtable(filename, 'VariableNamingRule', 'preserve');
 T.date_time = datetime(T.date_time, 'InputFormat', 'yyyy/MM/dd HH:mm');
@@ -34,7 +28,7 @@ ylabel('DNI (W/m^2)', 'Interpreter', 'none'); title('NWP 法向直射辐照', 'I
 nexttile; plot(T.date_time, T.nwp_temperature, 'm');
 ylabel('气温 (℃)', 'Interpreter', 'none'); xlabel('时间', 'Interpreter', 'none'); title('NWP 气温', 'Interpreter', 'none'); grid on;
 sgtitle('气象变量时间序列图', 'Interpreter', 'none');
-saveas(gcf, '01_时间序列图.png');
+save_project_figure(gcf, mfilename('fullpath'), 'figures', '01_时间序列图.png');
 
 %% 图2：日内平均功率与GHI
 T.HourMinute = timeofday(T.date_time);
@@ -50,7 +44,7 @@ xlabel('一天中的时间', 'Interpreter', 'none');
 title('一天中功率与GHI的平均变化', 'Interpreter', 'none');
 legend({'功率','GHI'}, 'Location','northwest', 'Interpreter', 'none');
 grid on;
-saveas(gcf, '02_日内平均曲线.png');
+save_project_figure(gcf, mfilename('fullpath'), 'figures', '02_日内平均曲线.png');
 
 %% 图3：散点图
 figure; tiledlayout(2,2, 'TileSpacing','compact');
@@ -68,7 +62,7 @@ for i = 1:4
     title(titles{i}, 'Interpreter', 'none'); grid on;
 end
 sgtitle('功率与气象变量之间的关系', 'Interpreter', 'none');
-saveas(gcf, '03_功率散点图.png');
+save_project_figure(gcf, mfilename('fullpath'), 'figures', '03_功率散点图.png');
 
 %% 图4：热力图（日-小时）
 T.Date = dateshift(T.date_time, 'start', 'day');
@@ -83,7 +77,7 @@ ylabel('日期', 'Interpreter', 'none');
 datetick('y','mm月dd日','keepticks');
 title('每日每小时平均发电功率热力图', 'Interpreter', 'none');
 set(gca, 'YDir', 'normal');
-saveas(gcf, '04_热力图.png');
+save_project_figure(gcf, mfilename('fullpath'), 'figures', '04_热力图.png');
 
 %% 图5：月均功率与GHI
 T.Month = month(T.date_time);
@@ -99,7 +93,7 @@ ylabel('平均GHI (W/m^2)', 'Interpreter', 'none');
 xlabel('月份', 'Interpreter', 'none');
 title('月均功率与GHI', 'Interpreter', 'none');
 legend({'功率','GHI'}, 'Location','northwest', 'Interpreter', 'none'); grid on;
-saveas(gcf, '05_月均功率与GHI.png');
+save_project_figure(gcf, mfilename('fullpath'), 'figures', '05_月均功率与GHI.png');
 
 %% 图6：二维热图 GHI vs 温度
 edges_GHI = 0:100:1200;
@@ -120,7 +114,7 @@ colorbar; colormap('jet');
 xlabel('气温 (℃)', 'Interpreter', 'none'); ylabel('GHI (W/m^2)', 'Interpreter', 'none');
 title('GHI 与温度条件下的平均功率热图', 'Interpreter', 'none');
 set(gca, 'YDir', 'normal');
-saveas(gcf, '06_GHI_温度_热图.png');
+save_project_figure(gcf, mfilename('fullpath'), 'figures', '06_GHI_温度_热图.png');
 
 %% 图7：月叠加 GHI 曲线
 T.HourDecimal = hour(T.date_time) + minute(T.date_time)/60;
@@ -138,7 +132,7 @@ L = findobj(gca, 'Type', 'Line');
 legend(L(end:-1:1), arrayfun(@(x)sprintf('%d月',x),1:length(L),'UniformOutput',false), ...
     'Location','northeast', 'Interpreter','none');
 title('各月日照典型曲线', 'Interpreter', 'none'); grid on;
-saveas(gcf, '07_各月GHI曲线.png');
+save_project_figure(gcf, mfilename('fullpath'), 'figures', '07_各月GHI曲线.png');
 
 %% 图8：温度 vs 单位辐照功率
 eff = T.power ./ T.nwp_globalirrad;
@@ -154,6 +148,6 @@ plot(edges(1:min_len)+1, eff_avg(1:min_len), '-o');
 xlabel('气温 (℃)', 'Interpreter', 'none');
 ylabel('单位辐照功率（效率）', 'Interpreter', 'none');
 title('温度对发电效率的影响', 'Interpreter', 'none'); grid on;
-saveas(gcf, '08_效率_vs_温度.png');
+save_project_figure(gcf, mfilename('fullpath'), 'figures', '08_效率_vs_温度.png');
 
 toc;

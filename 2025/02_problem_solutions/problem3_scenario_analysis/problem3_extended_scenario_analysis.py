@@ -16,15 +16,16 @@ SHARED_DIR = next(
 sys.path.insert(0, str(SHARED_DIR))
 
 from pv_project import (  # noqa: E402
+    ExperimentArtifacts,
     configure_matplotlib,
     resolve_input,
     safe_qcut,
     set_working_directory,
-    write_csv,
 )
 
 set_working_directory(__file__)
 configure_matplotlib(dpi=300)
+ARTIFACTS = ExperimentArtifacts(__file__)
 
 # ---------- 1. 数据读取 ----------
 df_station = pd.read_csv(resolve_input("station00.csv", __file__), parse_dates=["date_time"])
@@ -100,15 +101,7 @@ for field in group_fields:
     gdf.columns = [field, "提升值均值", "标准差", "样本数"]
     group_results[field] = gdf
 
-# ---------- 8. 绘图（IEEE论文风格） ----------
-plt.rcParams.update({
-    'font.sans-serif': ['SimHei', 'Noto Sans CJK SC'],
-    'axes.unicode_minus': False,
-    'axes.edgecolor': 'black',
-    'axes.linewidth': 1.2,
-    'font.size': 10
-})
-
+# ---------- 8. 绘图（中文期刊风格） ----------
 fig, axs = plt.subplots(2, 3, figsize=(14, 8), dpi=600)
 axs = axs.flatten()
 
@@ -131,10 +124,17 @@ for idx, (field, gdf) in enumerate(group_results.items()):
 
 fig.suptitle("不同气象场景对预测精度提升的影响", fontsize=12, fontweight='bold')
 plt.tight_layout()
-plt.savefig(SCRIPT_DIR / "六类分组_IEEE风格.png", bbox_inches='tight')
-plt.close()
-print("图像保存为：六类分组_IEEE风格.png")
+path = ARTIFACTS.save_figure("六类分组_IEEE风格.png", fig=fig)
+print(f"图像保存为：{path}")
 
 # ---------- 9. 结果保存 ----------
-write_csv(df, SCRIPT_DIR / "场景划分提升分析结果.csv", index=False)
-print("分析数据已保存为：场景划分提升分析结果.csv")
+path = ARTIFACTS.write_csv("metrics", "场景划分提升分析结果.csv", df, index=False)
+ARTIFACTS.write_summary(
+    {
+        "rows": int(len(df)),
+        "group_fields": group_fields,
+        "figure_style": "Chinese journal",
+        "outputs_note": "Scenario grouping figure and RMSE improvement table are written under outputs/.",
+    }
+)
+print(f"分析数据已保存为：{path}")

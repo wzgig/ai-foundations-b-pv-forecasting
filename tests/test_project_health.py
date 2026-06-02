@@ -97,7 +97,13 @@ class ProjectHealthTests(unittest.TestCase):
             self.assertEqual(csv_text, "value\n1")
             self.assertEqual(summary_path.parent.name, "reports")
             metrics_records = [path.replace("\\", "/") for path in artifacts.artifacts["metrics"]]
+            report_records = [path.replace("\\", "/") for path in artifacts.artifacts["reports"]]
             self.assertIn("outputs/metrics/metrics.csv", metrics_records)
+            self.assertIn("outputs/reports/run_summary.json", report_records)
+
+            summary = module.json.loads(summary_path.read_text(encoding="utf-8"))
+            summary_reports = [path.replace("\\", "/") for path in summary["artifacts"]["reports"]]
+            self.assertIn("outputs/reports/run_summary.json", summary_reports)
 
     def test_managed_training_scripts_use_output_manager(self):
         health = load_health_module()

@@ -16,15 +16,16 @@ SHARED_DIR = next(
 sys.path.insert(0, str(SHARED_DIR))
 
 from pv_project import (  # noqa: E402
+    ExperimentArtifacts,
     configure_matplotlib,
     resolve_input,
     safe_qcut,
     set_working_directory,
-    write_csv,
 )
 
 set_working_directory(__file__)
 configure_matplotlib(dpi=300)
+ARTIFACTS = ExperimentArtifacts(__file__)
 
 # ---------- 1. 数据读取 ----------
 df_station = pd.read_csv(resolve_input("station00.csv", __file__), parse_dates=["date_time"])
@@ -100,15 +101,7 @@ for field in group_fields:
     gdf.columns = [field, "提升值均值", "标准差", "样本数"]
     group_results[field] = gdf
 
-# ---------- 8. 绘图（IEEE论文风格） ----------
-plt.rcParams.update({
-    'font.sans-serif': ['SimHei', 'Noto Sans CJK SC'],
-    'axes.unicode_minus': False,
-    'axes.edgecolor': 'black',
-    'axes.linewidth': 1.2,
-    'font.size': 10
-})
-
+# ---------- 8. 绘图（中文期刊风格） ----------
 fig, axs = plt.subplots(2, 3, figsize=(14, 8), dpi=600)
 axs = axs.flatten()
 
@@ -118,7 +111,7 @@ for idx, (field, gdf) in enumerate(group_results.items()):
     y = gdf["提升值均值"]
     yerr = gdf["标准差"]
 
-    sns.barplot(x=x, y=y, ax=ax, palette="Blues", edgecolor="black", errorbar=None)
+    sns.barplot(x=x, y=y, hue=x, ax=ax, palette="Blues", edgecolor="black", errorbar=None, legend=False)
     ax.errorbar(range(len(x)), y, yerr=yerr, fmt='none', ecolor='black', capsize=5)
 
     for i, (_, row) in enumerate(gdf.iterrows()):
@@ -131,13 +124,12 @@ for idx, (field, gdf) in enumerate(group_results.items()):
 
 fig.suptitle("不同气象场景对预测精度提升的影响", fontsize=12, fontweight='bold')
 plt.tight_layout()
-plt.savefig(SCRIPT_DIR / "六类分组_IEEE风格.png", bbox_inches='tight')
-plt.close()
-print("图像保存为：六类分组_IEEE风格.png")
+path = ARTIFACTS.save_figure("六类分组_IEEE风格.png", fig=fig)
+print(f"图像保存为：{path}")
 
 # ---------- 9. 结果保存 ----------
-write_csv(df, SCRIPT_DIR / "场景划分提升分析结果.csv", index=False)
-print("分析数据已保存为：场景划分提升分析结果.csv")
+path = ARTIFACTS.write_csv("metrics", "场景划分提升分析结果.csv", df, index=False)
+print(f"分析数据已保存为：{path}")
 
 # ---------- 10. 提升来源建模分析（线性回归 + 特征重要性） ----------
 from sklearn.linear_model import LinearRegression
@@ -178,21 +170,20 @@ rf_importance = pd.DataFrame({
 fig, axs = plt.subplots(1, 2, figsize=(12, 5), dpi=300)
 
 # 线性回归系数图
-sns.barplot(x="系数", y="特征", data=coef_df, palette="coolwarm", ax=axs[0])
+sns.barplot(x="系数", y="特征", hue="特征", data=coef_df, palette="coolwarm", ax=axs[0], legend=False)
 axs[0].set_title("线性回归：提升值影响系数")
 
 # 随机森林特征重要性图
-sns.barplot(x="重要性", y="特征", data=rf_importance, palette="Greens", ax=axs[1])
+sns.barplot(x="重要性", y="特征", hue="特征", data=rf_importance, palette="Greens", ax=axs[1], legend=False)
 axs[1].set_title("随机森林：特征重要性")
 
 plt.tight_layout()
-plt.savefig(SCRIPT_DIR / "特征重要性分析.png", bbox_inches="tight")
-plt.close()
-print("图像保存为：特征重要性分析.png")
+path = ARTIFACTS.save_figure("特征重要性分析.png", fig=fig)
+print(f"图像保存为：{path}")
 
 # ---------- 保存分析数据 ----------
-write_csv(coef_df, SCRIPT_DIR / "线性回归_提升来源分析.csv", index=False)
-write_csv(rf_importance, SCRIPT_DIR / "随机森林_特征重要性.csv", index=False)
+ARTIFACTS.write_csv("metrics", "线性回归_提升来源分析.csv", coef_df, index=False)
+ARTIFACTS.write_csv("metrics", "随机森林_特征重要性.csv", rf_importance, index=False)
 print("回归分析结果保存完毕")
 
 
@@ -204,21 +195,19 @@ except ImportError:
 else:
     explainer = shap.Explainer(rf, X)
     shap_values = explainer(X)
-    shap_dir = SCRIPT_DIR / "shap_images"
+    shap_dir = ARTIFACTS.directory("figures") / "shap_images"
     shap_dir.mkdir(exist_ok=True)
 
     plt.figure()
     shap.summary_plot(shap_values, features=X, feature_names=features, plot_type="bar", show=False)
     plt.tight_layout()
-    plt.savefig(shap_dir / "shap_summary_bar.png", dpi=300, bbox_inches="tight")
-    plt.close()
+    ARTIFACTS.save_figure(Path("shap_images") / "shap_summary_bar.png")
     print("SHAP柱状图保存为：shap_images/shap_summary_bar.png")
 
     plt.figure()
     shap.summary_plot(shap_values, features=X, feature_names=features, show=False)
     plt.tight_layout()
-    plt.savefig(shap_dir / "shap_summary_beeswarm.png", dpi=300, bbox_inches="tight")
-    plt.close()
+    ARTIFACTS.save_figure(Path("shap_images") / "shap_summary_beeswarm.png")
     print("SHAP蜜蜂图保存为：shap_images/shap_summary_beeswarm.png")
 
     for i, feat in enumerate(features):
@@ -226,13 +215,12 @@ else:
         shap.plots.scatter(shap_values[:, i], color=shap_values, show=False)
         plt.title(f"SHAP值 vs 特征: {feat}")
         plt.tight_layout()
-        plt.savefig(shap_dir / f"shap_dependence_{feat}.png", dpi=300, bbox_inches="tight")
-        plt.close()
+        ARTIFACTS.save_figure(Path("shap_images") / f"shap_dependence_{feat}.png")
     print("SHAP依赖图已保存")
 
     shap_df = pd.DataFrame(shap_values.values, columns=features)
     shap_df["起报时间"] = df["起报时间"].values
-    write_csv(shap_df, SCRIPT_DIR / "shap_每列贡献值.csv", index=False)
+    ARTIFACTS.write_csv("metrics", "shap_每列贡献值.csv", shap_df, index=False)
     print("SHAP数值已保存为：shap_每列贡献值.csv")
 
 
@@ -276,9 +264,8 @@ def plot_day_curve(df_day, title, save_path):
     plt.title(title, fontsize=12)
     plt.xticks(rotation=30)
     plt.tight_layout()
-    plt.savefig(SCRIPT_DIR / save_path, bbox_inches="tight")
-    plt.close()
-    print(f"图像保存为：{save_path}")
+    path = ARTIFACTS.save_figure(save_path)
+    print(f"图像保存为：{path}")
 
 # 绘图
 plot_day_curve(
@@ -291,5 +278,15 @@ plot_day_curve(
     extract_day_curve(worst_date),
     title=f"典型弱场景（{worst_date.date()}）",
     save_path="典型弱场景对比图.png"
+)
+ARTIFACTS.write_summary(
+    {
+        "rows": int(len(df)),
+        "group_fields": group_fields,
+        "features": features,
+        "top_case": str(top_date),
+        "worst_case": str(worst_date),
+        "figure_style": "Chinese journal",
+    }
 )
 print("典型场景案例图示完成")

@@ -14,9 +14,12 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `_shared/pv_project.py` | Python 公共工具，提供路径解析、中文绘图配置、随机种子、训练集归一化、指标计算、输出产物管理和 PyTorch checkpoint 保存/复用。 |
+| `_shared/pv_project.py` | Python 公共工具，提供路径解析、中文期刊绘图配置、随机种子、训练集归一化、指标计算、输出产物管理和 PyTorch checkpoint 保存/复用。 |
 | `_shared/matlab/resolve_project_input.m` | MATLAB 输入文件定位工具，减少脚本对当前工作目录的依赖。 |
-| `tools/project_health_check.py` | 静态健康检查脚本，检查 Python 语法、重复代码快照、相对输入文件和受管理训练脚本输出约束。 |
+| `_shared/matlab/configure_journal_plot.m` | MATLAB 中文期刊绘图默认值配置工具。 |
+| `_shared/matlab/project_output_path.m` | MATLAB `outputs/` 输出路径生成工具。 |
+| `_shared/matlab/save_project_figure.m` | MATLAB 期刊风格图像保存工具，默认写入 `outputs/figures/`。 |
+| `tools/project_health_check.py` | 静态健康检查脚本，检查 Python 语法、重复代码快照、相对输入文件和正式问题脚本输出约束。 |
 
 ## 正式问题代码
 
@@ -24,8 +27,8 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `02_problem_solutions/problem1_data_analysis/theoretical_power_baseline.py` | 问题 1 的基础理论功率计算入口，读取单站点 Excel 并进行初步建模与对比。 |
-| `02_problem_solutions/problem1_data_analysis/theoretical_power_calculation.py` | 问题 1 的理论功率计算版本，侧重太阳角、等效辐照度、大气透射率等物理量计算。 |
+| `02_problem_solutions/problem1_data_analysis/theoretical_power_baseline.py` | 问题 1 的基础理论功率计算入口，读取单站点 Excel 并输出基线时序、指标、日均对比图和运行摘要。 |
+| `02_problem_solutions/problem1_data_analysis/theoretical_power_calculation.py` | 问题 1 的理论功率计算版本，侧重太阳角、等效辐照度、大气透射率等物理量计算，并输出计算部件表、指标和期刊风格图。 |
 | `02_problem_solutions/problem1_data_analysis/theoretical_power_diagnostics.py` | 问题 1 的诊断与可视化版本，用于检查理论功率和实际功率差异，并生成 `outputs/` 下的时序表、指标表、诊断图和运行摘要。 |
 | `02_problem_solutions/problem1_data_analysis/matlab_theoretical_power_solarposition.m` | MATLAB 太阳位置法理论功率建模脚本。 |
 | `02_problem_solutions/problem1_data_analysis/matlab_theoretical_power_manual_angles.m` | MATLAB 手动太阳角计算版本。 |
@@ -47,10 +50,10 @@
 | 文件 | 用途 |
 | --- | --- |
 | `02_problem_solutions/problem3_scenario_analysis/problem3_weather_feature_forecast.py` | 问题 3 主训练入口，在问题 2 模型基础上加入多维气象输入。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_scenario_ieee_analysis.py` | IEEE 风格场景划分分析脚本，比较问题 2 与问题 3 结果在不同气象场景下的差异。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_integrated_scenario_analysis.py` | 问题 3 综合分析脚本，整合场景划分、特征重要性和提升来源分析。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_extended_scenario_analysis.py` | 问题 3 扩展分析脚本，用于补充更细的场景解释和结果输出。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_three_model_curve_plot.py` | 从问题 3 预测结果中提取三模型典型日曲线并绘图。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_scenario_ieee_analysis.py` | 中文期刊风格场景划分分析脚本，比较问题 2 与问题 3 结果在不同气象场景下的差异，并输出图、表和运行摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_integrated_scenario_analysis.py` | 问题 3 综合分析脚本，整合场景划分、特征重要性和决策树策略解释，并输出到 `outputs/`。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_extended_scenario_analysis.py` | 问题 3 扩展分析脚本，用于补充更细的场景解释和结果输出，并保存运行摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_three_model_curve_plot.py` | 从问题 3 预测结果中提取三模型典型日曲线并保存期刊风格图、曲线表和运行摘要。 |
 
 ### 问题 4：输入特征消融
 

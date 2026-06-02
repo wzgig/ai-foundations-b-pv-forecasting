@@ -16,8 +16,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-from matplotlib import font_manager
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -29,7 +29,7 @@ SHARED_DIR = PROJECT_ROOT / "_shared"
 if str(SHARED_DIR) not in sys.path:
     sys.path.insert(0, str(SHARED_DIR))
 
-from pv_project import ExperimentArtifacts, resolve_input  # noqa: E402
+from pv_project import ExperimentArtifacts, configure_matplotlib, resolve_input  # noqa: E402
 
 
 INPUT_FILENAME = "Solar station site 5 (Nominal capacity-110MW).xlsx"
@@ -77,41 +77,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Show figures interactively after saving them. Default is save-only.",
     )
     return parser.parse_args(argv)
-
-
-def choose_font() -> str:
-    preferred_fonts = [
-        "Microsoft YaHei",
-        "SimHei",
-        "Noto Sans CJK SC",
-        "Source Han Sans SC",
-        "WenQuanYi Micro Hei",
-    ]
-    available = {font.name for font in font_manager.fontManager.ttflist}
-    for font_name in preferred_fonts:
-        if font_name in available:
-            return font_name
-    return "DejaVu Sans"
-
-
-def configure_plot_style() -> str:
-    font_name = choose_font()
-    sns.set_theme(style="whitegrid", context="notebook")
-    plt.rcParams.update(
-        {
-            "font.family": "sans-serif",
-            "font.sans-serif": [font_name],
-            "axes.unicode_minus": False,
-            "figure.dpi": 150,
-            "axes.titlesize": 14,
-            "axes.labelsize": 11,
-            "legend.fontsize": 10,
-            "xtick.labelsize": 10,
-            "ytick.labelsize": 10,
-            "lines.linewidth": 2.0,
-        }
-    )
-    return font_name
 
 
 def load_station_data(input_path: Path) -> tuple[pd.DataFrame, int]:
@@ -484,6 +449,9 @@ def plot_daily_mean_curve(df: pd.DataFrame) -> plt.Figure:
     ax.set_ylabel("日均功率 / MW")
     ax.legend()
     ax.grid(True, alpha=0.35)
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=4))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+    ax.tick_params(axis="x", rotation=25)
     fig.tight_layout()
     return fig
 
@@ -535,7 +503,7 @@ def save_figures(
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     params = PhysicalParams()
-    font_name = configure_plot_style()
+    font_name = configure_matplotlib()
 
     input_path = args.input if args.input else resolve_input(INPUT_FILENAME, __file__)
     artifacts = ExperimentArtifacts(__file__)
