@@ -244,6 +244,7 @@ requires_openai_auth = true
 
         self.assertIn("software_launcher.py", text)
         self.assertIn("pythonw.exe", text)
+        self.assertIn("shell.Run command, 1, False", text)
 
     def test_app_direct_python_run_prints_launch_hint(self):
         completed = subprocess.run(

@@ -17,7 +17,7 @@ shell.CurrentDirectory = scriptDir
 
 On Error Resume Next
 command = "pythonw.exe " & Chr(34) & launcher & Chr(34)
-shell.Run command, 0, False
+shell.Run command, 1, False
 
 If Err.Number <> 0 Then
     Err.Clear

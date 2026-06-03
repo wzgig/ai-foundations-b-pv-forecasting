@@ -9,6 +9,7 @@ import subprocess
 import sys
 import threading
 import time
+import traceback
 import urllib.error
 import urllib.request
 import webbrowser
@@ -118,8 +119,8 @@ class SoftwareLauncher:
         Button(buttons, text="停止后台服务", command=self.stop_server, width=16).pack(side=LEFT, padx=(0, 8))
         Button(buttons, text="退出", command=self.close, width=10).pack(side=RIGHT)
 
-        log_frame = Frame(self.root, padx=18, pady=(0, 18))
-        log_frame.pack(fill=BOTH, expand=True)
+        log_frame = Frame(self.root, padx=18)
+        log_frame.pack(fill=BOTH, expand=True, pady=(0, 18))
         Label(log_frame, text="运行日志", font=("Microsoft YaHei UI", 10, "bold"), anchor="w").pack(fill=X)
         self.log = Text(log_frame, height=18, wrap="word")
         self.log.pack(fill=BOTH, expand=True, pady=(6, 0))
@@ -273,4 +274,16 @@ class SoftwareLauncher:
 
 
 if __name__ == "__main__":
-    SoftwareLauncher().run()
+    try:
+        SoftwareLauncher().run()
+    except Exception as exc:  # pragma: no cover - last-resort desktop diagnostics
+        log_path = ROOT / "launcher_error.log"
+        log_path.write_text(traceback.format_exc(), encoding="utf-8")
+        try:
+            messagebox.showerror(
+                "启动器启动失败",
+                f"{exc}\n\n详细错误已写入：{log_path}",
+            )
+        except Exception:
+            pass
+        raise

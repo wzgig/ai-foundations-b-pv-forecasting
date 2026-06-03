@@ -2,6 +2,45 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-03 桌面启动器双击无反应修复
+
+### 调整目标
+
+- 排查用户双击 `2025\start_software.vbs` 后系统没有反应的问题。
+- 修复启动器静默失败，让后续桌面启动入口可见、可诊断。
+
+### 问题原因
+
+- `2025/software_launcher.py` 在创建 Tkinter 日志区域时使用了 `Frame(..., pady=(0, 18))`。
+- Tkinter 的 `Frame` 构造参数不接受元组形式的 `pady`，启动时抛出 `_tkinter.TclError: bad screen distance "0 18"`。
+- `2025/start_software.vbs` 使用 `pythonw.exe` 启动，`pythonw` 没有控制台，因此异常被隐藏，表现为双击后没有任何反应。
+- VBS 还把 `shell.Run` 的窗口样式设为 `0`，即隐藏窗口；即便启动器正常，也存在窗口被隐藏的风险。
+
+### 主要改动
+
+- 修复 `2025/software_launcher.py`：
+  - 将 `Frame(..., pady=(0, 18))` 改为 `Frame(...); pack(..., pady=(0, 18))`。
+  - 在主入口增加最后兜底异常捕获，将启动异常写入 `2025/launcher_error.log`，并尝试用消息框提示错误。
+- 修复 `2025/start_software.vbs`：
+  - 将 `shell.Run command, 0, False` 改为 `shell.Run command, 1, False`，确保 `pythonw` 启动的桌面窗口可见。
+- 更新 `tests/test_project_health.py`：
+  - 增加 VBS 启动样式检查，防止无终端入口再次隐藏启动器窗口。
+
+### 验证结果
+
+- `python -m py_compile 2025\software_launcher.py 2025\app.py 2025\llm\assistant.py`：通过。
+- `python 2025\tools\project_health_check.py`：通过，未发现解析错误、缺失相对输入或受管输出问题。
+- `python -m unittest discover -s tests -q`：通过，18 个测试 OK。
+- `python -m pip check`：通过，未发现损坏依赖。
+- `git -c core.longpaths=true diff --check`：通过，仅提示 Git 后续可能将部分 LF 转为 CRLF。
+- `Start-Process python 2025\software_launcher.py`：启动器进程保持运行，测试后手动停止。
+- `cscript //nologo 2025\start_software.vbs`：退出码 0，能启动 `pythonw.exe` 启动器进程，测试后手动停止。
+
+### 后续注意事项
+
+- 后续若双击仍失败，优先查看 `2025\launcher_error.log`，该文件会记录 GUI 启动前的 Python 异常。
+- 不要再把 `2025\start_software.vbs` 的 `shell.Run` 窗口样式改回 `0`，否则桌面入口可能再次表现为无响应。
+
 ## 2026-06-03 Codex API 接入、Skills 安装与界面优化
 
 ### 调整目标
