@@ -48,7 +48,7 @@ python -m unittest discover -s tests -q
 
 ## 3. 课程交互展示入口
 
-本项目新增了面向期末大作业演示的 Streamlit 控制台。该界面默认读取已有 `outputs/`，展示四问结果、指标表、图像产物和大模型辅助解读，不会自动触发长时间训练。
+本项目新增了面向期末大作业演示的 Streamlit 控制台。该界面默认读取已有 `outputs/`，展示四问结果、指标表、图像产物、本地代码入口和大模型辅助解读，不会自动触发长时间训练。
 
 Windows 双击启动：
 
@@ -64,19 +64,30 @@ python -m streamlit run 2025\app.py
 
 界面功能：
 
-- 项目总览：展示问题 2、问题 3、问题 4 的最优模型和附件指标。
-- 指标表：集中查看各问题 CSV 指标。
-- 图表：查看已有 PNG 和 Plotly HTML 交互图。
-- 大模型解读：根据现有输出生成中文解释；无 API 配置时使用离线模板兜底。
-- 运行控制：调用 `python 2025\run_project.py --show all` 查看全部已有结果。
+- 工作台：展示问题 2、问题 3、问题 4 的最优模型、附件指标和软件入口状态。
+- 运行结果：集中查看各问题 CSV 指标、PNG 图和 Plotly HTML 交互图。
+- 本地代码交互：查看核心脚本/文档，执行 `--list`、`--show`、`--dry-run` 等安全命令，并可把当前代码片段加入问答上下文。
+- 大模型问答：根据现有输出生成中文解释；无 API 配置时使用离线模板兜底。
+- 运行控制：默认查看已有结果或 dry-run 预演；真正运行任务前必须勾选确认框。
 
-可选远程大模型配置：
+不要直接运行 `python 2025\app.py`。该命令现在只输出正确启动提示，避免 Streamlit bare mode 下的 `missing ScriptRunContext` 警告刷屏。
+
+可选远程或本地大模型配置：
 
 ```powershell
 $env:PV_LLM_PROVIDER="openai-compatible"
 $env:PV_LLM_MODEL="your-model-name"
 $env:PV_LLM_API_KEY="your-api-key"
 $env:PV_LLM_BASE_URL="https://your-compatible-endpoint/v1/chat/completions"
+python -m streamlit run 2025\app.py
+```
+
+若本地 Codex 或其他本地模型服务暴露 OpenAI-compatible `chat/completions` HTTP 接口，可以改为：
+
+```powershell
+$env:PV_LLM_PROVIDER="local-codex"
+$env:PV_LLM_MODEL="your-local-model"
+$env:PV_LLM_BASE_URL="http://127.0.0.1:8000/v1/chat/completions"
 python -m streamlit run 2025\app.py
 ```
 

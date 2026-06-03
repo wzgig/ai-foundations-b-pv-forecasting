@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 import ast
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -172,8 +173,39 @@ class ProjectHealthTests(unittest.TestCase):
         self.assertIn("FusionModel_mixed", response.text)
         self.assertIn("空间降尺度", response.text)
 
+    def test_llm_local_codex_config_allows_empty_api_key(self):
+        sys.path.insert(0, str(PROJECT_ROOT / "2025"))
+        from llm.assistant import LLMConfig
+
+        config = LLMConfig(
+            provider="local-codex",
+            model="codex-local",
+            base_url="http://127.0.0.1:8000/v1",
+            api_key="",
+        )
+
+        self.assertFalse(config.requires_api_key())
+        self.assertEqual(config.endpoint(), "http://127.0.0.1:8000/v1/chat/completions")
+
     def test_app_source_parses_successfully(self):
         ast.parse(APP.read_text(encoding="utf-8"), filename=str(APP))
+
+    def test_app_direct_python_run_prints_launch_hint(self):
+        completed = subprocess.run(
+            [sys.executable, str(APP)],
+            cwd=PROJECT_ROOT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+            timeout=20,
+        )
+
+        self.assertEqual(completed.returncode, 0)
+        self.assertIn("python -m streamlit run", completed.stdout)
+        self.assertNotIn("missing ScriptRunContext", completed.stdout)
 
     def test_runtime_requirements_are_version_pinned(self):
         requirements = PROJECT_ROOT / "2025" / "requirements.txt"

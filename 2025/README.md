@@ -66,7 +66,7 @@
 
 ### `llm/`
 
-课程大作业的大模型辅助解读模块。默认不依赖外部 API，会根据现有 `outputs/` 指标和运行摘要生成离线解释；配置 `PV_LLM_PROVIDER`、`PV_LLM_API_KEY`、`PV_LLM_MODEL` 和 `PV_LLM_BASE_URL` 后，可切换到远程大模型接口。
+课程大作业的大模型辅助解读模块。默认不依赖外部 API，会根据现有 `outputs/` 指标和运行摘要生成离线解释；配置 `PV_LLM_PROVIDER`、`PV_LLM_API_KEY`、`PV_LLM_MODEL` 和 `PV_LLM_BASE_URL` 后，可切换到远程或本地 OpenAI-compatible 大模型接口。本地 Codex 若暴露兼容 HTTP API，可使用 `PV_LLM_PROVIDER=local-codex` 接入。
 
 ### `_shared/`
 
@@ -121,6 +121,10 @@ python 2025\run_project.py --show 1,4
 ```powershell
 python -m streamlit run 2025\app.py
 ```
+
+不要直接运行 `python 2025\app.py`；该命令现在只会输出正确启动提示，避免 Streamlit bare mode 的 `missing ScriptRunContext` 警告刷屏。
+
+展示界面包含工作台、运行结果、本地代码交互、大模型问答和运行控制五个页面。运行控制页默认只查看已有输出或执行 dry-run，真正启动训练前需要显式勾选确认框。
 
 运行单个问题脚本时，可以直接进入问题目录：
 

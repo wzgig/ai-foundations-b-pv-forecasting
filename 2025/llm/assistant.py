@@ -8,10 +8,23 @@ import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from typing import Any
+from typing import Sequence
 
 from .prompts import REPORT_BRIEF_PROMPT, SYSTEM_PROMPT
-from .result_context import TaskContext, best_row_by_metric, collect_all_context, compact_metric_row, format_context_for_prompt
+from .result_context import TaskContext, best_row_by_metric, collect_all_context, format_context_for_prompt
+
+
+REMOTE_PROVIDERS = {
+    "api",
+    "openai",
+    "openai-compatible",
+    "remote",
+    "local",
+    "local-codex",
+    "codex",
+    "codex-local",
+}
+LOCAL_PROVIDERS = {"local", "local-codex", "codex", "codex-local", "openai-compatible"}
 
 
 @dataclass(frozen=True)
@@ -24,13 +37,51 @@ class LLMConfig:
 
     @classmethod
     def from_env(cls) -> "LLMConfig":
+        provider = os.getenv("PV_LLM_PROVIDER", "offline").strip().lower() or "offline"
+        model = (
+            os.getenv("PV_LLM_MODEL")
+            or os.getenv("CODEX_LLM_MODEL")
+            or os.getenv("OPENAI_MODEL")
+            or "offline-template"
+        )
+        api_key = (
+            os.getenv("PV_LLM_API_KEY")
+            or os.getenv("CODEX_LLM_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+            or ""
+        )
+        base_url = (
+            os.getenv("PV_LLM_BASE_URL")
+            or os.getenv("CODEX_LLM_BASE_URL")
+            or os.getenv("OPENAI_BASE_URL")
+            or ""
+        )
         return cls(
-            provider=os.getenv("PV_LLM_PROVIDER", "offline").strip().lower() or "offline",
-            model=os.getenv("PV_LLM_MODEL", "offline-template").strip() or "offline-template",
-            api_key=os.getenv("PV_LLM_API_KEY", "").strip(),
-            base_url=os.getenv("PV_LLM_BASE_URL", "").strip(),
+            provider=provider,
+            model=model.strip() or "offline-template",
+            api_key=api_key.strip(),
+            base_url=base_url.strip(),
             timeout_seconds=int(os.getenv("PV_LLM_TIMEOUT", "20")),
         )
+
+    def endpoint(self) -> str:
+        if not self.base_url:
+            return "https://api.openai.com/v1/chat/completions"
+        base_url = self.base_url.rstrip("/")
+        if base_url.endswith("/chat/completions"):
+            return base_url
+        if base_url.endswith("/v1"):
+            return f"{base_url}/chat/completions"
+        return f"{base_url}/v1/chat/completions"
+
+    def endpoint_display(self) -> str:
+        if self.provider == "offline":
+            return "offline-template"
+        api_key_state = "set" if self.api_key else "empty/local"
+        return f"provider={self.provider}; model={self.model}; endpoint={self.endpoint()}; api_key={api_key_state}"
+
+    def requires_api_key(self) -> bool:
+        return self.provider in {"api", "openai", "remote"} and not self.api_key
 
 
 @dataclass(frozen=True)
@@ -86,11 +137,19 @@ def _offline_answer(question: str, contexts: dict[str, TaskContext]) -> str:
             "越高表示预测点更稳定地落在合格阈值内。本项目所有问题2-4的核心指标都只在白昼时段统计。"
         )
 
-    if any(key in q for key in ("不足", "改进", "展望")):
+    if any(key in q for key in ("不足", "改进", "展望", "材料", "期末")):
         return (
             "当前项目的主要不足包括：深度模型定义仍有重复、历史工作区体积较大、LLM模块默认采用离线模板兜底、"
             "最终课程主报告仍需和最新outputs指标完全同步。后续可继续抽取统一预测模型模块，压缩提交包，"
             "并接入本地轻量大模型或稳定API来增强自然语言问答能力。"
+        )
+
+    if any(key in q for key in ("app.py", "run_project", "llm", "代码", "协同", "入口")):
+        return (
+            "软件入口采用三层协同：run_project.py 负责项目级任务编排、依赖顺序和 outputs 查看；"
+            "llm/result_context.py 把各问题运行摘要和指标表整理成结构化上下文；"
+            "app.py 负责 Streamlit 交互界面，把结果浏览、代码查看、安全命令和大模型问答组织到同一个控制台。"
+            "这样教师或演示视频可以先双击 run.bat 进入界面，再按页面查看结果或提问，不必直接接触训练脚本。"
         )
 
     return (
@@ -103,21 +162,21 @@ def _offline_answer(question: str, contexts: dict[str, TaskContext]) -> str:
 
 
 def _remote_chat(messages: list[dict[str, str]], config: LLMConfig) -> str:
-    if not config.api_key:
-        raise ValueError("PV_LLM_API_KEY is empty")
-    base_url = config.base_url or "https://api.openai.com/v1/chat/completions"
+    if config.requires_api_key():
+        raise ValueError("PV_LLM_API_KEY or OPENAI_API_KEY is empty")
     payload = {
         "model": config.model,
         "messages": messages,
         "temperature": 0.2,
+        "stream": False,
     }
+    headers = {"Content-Type": "application/json"}
+    if config.api_key:
+        headers["Authorization"] = f"Bearer {config.api_key}"
     request = urllib.request.Request(
-        base_url,
+        config.endpoint(),
         data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {config.api_key}",
-            "Content-Type": "application/json",
-        },
+        headers=headers,
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=config.timeout_seconds) as response:
@@ -136,16 +195,23 @@ def answer_question(
     question: str,
     contexts: dict[str, TaskContext] | None = None,
     config: LLMConfig | None = None,
+    history: Sequence[dict[str, str]] | None = None,
+    extra_context: str = "",
 ) -> LLMResponse:
     contexts = contexts or collect_all_context()
     config = config or LLMConfig.from_env()
     context_text = format_context_for_prompt(contexts)
+    if extra_context.strip():
+        context_text = f"{context_text}\n\n补充代码上下文：\n{extra_context.strip()}"
 
-    if config.provider in {"api", "openai", "openai-compatible", "remote"}:
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"{context_text}\n\n问题：{question}"},
-        ]
+    if config.provider in REMOTE_PROVIDERS:
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        for item in list(history or [])[-8:]:
+            role = item.get("role", "")
+            content = item.get("content", "")
+            if role in {"user", "assistant"} and content:
+                messages.append({"role": role, "content": content[:4000]})
+        messages.append({"role": "user", "content": f"{context_text}\n\n问题：{question}"})
         try:
             return LLMResponse(
                 text=_remote_chat(messages, config),

@@ -2,6 +2,42 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-03 Streamlit 软件控制台增强与本地 Codex 接入
+
+### 调整目标
+
+- 检查用户直接运行 `python app.py` 后出现的 Streamlit bare mode 日志，避免 `missing ScriptRunContext` 警告误导。
+- 将展示层从简单结果页增强为课程项目软件控制台，补齐本地代码交互、结果浏览、LLM 聊天和受保护运行控制。
+- 支持本地 Codex 或其他 OpenAI-compatible HTTP 接口，同时保留离线模板兜底，保证演示稳定。
+- 按用户要求通过网络检索并安装适合 Streamlit 开发的官方 skill；本轮安装了 `streamlit/agent-skills@developing-with-streamlit`，Codex 重启后可自动加载。
+
+### 主要改动
+
+- 重构 `2025/app.py`：
+  - 新增工作台、运行结果、本地代码交互、大模型问答、运行控制五个页面。
+  - 直接运行 `python 2025\app.py` 时只输出正确启动命令，不再触发 Streamlit bare mode 警告。
+  - 本地代码交互页支持查看项目内文本/代码文件，执行 `--list`、`--show`、`--dry-run` 等固定安全命令，并可把当前代码片段加入问答上下文。
+  - 运行控制页默认只查看已有输出或 dry-run，真正运行任务前需要显式勾选确认。
+- 扩展 `2025/llm/assistant.py`：
+  - 支持 `local-codex`、`codex`、`local`、`openai-compatible` 等 provider。
+  - 支持从 `PV_LLM_*`、`CODEX_LLM_*`、`OPENAI_*` 环境变量读取模型、API Key 和接口地址。
+  - 本地兼容端点允许空 API Key；官方/远程模式仍要求密钥。
+  - 支持聊天历史和额外代码上下文。
+- 更新 `tests/test_project_health.py`：
+  - 增加本地 Codex 端点配置测试。
+  - 增加 `python 2025\app.py` 直接运行保护测试。
+- 更新 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md`、`2025/CODE_INDEX.md`、`2025/CODE_AUDIT.md`、`2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`，同步新软件入口和本地大模型配置说明。
+
+### 验证结果
+
+- `python -m py_compile 2025\app.py 2025\llm\__init__.py 2025\llm\assistant.py 2025\llm\prompts.py 2025\llm\result_context.py`：通过。
+- `python 2025\tools\project_health_check.py`：通过，未发现 Python 解析错误、未解析相对输入或受管理输出问题。
+- `python -m unittest discover -s tests -q`：15 个测试通过。
+- `python 2025\run_project.py --show all`：通过，能读取问题 1-4 和问题 3 二次分析已有输出。
+- `python -m pip check`：通过。
+- `python 2025\app.py`：只输出正确 Streamlit 启动提示，不再出现 `missing ScriptRunContext`。
+- `python -m streamlit run 2025\app.py --server.headless true --server.port 8504 --browser.gatherUsageStats false`：HTTP 烟测通过。
+
 ## 2026-06-03 课程交付展示层与大模型辅助模块
 
 ### 调整目标
