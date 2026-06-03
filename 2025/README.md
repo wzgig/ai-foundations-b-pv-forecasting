@@ -22,15 +22,19 @@
 │   └── scenario_comparisons/
 ├── 04_paper/
 │   └── final_submission/
+├── llm/
 ├── _shared/
 │   ├── pv_project.py
 │   └── matlab/
 ├── tools/
 │   └── project_health_check.py
+├── app.py
+├── run.bat
 ├── CODE_AUDIT.md
 ├── CODE_INDEX.md
 ├── README.md
-└── requirements.txt
+├── requirements.txt
+└── requirements-optional.txt
 ```
 
 ## 目录职责
@@ -60,6 +64,10 @@
 
 最终论文 PDF 和可编辑 Word 文档。
 
+### `llm/`
+
+课程大作业的大模型辅助解读模块。默认不依赖外部 API，会根据现有 `outputs/` 指标和运行摘要生成离线解释；配置 `PV_LLM_PROVIDER`、`PV_LLM_API_KEY`、`PV_LLM_MODEL` 和 `PV_LLM_BASE_URL` 后，可切换到远程大模型接口。
+
 ### `_shared/`
 
 公共工程工具：
@@ -82,6 +90,12 @@
 pip install -r 2025\requirements.txt
 ```
 
+可选实验依赖仅在重跑 SHAP、EMD 或 Optuna 相关早期实验时安装：
+
+```powershell
+pip install -r 2025\requirements-optional.txt
+```
+
 运行健康检查：
 
 ```powershell
@@ -94,6 +108,18 @@ python 2025\tools\project_health_check.py
 python 2025\run_project.py --list
 python 2025\run_project.py --run main --parallel
 python 2025\run_project.py --show 1,4
+```
+
+启动交互展示界面：
+
+```powershell
+.\2025\run.bat
+```
+
+或：
+
+```powershell
+python -m streamlit run 2025\app.py
 ```
 
 运行单个问题脚本时，可以直接进入问题目录：

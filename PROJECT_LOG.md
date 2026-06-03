@@ -2,6 +2,26 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-03 课程交付展示层与大模型辅助模块
+
+### 调整目标
+
+- 补齐期末大作业通知要求中的 `llm/` 大模型模块、`app.py` 交互界面、`run.bat` 一键运行脚本和精确版本依赖。
+- 在不改动现有问题 1-4 训练脚本的前提下，新增一个稳定的演示入口，默认读取已有 `outputs/`，避免课堂演示误触发长时间训练。
+- 为报告和演示视频提供可直接展示的结果解读、指标说明和图表浏览界面。
+
+### 主要改动
+
+- 新增 `2025/llm/`：
+  - `result_context.py` 读取各问题 `run_summary.json` 与指标 CSV，整理为项目上下文。
+  - `assistant.py` 提供离线优先的大模型辅助解读；配置 `PV_LLM_PROVIDER`、`PV_LLM_API_KEY`、`PV_LLM_MODEL`、`PV_LLM_BASE_URL` 后可调用兼容聊天接口。
+  - `prompts.py` 保存项目问答和报告摘要提示词模板。
+- 新增 `2025/app.py`：Streamlit 结果控制台，包含项目总览、指标表、图表展示、大模型解读和运行控制页面。
+- 新增 `2025/run.bat`：Windows 双击启动脚本，会检查 Python/Streamlit 并启动 `app.py`。
+- 将 `2025/requirements.txt` 改为固定版本运行依赖，并新增 `2025/requirements-optional.txt` 保存可选实验依赖。
+- 更新 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md`、`2025/CODE_INDEX.md`、`2025/CODE_AUDIT.md` 和 `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`，同步新的交付入口。
+- 更新 `tests/test_project_health.py`，增加 LLM 上下文读取、离线兜底、`app.py` 语法和固定版本依赖检查。
+
 ## 2026-06-03 期末大作业要求阅读与适配分析
 
 ### 调整目标

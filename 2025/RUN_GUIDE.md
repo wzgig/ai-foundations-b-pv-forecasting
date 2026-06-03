@@ -31,6 +31,12 @@ cd "d:\Qiuhua Wang\个人资料\电气\人工智能基础B\电气工程及其自
 pip install -r 2025\requirements.txt
 ```
 
+`requirements.txt` 是固定版本运行依赖。若要重跑早期工作区中的 SHAP、EMD 或 Optuna 实验，再额外安装：
+
+```powershell
+pip install -r 2025\requirements-optional.txt
+```
+
 先运行静态检查和轻量测试：
 
 ```powershell
@@ -40,7 +46,43 @@ python -m unittest discover -s tests -q
 
 这两个命令不会训练模型。它们用于确认 Python 文件可解析、输入文件能找到、核心输出管理约束没有被破坏。
 
-## 3. 总控入口与并行关系
+## 3. 课程交互展示入口
+
+本项目新增了面向期末大作业演示的 Streamlit 控制台。该界面默认读取已有 `outputs/`，展示四问结果、指标表、图像产物和大模型辅助解读，不会自动触发长时间训练。
+
+Windows 双击启动：
+
+```powershell
+2025\run.bat
+```
+
+命令行启动：
+
+```powershell
+python -m streamlit run 2025\app.py
+```
+
+界面功能：
+
+- 项目总览：展示问题 2、问题 3、问题 4 的最优模型和附件指标。
+- 指标表：集中查看各问题 CSV 指标。
+- 图表：查看已有 PNG 和 Plotly HTML 交互图。
+- 大模型解读：根据现有输出生成中文解释；无 API 配置时使用离线模板兜底。
+- 运行控制：调用 `python 2025\run_project.py --show all` 查看全部已有结果。
+
+可选远程大模型配置：
+
+```powershell
+$env:PV_LLM_PROVIDER="openai-compatible"
+$env:PV_LLM_MODEL="your-model-name"
+$env:PV_LLM_API_KEY="your-api-key"
+$env:PV_LLM_BASE_URL="https://your-compatible-endpoint/v1/chat/completions"
+python -m streamlit run 2025\app.py
+```
+
+若未配置这些环境变量，界面仍可稳定运行，并用离线模板生成项目解读。
+
+## 4. 总控入口与并行关系
 
 如果只想用一个开关式入口运行或查看结果，可以使用：
 
@@ -74,7 +116,7 @@ python 2025\run_project.py --show all --open-output
 
 `--show` 只读取 `outputs/` 下已有摘要、指标和预测表路径，不触发训练。`--dry-run` 只打印运行计划，适合在正式长时间运行前确认依赖和并行批次。
 
-## 4. 推荐完整运行顺序
+## 5. 推荐完整运行顺序
 
 ### 步骤 1：问题 1 数据分析
 
@@ -237,7 +279,7 @@ outputs/reports/run_summary.json
 
 当前默认结果中，`FusionModel_mixed` 的综合表现最好：`E_rmse=0.0465`、`C_R=95.35%`、`Q_R=99.84%`。完整指标以 `outputs/metrics/Q4_模型输入对比结果.csv` 为准。
 
-## 5. 模型保存与复用逻辑
+## 6. 模型保存与复用逻辑
 
 问题 2、问题 3、问题 4 的主训练脚本都使用相同的 checkpoint 逻辑：
 
@@ -263,7 +305,7 @@ problem4_FusionModel_lmd.pth
 problem4_FusionModel_mixed.pth
 ```
 
-## 6. 输出保存逻辑
+## 7. 输出保存逻辑
 
 正式问题脚本使用统一输出结构：
 
@@ -289,7 +331,7 @@ Get-Content .\outputs\reports\run_summary.json
 Get-ChildItem .\outputs -Recurse
 ```
 
-## 7. 结果查看顺序
+## 8. 结果查看顺序
 
 每个问题运行结束后，建议按下面顺序查看结果。
 
@@ -383,7 +425,7 @@ outputs/figures/*.html
 
 HTML 图可以直接用浏览器打开，适合放大查看某一天的预测曲线。
 
-## 8. 快速查看命令
+## 9. 快速查看命令
 
 查看某个问题所有输出：
 
@@ -409,7 +451,7 @@ explorer .\outputs
 explorer .\outputs\figures
 ```
 
-## 9. 推荐复现实验记录方式
+## 10. 推荐复现实验记录方式
 
 每次正式运行后，建议记录：
 
@@ -425,7 +467,7 @@ explorer .\outputs\figures
 
 本项目根目录已有 `PROJECT_LOG.md`，用于记录重要结构调整和代码维护；单次训练实验记录可以另建实验日志，也可以在论文整理时从 `outputs/reports/run_summary.json` 回溯。
 
-## 10. 常见问题
+## 11. 常见问题
 
 ### 运行很慢怎么办？
 

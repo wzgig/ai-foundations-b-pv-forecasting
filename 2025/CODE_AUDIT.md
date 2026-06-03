@@ -53,6 +53,8 @@
 
 - 新增 `_shared/pv_project.py`，集中处理 Python 路径解析、中文绘图配置、随机种子、训练集归一化、稳健分箱和 CSV 写出。
 - 新增 `run_project.py`，作为问题 1-4 的总控入口，提供选择运行、并行运行、依赖检查和结果展示能力。
+- 新增 `app.py` 和 `llm/` 课程交付层，默认读取已有 `outputs/` 并提供指标展示、图表浏览和离线优先的大模型辅助解读。
+- 新增 `run.bat`，作为 Windows 一键启动脚本，便于期末大作业演示视频录制和教师复现。
 - 新增 `_shared/matlab/resolve_project_input.m`，让 MATLAB 脚本可以从脚本目录和项目内候选目录寻找数据。
 - 新增 `tools/project_health_check.py`，静态检查 Python 语法、重复代码快照和相对输入文件。
 - 新增 `tests/test_project_health.py`，用标准库 `unittest` 验证健康检查和共享路径解析。
@@ -137,6 +139,17 @@
 - 工作区脚本统一使用 `workspace_...` 前缀，保留其历史实验快照属性。
 - 新增 `CODE_INDEX.md`，逐个记录代码文件名称和用途。
 - 同步更新 `README.md`、`2025/README.md`、`RUN_GUIDE.md`、`project_health_check.py` 和 `tests/test_project_health.py` 中的入口引用。
+
+## 2026-06-03 课程交付展示层
+
+### 已完成的改进
+
+- `2025/app.py` 使用 Streamlit 搭建课程展示控制台，默认只读取已有结果，避免演示时误触发完整训练。
+- `2025/llm/result_context.py` 将问题 1-4 的运行摘要、指标表和产物路径整理为结构化上下文。
+- `2025/llm/assistant.py` 提供离线模板兜底的大模型解读能力，并保留远程兼容聊天接口配置入口。
+- `2025/run.bat` 支持 Windows 双击启动展示界面。
+- `2025/requirements.txt` 改为固定版本依赖，`2025/requirements-optional.txt` 固定可选实验依赖。
+- 回归测试新增 LLM 上下文读取、离线解读、`app.py` 语法和依赖固定版本检查。
 
 ## 当前检查结果
 

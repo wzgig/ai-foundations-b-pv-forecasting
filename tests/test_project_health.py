@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import ast
 import sys
 import tempfile
 import unittest
@@ -13,6 +14,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 HEALTH_CHECK = PROJECT_ROOT / "2025" / "tools" / "project_health_check.py"
 RUN_PROJECT = PROJECT_ROOT / "2025" / "run_project.py"
+APP = PROJECT_ROOT / "2025" / "app.py"
 
 
 def load_health_module():
@@ -143,6 +145,46 @@ class ProjectHealthTests(unittest.TestCase):
         self.assertEqual(runner.TASKS["3-analysis"].depends, ("2", "3"))
         self.assertTrue(runner.task_outputs_ready("2"))
         self.assertTrue(runner.task_outputs_ready("3"))
+
+    def test_llm_context_reads_existing_outputs(self):
+        sys.path.insert(0, str(PROJECT_ROOT / "2025"))
+        from llm.result_context import best_row_by_metric, collect_all_context
+
+        contexts = collect_all_context()
+
+        self.assertIn("4", contexts)
+        self.assertTrue(contexts["4"].report_exists)
+        self.assertGreaterEqual(len(contexts["4"].metric_rows), 3)
+        self.assertEqual(best_row_by_metric(contexts["4"])["模型_输入"], "FusionModel_mixed")
+
+    def test_llm_offline_answer_has_stable_fallback(self):
+        sys.path.insert(0, str(PROJECT_ROOT / "2025"))
+        from llm.assistant import LLMConfig, answer_question
+        from llm.result_context import collect_all_context
+
+        response = answer_question(
+            "为什么NWP+LMD混合输入在问题4中表现最好？",
+            contexts=collect_all_context(),
+            config=LLMConfig(provider="offline"),
+        )
+
+        self.assertFalse(response.used_remote)
+        self.assertIn("FusionModel_mixed", response.text)
+        self.assertIn("空间降尺度", response.text)
+
+    def test_app_source_parses_successfully(self):
+        ast.parse(APP.read_text(encoding="utf-8"), filename=str(APP))
+
+    def test_runtime_requirements_are_version_pinned(self):
+        requirements = PROJECT_ROOT / "2025" / "requirements.txt"
+        lines = [
+            line.strip()
+            for line in requirements.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+
+        self.assertIn("streamlit==1.58.0", lines)
+        self.assertTrue(all("==" in line for line in lines))
 
 
 if __name__ == "__main__":

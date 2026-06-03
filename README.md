@@ -25,19 +25,23 @@
 │   ├── 02_problem_solutions/      问题 1-4 的代码、数据、结果和图表
 │   ├── 03_figures/                探索图、论文素材图和场景对比图
 │   ├── 04_paper/                  最终论文 PDF 与 Word 文件
+│   ├── llm/                       大模型辅助解读模块
 │   ├── _shared/                   Python 与 MATLAB 公共工具
 │   ├── tools/                     项目健康检查脚本
+│   ├── app.py                     Streamlit 交互展示入口
+│   ├── run.bat                    Windows 一键启动脚本
 │   ├── CODE_AUDIT.md              代码审计与优化记录
 │   ├── ASSIGNMENT_REQUIREMENTS_ANALYSIS.md  期末大作业要求分析
 │   ├── README.md                  2025 目录说明
-│   └── requirements.txt           Python 依赖清单
+│   ├── requirements.txt           Python 运行依赖清单
+│   └── requirements-optional.txt  可选实验依赖清单
 ├── tests/                         轻量级回归检查
 └── PROJECT_LOG.md                 项目工作日志
 ```
 
 ## 技术栈
 
-- Python：`numpy`、`pandas`、`matplotlib`、`seaborn`、`scikit-learn`、`scipy`、`torch`、`plotly`
+- Python：`numpy`、`pandas`、`matplotlib`、`seaborn`、`scikit-learn`、`scipy`、`torch`、`plotly`、`streamlit`
 - MATLAB：问题 1 理论功率建模和探索性绘图
 - Office 文档：论文终稿、分问题说明和补充材料
 
@@ -69,6 +73,18 @@ python 2025\run_project.py --run 2,3,4 --parallel
 python 2025\run_project.py --show 4
 ```
 
+启动课程大作业交互展示界面：
+
+```powershell
+2025\run.bat
+```
+
+也可以直接运行：
+
+```powershell
+python -m streamlit run 2025\app.py
+```
+
 完整运行顺序、模型复用逻辑、输出目录和结果查看方式见 `2025/RUN_GUIDE.md`。每个代码文件的现用名称和用途见 `2025/CODE_INDEX.md`。
 
 运行某个实验时，优先进入对应目录，例如：
@@ -93,6 +109,8 @@ python .\problem2_baseline_three_model_forecast.py
 2026-06-02 已完成问题 4 输入特征消融优化：`problem4_feature_ablation_forecast.py` 改为严格日前口径，比较 NWP、LMD 与 NWP+LMD 三类输入，支持 `PV_Q4_MODES`、`PV_Q4_MODELS` 和 `PV_Q4_SAVE_RUN_DIAGNOSTICS`，当前默认结果中 `FusionModel_mixed` 综合表现最好。
 
 2026-06-03 已新增项目总控入口：`2025/run_project.py` 支持用 `--run` 选择问题 1-4、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出；问题 3 场景分析会显式检查问题 2 和问题 3 预测表依赖。
+
+2026-06-03 已新增课程交付展示层：`2025/app.py` 提供 Streamlit 结果控制台，`2025/llm/` 提供离线优先的大模型辅助解读，`2025/run.bat` 支持 Windows 双击启动，`requirements.txt` 改为固定版本运行依赖。
 
 2026-06-02 已完成输出模块和中文期刊绘图规范整理：正式问题脚本统一使用 `outputs/` 目录和 `run_summary.json`，共享绘图配置改为中文字体兜底、600 dpi 保存、弱网格、统一配色和期刊式坐标轴；MATLAB 增加对应的输出与绘图 helper。
 

@@ -1,0 +1,5 @@
+# Optional experiment and interpretability dependencies.
+# Install only when rerunning early workspace experiments or SHAP analysis.
+shap==0.52.0
+EMD-signal==1.9.0
+optuna==4.9.0
