@@ -2,6 +2,59 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-03 GitHub 推送规则固化与本轮推送
+
+### 调整目标
+
+- 按用户要求将本轮“软件化入口”相关修改提交并推送到 GitHub。
+- 在当前项目文件夹内固化协作规则，让后续新对话也能遵守：重要修改需要详细改动备注、验证、提交和推送确认。
+
+### 主要改动
+
+- 新增 `AGENTS.md`：
+  - 明确后续代理维护本仓库时，应优先遵守项目级协作规则。
+  - 规定用户要求推送 GitHub 时，需要检查分支和远程仓库、更新 `PROJECT_LOG.md`、同步相关文档、运行轻量验证、使用清晰 Conventional Commit，并在推送后确认远程同步状态。
+  - 规定课程演示入口优先使用 `2025\start_software.vbs`，`2025\run.bat` 作为调试入口。
+- 更新 `README.md`：
+  - 在目录结构中加入 `AGENTS.md`。
+  - 补充项目级协作规则入口和后续改动记录要求。
+
+### 验证结果
+
+- `python 2025\tools\project_health_check.py`：通过，未发现 Python 解析错误、未解析相对输入或受管理输出问题。
+- `python -m unittest discover -s tests -q`：17 个测试通过。
+- `python -m py_compile 2025\software_launcher.py 2025\app.py 2025\llm\__init__.py 2025\llm\assistant.py 2025\llm\prompts.py 2025\llm\result_context.py`：通过。
+- `python -m pip check`：通过。
+
+## 2026-06-03 无终端桌面启动器
+
+### 调整目标
+
+- 将课程展示入口进一步改造成“可双击打开的软件”，避免演示时只出现命令行窗口。
+- 保留原 `run.bat` 作为依赖安装和命令行调试入口，同时新增更适合演示视频和教师复现的桌面启动入口。
+
+### 主要改动
+
+- 新增 `2025/software_launcher.py`：
+  - 使用 Tkinter 提供桌面启动器窗口。
+  - 可启动后台 Streamlit 服务、打开浏览器控制台、运行 `tools/project_health_check.py`、停止后台服务。
+  - 启动 Streamlit 时使用隐藏窗口参数，并自动选择 8501 附近可用端口。
+- 新增 `2025/start_software.vbs`：
+  - 双击后优先通过 `pythonw.exe` 启动桌面启动器，避免先出现黑色终端。
+  - 若 `pythonw.exe` 不可用，则回退到 `python.exe`，便于暴露错误信息。
+- 更新 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md`、`2025/CODE_INDEX.md` 和 `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`，明确演示优先使用 `start_software.vbs`，调试再用 `run.bat`。
+- 更新 `tests/test_project_health.py`，增加桌面启动器语法检查和 VBS 入口引用检查。
+
+### 验证结果
+
+- `python -m py_compile 2025\software_launcher.py 2025\app.py 2025\llm\__init__.py 2025\llm\assistant.py 2025\llm\prompts.py 2025\llm\result_context.py`：通过。
+- `python 2025\tools\project_health_check.py`：通过，未发现 Python 解析错误、未解析相对输入或受管理输出问题。
+- `python -m unittest discover -s tests -q`：17 个测试通过。
+- `python -m pip check`：通过。
+- `python 2025\app.py`：只输出正确 Streamlit 启动提示。
+- `software_launcher.py` 非 GUI 导入检查：通过，能识别 `D:\Software\Python312\python.exe` 与已安装的 Streamlit。
+- `python -m streamlit run 2025\app.py --server.headless true --server.port 8506 --browser.gatherUsageStats false`：HTTP 烟测通过，`/_stcore/health` 返回 `ok`。
+
 ## 2026-06-03 Streamlit 软件控制台增强与本地 Codex 接入
 
 ### 调整目标

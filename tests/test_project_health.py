@@ -16,6 +16,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 HEALTH_CHECK = PROJECT_ROOT / "2025" / "tools" / "project_health_check.py"
 RUN_PROJECT = PROJECT_ROOT / "2025" / "run_project.py"
 APP = PROJECT_ROOT / "2025" / "app.py"
+LAUNCHER = PROJECT_ROOT / "2025" / "software_launcher.py"
+START_SOFTWARE = PROJECT_ROOT / "2025" / "start_software.vbs"
 
 
 def load_health_module():
@@ -189,6 +191,15 @@ class ProjectHealthTests(unittest.TestCase):
 
     def test_app_source_parses_successfully(self):
         ast.parse(APP.read_text(encoding="utf-8"), filename=str(APP))
+
+    def test_software_launcher_source_parses_successfully(self):
+        ast.parse(LAUNCHER.read_text(encoding="utf-8"), filename=str(LAUNCHER))
+
+    def test_no_console_launcher_points_to_desktop_launcher(self):
+        text = START_SOFTWARE.read_text(encoding="utf-8")
+
+        self.assertIn("software_launcher.py", text)
+        self.assertIn("pythonw.exe", text)
 
     def test_app_direct_python_run_prints_launch_hint(self):
         completed = subprocess.run(

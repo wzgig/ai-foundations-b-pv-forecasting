@@ -48,9 +48,17 @@ python -m unittest discover -s tests -q
 
 ## 3. 课程交互展示入口
 
-本项目新增了面向期末大作业演示的 Streamlit 控制台。该界面默认读取已有 `outputs/`，展示四问结果、指标表、图像产物、本地代码入口和大模型辅助解读，不会自动触发长时间训练。
+本项目新增了面向期末大作业演示的 Streamlit 控制台。该界面默认读取已有 `outputs/`，展示四问结果、指标表、图像产物、本地代码入口和大模型辅助解读，不会自动触发长时间训练。为了避免演示时先出现黑色终端窗口，当前还提供了一个 Windows 桌面启动器。
 
-Windows 双击启动：
+Windows 演示推荐入口：
+
+```powershell
+2025\start_software.vbs
+```
+
+该脚本会通过 `pythonw` 打开 `software_launcher.py` 桌面窗口，由启动器在后台启动 Streamlit 服务并打开浏览器界面。启动器还能运行健康检查、重新打开浏览器和停止后台服务。
+
+命令行调试入口：
 
 ```powershell
 2025\run.bat

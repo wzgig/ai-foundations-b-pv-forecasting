@@ -29,6 +29,8 @@
 ├── tools/
 │   └── project_health_check.py
 ├── app.py
+├── software_launcher.py
+├── start_software.vbs
 ├── run.bat
 ├── CODE_AUDIT.md
 ├── CODE_INDEX.md
@@ -110,7 +112,13 @@ python 2025\run_project.py --run main --parallel
 python 2025\run_project.py --show 1,4
 ```
 
-启动交互展示界面：
+启动交互展示界面。演示时优先双击无终端桌面启动器：
+
+```powershell
+.\2025\start_software.vbs
+```
+
+需要查看依赖安装或 Streamlit 详细输出时，再运行：
 
 ```powershell
 .\2025\run.bat
@@ -122,7 +130,7 @@ python 2025\run_project.py --show 1,4
 python -m streamlit run 2025\app.py
 ```
 
-不要直接运行 `python 2025\app.py`；该命令现在只会输出正确启动提示，避免 Streamlit bare mode 的 `missing ScriptRunContext` 警告刷屏。
+不要直接运行 `python 2025\app.py`；该命令现在只会输出正确启动提示，避免 Streamlit bare mode 的 `missing ScriptRunContext` 警告刷屏。`software_launcher.py` 提供桌面窗口，可启动/打开浏览器软件界面、运行健康检查并停止后台服务。
 
 展示界面包含工作台、运行结果、本地代码交互、大模型问答和运行控制五个页面。运行控制页默认只查看已有输出或执行 dry-run，真正启动训练前需要显式勾选确认框。
 
