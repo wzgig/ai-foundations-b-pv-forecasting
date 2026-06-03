@@ -42,40 +42,46 @@ CORE_FILES = [
 STYLE = """
 <style>
 :root {
-  --ink: #202226;
-  --muted: #64727f;
-  --line: #d7dde3;
-  --paper: #f7f5ef;
+  --ink: #1c2327;
+  --muted: #5e6972;
+  --line: #d8dee4;
+  --paper: #f4f6f4;
   --panel: #ffffff;
-  --teal: #13746e;
-  --copper: #b35f36;
-  --blue: #2d5f8f;
-  --red: #ad3b3b;
+  --panel-soft: #f8faf9;
+  --teal: #0f766e;
+  --leaf: #4f7d3f;
+  --blue: #1f5f99;
+  --gold: #b7791f;
+  --red: #b33a3a;
 }
 .stApp {
-  background: linear-gradient(180deg, rgba(247,245,239,0.98), rgba(239,243,241,1));
+  background:
+    linear-gradient(180deg, rgba(244,246,244,1), rgba(238,242,244,1));
   color: var(--ink);
 }
 section[data-testid="stSidebar"] {
-  background: #22272b;
-  border-right: 1px solid #15191c;
+  background: #182125;
+  border-right: 1px solid #10171a;
 }
 section[data-testid="stSidebar"] * {
-  color: #f4f0e8;
+  color: #f2f6f4;
 }
 .block-container {
-  padding-top: 1.8rem;
+  padding-top: 1.35rem;
   padding-bottom: 3rem;
+  max-width: 1280px;
 }
 .pv-title {
-  border-bottom: 2px solid var(--ink);
-  padding-bottom: .75rem;
+  border: 1px solid var(--line);
+  border-left: 7px solid var(--teal);
+  background: rgba(255,255,255,.88);
+  padding: 1.05rem 1.15rem;
   margin-bottom: 1rem;
 }
 .pv-title h1 {
   margin: 0;
-  font-size: 2.08rem;
-  line-height: 1.18;
+  font-size: 1.88rem;
+  line-height: 1.2;
   letter-spacing: 0;
   color: var(--ink);
 }
@@ -84,16 +90,48 @@ section[data-testid="stSidebar"] * {
   color: var(--muted);
   max-width: 74rem;
 }
+.pv-kicker {
+  margin-bottom: .35rem;
+  color: var(--teal);
+  font-weight: 700;
+  font-size: .84rem;
+}
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+  margin: .5rem 0 1rem 0;
+}
+.status-cell {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: .78rem .85rem;
+  min-height: 5.3rem;
+}
+.status-cell b {
+  display: block;
+  font-size: .86rem;
+  color: var(--muted);
+  margin-bottom: .28rem;
+}
+.status-cell span {
+  display: block;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
 .metric-card, .tool-card {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-left: 5px solid var(--teal);
-  padding: .95rem 1rem;
-  min-height: 8.4rem;
+  border-top: 4px solid var(--teal);
+  padding: .9rem .95rem;
+  min-height: 8.1rem;
 }
 .tool-card {
   border-left-color: var(--blue);
-  min-height: 7.2rem;
+  border-top-color: var(--blue);
+  min-height: 6.9rem;
 }
 .metric-card h3, .tool-card h3 {
   margin: 0 0 .45rem 0;
@@ -101,10 +139,19 @@ section[data-testid="stSidebar"] * {
   color: var(--ink);
 }
 .metric-card .value {
-  font-size: 1.52rem;
+  font-size: 1.36rem;
   font-weight: 700;
   color: var(--teal);
   overflow-wrap: anywhere;
+}
+.metric-card .delta {
+  display: inline-block;
+  margin-top: .45rem;
+  padding: .18rem .45rem;
+  background: rgba(15,118,110,.1);
+  border: 1px solid rgba(15,118,110,.22);
+  color: #0d5f59;
+  font-size: .78rem;
 }
 .caption, .metric-card .caption, .tool-card .caption {
   margin-top: .35rem;
@@ -113,12 +160,12 @@ section[data-testid="stSidebar"] * {
 }
 .status-strip {
   border: 1px solid var(--line);
-  background: rgba(255,255,255,.76);
+  background: rgba(255,255,255,.86);
   padding: .72rem .9rem;
   margin: .35rem 0 1rem 0;
 }
 .note {
-  border-left: 4px solid var(--copper);
+  border-left: 4px solid var(--gold);
   padding: .72rem .9rem;
   background: rgba(255,255,255,.78);
   color: var(--ink);
@@ -131,8 +178,51 @@ div[data-testid="stMetric"] {
   border: 1px solid var(--line);
   padding: .9rem;
 }
+.workflow-band {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+  margin: .85rem 0 1.1rem 0;
+}
+.workflow-step {
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  padding: .82rem .86rem;
+  min-height: 6.2rem;
+}
+.workflow-step b {
+  display: block;
+  color: var(--ink);
+  margin-bottom: .32rem;
+}
+.workflow-step span {
+  color: var(--muted);
+  font-size: .88rem;
+}
+.llm-panel {
+  background: #f7faf8;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--leaf);
+  padding: .8rem .95rem;
+  margin-bottom: .85rem;
+}
+.llm-panel b {
+  color: var(--ink);
+}
 pre, code {
   white-space: pre-wrap;
+}
+@media (max-width: 900px) {
+  .status-grid,
+  .workflow-band {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .status-grid,
+  .workflow-band {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 """
@@ -158,7 +248,10 @@ def print_direct_run_help() -> None:
     print("Recommended from the project root:")
     print("  python -m streamlit run 2025\\app.py")
     print("")
-    print("Or double-click / run:")
+    print("Recommended desktop launcher:")
+    print("  2025\\start_software.vbs")
+    print("")
+    print("Command-line diagnostics:")
     print("  2025\\run.bat")
 
 
@@ -167,7 +260,7 @@ def configure_page() -> None:
         page_title=PAGE_TITLE,
         page_icon=None,
         layout="wide",
-        initial_sidebar_state="expanded",
+        initial_sidebar_state="auto",
     )
 
 
@@ -237,6 +330,44 @@ def value_from_row(row: pd.Series | None, column: str) -> str:
         return str(value)
 
 
+def llm_status_label(config: LLMConfig) -> str:
+    if config.provider == "offline":
+        return "离线模板"
+    key_state = "密钥已读取" if config.api_key else "未读取密钥"
+    return f"{config.provider} / {config.wire_api} / {key_state}"
+
+
+def render_status_grid(contexts: dict[str, TaskContext]) -> None:
+    ready_count = sum(1 for task in contexts.values() if task.report_exists or task.metrics_exists)
+    total_figures = sum(len(task.artifacts.get("figures", [])) for task in contexts.values())
+    llm_config = LLMConfig.from_env()
+    st.markdown(
+        f"""
+        <div class="status-grid">
+          <div class="status-cell"><b>任务识别</b><span>{len(contexts)} 个任务</span></div>
+          <div class="status-cell"><b>摘要/指标</b><span>{ready_count} 项可读</span></div>
+          <div class="status-cell"><b>图表产物</b><span>{total_figures} 条记录</span></div>
+          <div class="status-cell"><b>大模型接入</b><span>{llm_status_label(llm_config)}</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_workflow_band() -> None:
+    st.markdown(
+        """
+        <div class="workflow-band">
+          <div class="workflow-step"><b>1. 数据与物理分析</b><span>读取站点数据、理论功率、周期性和偏差诊断。</span></div>
+          <div class="workflow-step"><b>2. 日前预测模型</b><span>复用 checkpoint，比较 PureLSTM、FusionModel、BiFusionModel。</span></div>
+          <div class="workflow-step"><b>3. 场景与特征解释</b><span>融入 NWP/LMD，查看场景划分、误差来源和特征重要性。</span></div>
+          <div class="workflow-step"><b>4. LLM 辅助交付</b><span>读取 outputs 形成问答、报告摘要和演示口播素材。</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def safe_text_path(relative: str) -> Path:
     target = (ROOT / relative).resolve()
     target.relative_to(ROOT)
@@ -283,8 +414,9 @@ def render_title() -> None:
     st.markdown(
         """
         <div class="pv-title">
-          <h1>光伏电站发电功率日前预测项目控制台</h1>
-          <p>面向《人工智能基础B》期末大作业的软件入口：集中查看四问结果、浏览本地代码、执行安全命令，并通过离线模板或本地/远程大模型进行问答交流。</p>
+          <div class="pv-kicker">AI Foundations B · PV Day-Ahead Forecasting</div>
+          <h1>光伏电站发电功率日前预测软件</h1>
+          <p>面向《人工智能基础B》期末大作业的工程化入口：集中查看四问结果、浏览本地代码、执行受保护命令，并自动接入本机 Codex / OpenAI-compatible 大模型配置。</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -307,6 +439,7 @@ def render_metric_cards(contexts: dict[str, TaskContext]) -> None:
                   <h3>{title}</h3>
                   <div class="value">{label_from_row(row)}</div>
                   <div class="caption">E_rmse={value_from_row(row, 'E_rmse')} | C_R={value_from_row(row, 'C_R')}% | Q_R={value_from_row(row, 'Q_R')}%</div>
+                  <div class="delta">白昼附件指标</div>
                   <div class="caption">{caption}</div>
                 </div>
                 """,
@@ -316,21 +449,13 @@ def render_metric_cards(contexts: dict[str, TaskContext]) -> None:
 
 def render_workbench(contexts: dict[str, TaskContext]) -> None:
     st.subheader("工作台")
+    render_status_grid(contexts)
+    render_workflow_band()
     render_metric_cards(contexts)
     st.markdown(
         '<div class="note">界面默认只读取已有 outputs，不触发长时间训练；需要重训时请到“运行控制”页显式勾选确认。</div>',
         unsafe_allow_html=True,
     )
-
-    cols = st.columns(4)
-    ready_count = sum(1 for task in contexts.values() if task.report_exists or task.metrics_exists)
-    total_figures = sum(len(task.artifacts.get("figures", [])) for task in contexts.values())
-    total_metrics = sum(1 for task in contexts.values() if task.metrics_exists)
-    llm_config = LLMConfig.from_env()
-    cols[0].metric("已识别任务", len(contexts))
-    cols[1].metric("已有摘要/指标", ready_count)
-    cols[2].metric("图表产物记录", total_figures)
-    cols[3].metric("LLM 模式", llm_config.provider)
 
     st.subheader("功能入口")
     tool_cols = st.columns(3)
@@ -482,25 +607,34 @@ def render_code_lab() -> None:
 def build_llm_config_from_ui() -> LLMConfig:
     env_config = LLMConfig.from_env()
     with st.expander("大模型接口配置", expanded=False):
-        st.caption("支持任何 OpenAI-compatible `/v1/chat/completions` 端点。若本地 Codex 暴露了兼容 HTTP API，可选择 local-codex 并填入本地地址。")
-        provider_options = ["offline", "openai-compatible", "local-codex", "local", "openai"]
+        st.caption("默认自动读取本机 Codex 配置；也支持任何 OpenAI-compatible Chat Completions 或 Responses 端点。密钥不会写入项目文件。")
+        provider_options = ["codex-config", "offline", "openai-compatible", "local-codex", "local", "openai"]
+        if env_config.provider not in provider_options:
+            provider_options.insert(0, env_config.provider)
         index = provider_options.index(env_config.provider) if env_config.provider in provider_options else 1
         provider = st.selectbox("接口模式", provider_options, index=index)
         model = st.text_input("模型名称", value=env_config.model)
+        wire_api_options = ["responses", "chat"]
+        wire_index = wire_api_options.index(env_config.wire_api) if env_config.wire_api in wire_api_options else 1
+        wire_api = st.segmented_control("接口协议", wire_api_options, default=wire_api_options[wire_index])
         base_url = st.text_input(
             "API 地址",
             value=env_config.base_url,
-            placeholder="http://127.0.0.1:8000/v1/chat/completions",
+            placeholder="https://api.example.com/v1",
         )
-        api_key = st.text_input("API Key（本地端点可留空）", value=env_config.api_key, type="password")
+        key_placeholder = "已从本机配置读取，留空继续使用" if env_config.api_key else "本地端点可留空"
+        api_key_input = st.text_input("API Key", value="", placeholder=key_placeholder, type="password")
         timeout = st.number_input("超时时间（秒）", min_value=3, max_value=120, value=env_config.timeout_seconds)
         config = LLMConfig(
             provider=provider,
             model=model.strip() or env_config.model,
-            api_key=api_key.strip(),
+            api_key=api_key_input.strip() or env_config.api_key,
             base_url=base_url.strip(),
+            wire_api=str(wire_api or env_config.wire_api).strip(),
             timeout_seconds=int(timeout),
+            source=env_config.source,
         )
+        st.caption(f"配置来源：{env_config.source}")
         st.code(config.endpoint_display(), language="text")
         if st.button("测试大模型连接"):
             response = answer_question(
@@ -523,7 +657,13 @@ def render_llm_chat(contexts: dict[str, TaskContext]) -> None:
     st.subheader("大模型问答交流")
     config = build_llm_config_from_ui()
     st.markdown(
-        f'<div class="status-strip">当前模式：{config.provider}；模型：{config.model}。未配置可用端点时自动使用离线模板兜底，保证课堂演示不断。</div>',
+        f"""
+        <div class="llm-panel">
+          <b>当前接入：</b>{config.provider} · {config.model} · {config.wire_api}<br>
+          <b>端点：</b>{config.endpoint()}<br>
+          <b>密钥：</b>{"已读取" if config.api_key else "未配置"}；远程失败时自动使用离线模板兜底。
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
@@ -631,8 +771,10 @@ def main() -> None:
     )
     st.sidebar.markdown("---")
     st.sidebar.caption(f"项目目录：{ROOT}")
-    st.sidebar.caption(f"LLM Provider：{LLMConfig.from_env().provider}")
-    st.sidebar.caption("直接运行 app.py 会只显示启动提示，请使用 run.bat 或 streamlit run。")
+    llm_config = LLMConfig.from_env()
+    st.sidebar.caption(f"LLM：{llm_config.provider} / {llm_config.wire_api}")
+    st.sidebar.caption(f"模型：{llm_config.model}")
+    st.sidebar.caption("直接运行 app.py 只显示启动提示；演示优先用 start_software.vbs，调试用 run.bat。")
 
     if page == "工作台":
         render_workbench(contexts)

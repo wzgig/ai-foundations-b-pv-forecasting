@@ -75,31 +75,39 @@ python -m streamlit run 2025\app.py
 - 工作台：展示问题 2、问题 3、问题 4 的最优模型、附件指标和软件入口状态。
 - 运行结果：集中查看各问题 CSV 指标、PNG 图和 Plotly HTML 交互图。
 - 本地代码交互：查看核心脚本/文档，执行 `--list`、`--show`、`--dry-run` 等安全命令，并可把当前代码片段加入问答上下文。
-- 大模型问答：根据现有输出生成中文解释；无 API 配置时使用离线模板兜底。
+- 大模型问答：默认读取本机 Codex 配置和密钥，支持 Responses API；无可用 API 时使用离线模板兜底。
 - 运行控制：默认查看已有结果或 dry-run 预演；真正运行任务前必须勾选确认框。
 
 不要直接运行 `python 2025\app.py`。该命令现在只输出正确启动提示，避免 Streamlit bare mode 下的 `missing ScriptRunContext` 警告刷屏。
 
-可选远程或本地大模型配置：
+大模型配置优先级：
+
+1. 若未显式设置 `PV_LLM_PROVIDER`，软件会自动读取本机 `~\.codex\config.toml` 和 `~\.codex\auth.json`。
+2. 若设置 `PV_LLM_*` 环境变量，则优先使用环境变量。
+3. 若远程调用失败，界面会自动使用离线模板兜底，保证演示不断。
+
+当前 Codex 配置使用 Responses API 时，无需把密钥写入项目文件。可选远程或本地覆盖配置：
 
 ```powershell
 $env:PV_LLM_PROVIDER="openai-compatible"
+$env:PV_LLM_WIRE_API="chat"
 $env:PV_LLM_MODEL="your-model-name"
 $env:PV_LLM_API_KEY="your-api-key"
 $env:PV_LLM_BASE_URL="https://your-compatible-endpoint/v1/chat/completions"
 python -m streamlit run 2025\app.py
 ```
 
-若本地 Codex 或其他本地模型服务暴露 OpenAI-compatible `chat/completions` HTTP 接口，可以改为：
+若本地模型服务暴露 OpenAI-compatible `chat/completions` HTTP 接口，可以改为：
 
 ```powershell
 $env:PV_LLM_PROVIDER="local-codex"
+$env:PV_LLM_WIRE_API="chat"
 $env:PV_LLM_MODEL="your-local-model"
 $env:PV_LLM_BASE_URL="http://127.0.0.1:8000/v1/chat/completions"
 python -m streamlit run 2025\app.py
 ```
 
-若未配置这些环境变量，界面仍可稳定运行，并用离线模板生成项目解读。
+若使用 Responses API，则把 `PV_LLM_WIRE_API` 改为 `responses`，并将 `PV_LLM_BASE_URL` 指向 `/v1` 或 `/v1/responses`。不要把真实密钥写入 README、代码或 Git 跟踪文件。
 
 ## 4. 总控入口与并行关系
 

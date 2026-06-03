@@ -39,3 +39,11 @@ desktop.ini
 
 # Local runtime logs
 *.log.*
+tmp/
+
+# Local secrets and API configuration
+.env
+.env.*
+!.env.example
+2025/.env.local
+2025/.env.*.local

@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import importlib.util
 import ast
+import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -189,6 +192,47 @@ class ProjectHealthTests(unittest.TestCase):
         self.assertFalse(config.requires_api_key())
         self.assertEqual(config.endpoint(), "http://127.0.0.1:8000/v1/chat/completions")
 
+    def test_llm_reads_local_codex_responses_config(self):
+        sys.path.insert(0, str(PROJECT_ROOT / "2025"))
+        from llm.assistant import LLMConfig
+
+        with tempfile.TemporaryDirectory() as tmp:
+            codex_home = Path(tmp)
+            (codex_home / "config.toml").write_text(
+                """
+model_provider = "my_codex"
+model = "gpt-5.5"
+
+[model_providers.my_codex]
+base_url = "https://api.example.test/v1"
+wire_api = "responses"
+requires_openai_auth = true
+""".strip(),
+                encoding="utf-8",
+            )
+            (codex_home / "auth.json").write_text(
+                json.dumps({"OPENAI_API_KEY": "sk-test-local"}),
+                encoding="utf-8",
+            )
+
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "CODEX_HOME": str(codex_home),
+                    "PV_LLM_PROVIDER": "",
+                    "CODEX_LLM_PROVIDER": "",
+                    "OPENAI_PROVIDER": "",
+                },
+                clear=False,
+            ):
+                config = LLMConfig.from_env()
+
+        self.assertEqual(config.provider, "codex-config")
+        self.assertEqual(config.model, "gpt-5.5")
+        self.assertEqual(config.wire_api, "responses")
+        self.assertEqual(config.endpoint(), "https://api.example.test/v1/responses")
+        self.assertEqual(config.api_key, "sk-test-local")
+
     def test_app_source_parses_successfully(self):
         ast.parse(APP.read_text(encoding="utf-8"), filename=str(APP))
 
@@ -216,6 +260,7 @@ class ProjectHealthTests(unittest.TestCase):
 
         self.assertEqual(completed.returncode, 0)
         self.assertIn("python -m streamlit run", completed.stdout)
+        self.assertIn("start_software.vbs", completed.stdout)
         self.assertNotIn("missing ScriptRunContext", completed.stdout)
 
     def test_runtime_requirements_are_version_pinned(self):

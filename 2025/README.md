@@ -68,7 +68,7 @@
 
 ### `llm/`
 
-课程大作业的大模型辅助解读模块。默认不依赖外部 API，会根据现有 `outputs/` 指标和运行摘要生成离线解释；配置 `PV_LLM_PROVIDER`、`PV_LLM_API_KEY`、`PV_LLM_MODEL` 和 `PV_LLM_BASE_URL` 后，可切换到远程或本地 OpenAI-compatible 大模型接口。本地 Codex 若暴露兼容 HTTP API，可使用 `PV_LLM_PROVIDER=local-codex` 接入。
+课程大作业的大模型辅助解读模块。默认会优先读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，支持 Codex 当前的 Responses API 接入；若没有可用配置，则使用离线模板根据现有 `outputs/` 指标和运行摘要生成解释。配置 `PV_LLM_PROVIDER`、`PV_LLM_WIRE_API`、`PV_LLM_API_KEY`、`PV_LLM_MODEL` 和 `PV_LLM_BASE_URL` 后，可覆盖为其他远程或本地 OpenAI-compatible 接口。密钥只从本机配置或环境变量读取，不写入仓库。
 
 ### `_shared/`
 

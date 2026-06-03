@@ -2,6 +2,46 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-06-03 Codex API 接入、Skills 安装与界面优化
+
+### 调整目标
+
+- 按用户要求查找本机 Codex API 接入配置，并将其接入课程项目软件。
+- 通过全网/skills.sh 检索并安装与软件、前端、UI、Streamlit 相关的 skills。
+- 在不触发模型重训的前提下，对 Streamlit 软件的框架、界面、逻辑和大模型接入体验做一轮全面提升。
+
+### 主要改动
+
+- 安装/确认本机 skills：
+  - 已有 `developing-with-streamlit`、`frontend-design`、`web-design-guidelines`、`vercel-react-best-practices` 等技能。
+  - 新安装 `streamlit`、`ui-design-system`、`ui-design-review`、`frontend-ui-ux-design`、`frontend-design-system` 到 `~\.agents\skills\`。
+  - `streamlit/agent-skills` 仓库实际只暴露 `developing-with-streamlit`，本机已存在；部分 PromptScript 目标提示不支持全局安装，但 Codex 可读的 skill 目录已完成复制。
+- 接入本机 Codex 配置：
+  - `2025/llm/assistant.py` 现在会在未显式设置 `PV_LLM_PROVIDER` 时自动读取 `~\.codex\config.toml` 和 `~\.codex\auth.json`。
+  - 支持 Codex 配置中的 Responses API，即 `/v1/responses`。
+  - 密钥只从本机 auth 或环境变量读取，不写入仓库、README 或日志。
+  - 保留 Chat Completions、OpenAI-compatible、本地端点和离线模板兜底。
+- 优化 `2025/app.py`：
+  - 工作台增加任务状态总览、项目流程带、LLM 接入状态和更清晰的指标卡。
+  - 大模型配置面板显示 provider、model、wire API、endpoint 和配置来源，但不把密钥明文预填到输入框。
+  - 页面视觉从简单展示页调整为更像工程控制台的软件界面。
+- 更新 `.gitignore`，忽略 `.env`、`.env.*`、`2025/.env.local` 等本地密钥配置文件。
+- 更新 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md`、`2025/CODE_INDEX.md`、`2025/CODE_AUDIT.md` 和 `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`，同步 Codex 自动接入、Responses API 和密钥保护说明。
+- 更新 `tests/test_project_health.py`，增加临时 `CODEX_HOME` 下读取 Codex Responses 配置的回归测试。
+
+### 验证结果
+
+- `python -m py_compile 2025\app.py 2025\llm\assistant.py 2025\llm\result_context.py 2025\llm\prompts.py 2025\software_launcher.py`：通过。
+- `python 2025\tools\project_health_check.py`：通过，未发现 Python 解析错误、未解析相对输入或受管理输出问题。
+- `python -m unittest discover -s tests -q`：18 个测试通过。
+- `python -m pip check`：通过。
+- Streamlit 版本检查：`streamlit==1.58.0`，支持 `st.segmented_control`。
+- Codex 配置读取检查：自动识别 `codex-config`、`gpt-5.5`、`responses`、`/v1/responses`，密钥状态为已读取；未记录密钥内容。
+- 远程大模型调用检查：通过 `codex-config` 成功返回中文确认。
+- Streamlit HTTP 烟测：`http://127.0.0.1:8510/_stcore/health` 返回 `ok`。
+- Playwright 桌面截图：`tmp\pv_dashboard_8510_wait.png`，首屏标题、任务状态和流程卡正常渲染。
+- Playwright 移动端截图：`tmp\pv_dashboard_8510_mobile_auto.png`，侧栏默认收起，主内容可读。
+
 ## 2026-06-03 GitHub 推送规则固化与本轮推送
 
 ### 调整目标

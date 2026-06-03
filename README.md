@@ -94,7 +94,7 @@ python 2025\run_project.py --show 4
 python -m streamlit run 2025\app.py
 ```
 
-不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。控制台包含工作台、运行结果、本地代码交互、大模型问答和受保护运行控制页面，LLM 可通过 `PV_LLM_PROVIDER=local-codex` 接入本地兼容接口。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
+不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。控制台包含工作台、运行结果、本地代码交互、大模型问答和受保护运行控制页面。LLM 默认会读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，也可通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
 
 完整运行顺序、模型复用逻辑、输出目录和结果查看方式见 `2025/RUN_GUIDE.md`。每个代码文件的现用名称和用途见 `2025/CODE_INDEX.md`。
 
@@ -123,7 +123,7 @@ python .\problem2_baseline_three_model_forecast.py
 
 2026-06-03 已新增项目总控入口：`2025/run_project.py` 支持用 `--run` 选择问题 1-4、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出；问题 3 场景分析会显式检查问题 2 和问题 3 预测表依赖。
 
-2026-06-03 已新增课程交付展示层：`2025/app.py` 提供 Streamlit 软件控制台，`2025/llm/` 提供离线优先且支持本地 Codex/OpenAI-compatible 接口的大模型问答，`2025/start_software.vbs` 和 `2025/software_launcher.py` 提供无终端桌面启动入口，`2025/run.bat` 保留为命令行调试启动脚本，`requirements.txt` 改为固定版本运行依赖。
+2026-06-03 已新增课程交付展示层：`2025/app.py` 提供 Streamlit 软件控制台，`2025/llm/` 提供离线优先且支持本机 Codex 配置、Responses API 与 OpenAI-compatible 接口的大模型问答，`2025/start_software.vbs` 和 `2025/software_launcher.py` 提供无终端桌面启动入口，`2025/run.bat` 保留为命令行调试启动脚本，`requirements.txt` 改为固定版本运行依赖。
 
 2026-06-02 已完成输出模块和中文期刊绘图规范整理：正式问题脚本统一使用 `outputs/` 目录和 `run_summary.json`，共享绘图配置改为中文字体兜底、600 dpi 保存、弱网格、统一配色和期刊式坐标轴；MATLAB 增加对应的输出与绘图 helper。
 

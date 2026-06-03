@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import json
 import os
+import tomllib
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Sequence
 
 from .prompts import REPORT_BRIEF_PROMPT, SYSTEM_PROMPT
@@ -23,6 +25,7 @@ REMOTE_PROVIDERS = {
     "local-codex",
     "codex",
     "codex-local",
+    "codex-config",
 }
 LOCAL_PROVIDERS = {"local", "local-codex", "codex", "codex-local", "openai-compatible"}
 
@@ -33,11 +36,23 @@ class LLMConfig:
     model: str = "offline-template"
     api_key: str = ""
     base_url: str = ""
+    wire_api: str = "chat"
     timeout_seconds: int = 20
+    source: str = "default"
 
     @classmethod
     def from_env(cls) -> "LLMConfig":
-        provider = os.getenv("PV_LLM_PROVIDER", "offline").strip().lower() or "offline"
+        provider_from_env = (
+            os.getenv("PV_LLM_PROVIDER")
+            or os.getenv("CODEX_LLM_PROVIDER")
+            or os.getenv("OPENAI_PROVIDER")
+        )
+        if not provider_from_env:
+            codex_config = cls.from_codex_config()
+            if codex_config is not None:
+                return codex_config
+
+        provider = (provider_from_env or "offline").strip().lower() or "offline"
         model = (
             os.getenv("PV_LLM_MODEL")
             or os.getenv("CODEX_LLM_MODEL")
@@ -56,18 +71,75 @@ class LLMConfig:
             or os.getenv("OPENAI_BASE_URL")
             or ""
         )
+        wire_api = (
+            os.getenv("PV_LLM_WIRE_API")
+            or os.getenv("CODEX_LLM_WIRE_API")
+            or os.getenv("OPENAI_WIRE_API")
+            or "chat"
+        )
         return cls(
             provider=provider,
             model=model.strip() or "offline-template",
             api_key=api_key.strip(),
             base_url=base_url.strip(),
+            wire_api=wire_api.strip().lower() or "chat",
             timeout_seconds=int(os.getenv("PV_LLM_TIMEOUT", "20")),
+            source="environment",
+        )
+
+    @classmethod
+    def from_codex_config(cls) -> "LLMConfig | None":
+        codex_home = Path(os.getenv("CODEX_HOME", Path.home() / ".codex"))
+        config_path = codex_home / "config.toml"
+        auth_path = codex_home / "auth.json"
+        if not config_path.exists():
+            return None
+
+        try:
+            config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+        except (OSError, tomllib.TOMLDecodeError):
+            return None
+
+        provider_name = str(config.get("model_provider") or "").strip()
+        providers = config.get("model_providers") or {}
+        provider_config = providers.get(provider_name) if provider_name else None
+        if not isinstance(provider_config, dict):
+            return None
+
+        base_url = str(provider_config.get("base_url") or "").strip()
+        if not base_url:
+            return None
+
+        api_key = ""
+        if auth_path.exists():
+            try:
+                auth = json.loads(auth_path.read_text(encoding="utf-8"))
+                api_key = str(auth.get("OPENAI_API_KEY") or "").strip()
+            except (OSError, json.JSONDecodeError):
+                api_key = ""
+
+        return cls(
+            provider="codex-config",
+            model=str(config.get("model") or "gpt-5.5").strip(),
+            api_key=api_key,
+            base_url=base_url,
+            wire_api=str(provider_config.get("wire_api") or "chat").strip().lower() or "chat",
+            timeout_seconds=int(os.getenv("PV_LLM_TIMEOUT", "90")),
+            source=str(config_path),
         )
 
     def endpoint(self) -> str:
         if not self.base_url:
+            if self.wire_api == "responses":
+                return "https://api.openai.com/v1/responses"
             return "https://api.openai.com/v1/chat/completions"
         base_url = self.base_url.rstrip("/")
+        if self.wire_api == "responses":
+            if base_url.endswith("/responses"):
+                return base_url
+            if base_url.endswith("/v1"):
+                return f"{base_url}/responses"
+            return f"{base_url}/v1/responses"
         if base_url.endswith("/chat/completions"):
             return base_url
         if base_url.endswith("/v1"):
@@ -78,10 +150,13 @@ class LLMConfig:
         if self.provider == "offline":
             return "offline-template"
         api_key_state = "set" if self.api_key else "empty/local"
-        return f"provider={self.provider}; model={self.model}; endpoint={self.endpoint()}; api_key={api_key_state}"
+        return (
+            f"provider={self.provider}; model={self.model}; wire_api={self.wire_api}; "
+            f"endpoint={self.endpoint()}; api_key={api_key_state}; source={self.source}"
+        )
 
     def requires_api_key(self) -> bool:
-        return self.provider in {"api", "openai", "remote"} and not self.api_key
+        return self.provider in {"api", "openai", "remote", "codex-config"} and not self.api_key
 
 
 @dataclass(frozen=True)
@@ -149,7 +224,7 @@ def _offline_answer(question: str, contexts: dict[str, TaskContext]) -> str:
             "软件入口采用三层协同：run_project.py 负责项目级任务编排、依赖顺序和 outputs 查看；"
             "llm/result_context.py 把各问题运行摘要和指标表整理成结构化上下文；"
             "app.py 负责 Streamlit 交互界面，把结果浏览、代码查看、安全命令和大模型问答组织到同一个控制台。"
-            "这样教师或演示视频可以先双击 run.bat 进入界面，再按页面查看结果或提问，不必直接接触训练脚本。"
+            "这样教师或演示视频可以先双击 start_software.vbs 进入桌面启动器，再按页面查看结果或提问，不必直接接触训练脚本。"
         )
 
     return (
@@ -161,22 +236,71 @@ def _offline_answer(question: str, contexts: dict[str, TaskContext]) -> str:
     )
 
 
+def _headers(config: LLMConfig) -> dict[str, str]:
+    headers = {"Content-Type": "application/json; charset=utf-8"}
+    if config.api_key:
+        headers["Authorization"] = f"Bearer {config.api_key}"
+    return headers
+
+
+def _extract_responses_text(data: dict[str, object]) -> str:
+    direct = data.get("output_text")
+    if isinstance(direct, str) and direct.strip():
+        return direct
+
+    output = data.get("output")
+    if isinstance(output, list):
+        chunks: list[str] = []
+        for item in output:
+            if not isinstance(item, dict):
+                continue
+            content = item.get("content")
+            if not isinstance(content, list):
+                continue
+            for part in content:
+                if not isinstance(part, dict):
+                    continue
+                text = part.get("text") or part.get("content")
+                if isinstance(text, str) and text.strip():
+                    chunks.append(text)
+        if chunks:
+            return "\n".join(chunks)
+    raise ValueError("remote LLM response has empty output text")
+
+
+def _remote_responses(messages: list[dict[str, str]], config: LLMConfig) -> str:
+    payload = {
+        "model": config.model,
+        "input": messages,
+        "temperature": 0.2,
+        "max_output_tokens": 700,
+    }
+    request = urllib.request.Request(
+        config.endpoint(),
+        data=json.dumps(payload).encode("utf-8"),
+        headers=_headers(config),
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=config.timeout_seconds) as response:
+        data = json.loads(response.read().decode("utf-8"))
+    return _extract_responses_text(data)
+
+
 def _remote_chat(messages: list[dict[str, str]], config: LLMConfig) -> str:
     if config.requires_api_key():
         raise ValueError("PV_LLM_API_KEY or OPENAI_API_KEY is empty")
+    if config.wire_api == "responses":
+        return _remote_responses(messages, config)
     payload = {
         "model": config.model,
         "messages": messages,
         "temperature": 0.2,
         "stream": False,
     }
-    headers = {"Content-Type": "application/json"}
-    if config.api_key:
-        headers["Authorization"] = f"Bearer {config.api_key}"
     request = urllib.request.Request(
         config.endpoint(),
         data=json.dumps(payload).encode("utf-8"),
-        headers=headers,
+        headers=_headers(config),
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=config.timeout_seconds) as response:

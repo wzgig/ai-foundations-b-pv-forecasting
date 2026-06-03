@@ -26,7 +26,7 @@
 | `start_software.vbs` | 无终端双击入口，优先通过 `pythonw` 启动 `software_launcher.py`，适合演示视频和教师复现时使用。 |
 | `run.bat` | Windows 命令行调试启动脚本，会检查 Python/Streamlit 并启动 `app.py`，适合查看依赖安装和 Streamlit 输出。 |
 | `llm/result_context.py` | 从问题 1-4 的 `run_summary.json` 和指标 CSV 中读取结果，整理为 LLM 上下文。 |
-| `llm/assistant.py` | 大模型辅助解读入口，默认离线模板兜底，配置环境变量后可调用 OpenAI-compatible、`local-codex` 或其他本地/远程聊天接口。 |
+| `llm/assistant.py` | 大模型辅助解读入口，默认读取本机 Codex config/auth 并支持 Responses API；环境变量可覆盖为 OpenAI-compatible、`local-codex` 或其他本地/远程接口，失败时离线模板兜底。 |
 | `llm/prompts.py` | 项目问答与报告摘要的提示词模板。 |
 
 ## 正式问题代码
