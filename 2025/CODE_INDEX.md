@@ -20,6 +20,7 @@
 | `_shared/matlab/project_output_path.m` | MATLAB `outputs/` 输出路径生成工具。 |
 | `_shared/matlab/save_project_figure.m` | MATLAB 期刊风格图像保存工具，默认写入 `outputs/figures/`。 |
 | `tools/project_health_check.py` | 静态健康检查脚本，检查 Python 语法、重复代码快照、相对输入文件和正式问题脚本输出约束。 |
+| `run_project.py` | 项目总控入口，支持用 `--run` 选择问题任务、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出，并显式处理问题 3 二次分析对问题 2/3 预测表的依赖。 |
 
 ## 正式问题代码
 

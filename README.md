@@ -58,6 +58,14 @@ python 2025\tools\project_health_check.py
 python -m unittest discover -s tests -q
 ```
 
+使用总控入口选择运行或查看某一问：
+
+```powershell
+python 2025\run_project.py --list
+python 2025\run_project.py --run 2,3,4 --parallel
+python 2025\run_project.py --show 4
+```
+
 完整运行顺序、模型复用逻辑、输出目录和结果查看方式见 `2025/RUN_GUIDE.md`。每个代码文件的现用名称和用途见 `2025/CODE_INDEX.md`。
 
 运行某个实验时，优先进入对应目录，例如：
@@ -80,6 +88,8 @@ python .\problem2_baseline_three_model_forecast.py
 2026-06-02 已完成问题 3 气象特征预测优化：`problem3_weather_feature_forecast.py` 改为以前一日实测功率和目标日 NWP 气象序列预测目标日 96 点功率，修正预测表时间对齐、PyTorch DLL 运行库兜底、checkpoint 复用、中文期刊风格图和二次分析脚本的目标日场景合并。
 
 2026-06-02 已完成问题 4 输入特征消融优化：`problem4_feature_ablation_forecast.py` 改为严格日前口径，比较 NWP、LMD 与 NWP+LMD 三类输入，支持 `PV_Q4_MODES`、`PV_Q4_MODELS` 和 `PV_Q4_SAVE_RUN_DIAGNOSTICS`，当前默认结果中 `FusionModel_mixed` 综合表现最好。
+
+2026-06-03 已新增项目总控入口：`2025/run_project.py` 支持用 `--run` 选择问题 1-4、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出；问题 3 场景分析会显式检查问题 2 和问题 3 预测表依赖。
 
 2026-06-02 已完成输出模块和中文期刊绘图规范整理：正式问题脚本统一使用 `outputs/` 目录和 `run_summary.json`，共享绘图配置改为中文字体兜底、600 dpi 保存、弱网格、统一配色和期刊式坐标轴；MATLAB 增加对应的输出与绘图 helper。
 

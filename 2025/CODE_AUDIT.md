@@ -52,6 +52,7 @@
 ## 本轮已完成的优化
 
 - 新增 `_shared/pv_project.py`，集中处理 Python 路径解析、中文绘图配置、随机种子、训练集归一化、稳健分箱和 CSV 写出。
+- 新增 `run_project.py`，作为问题 1-4 的总控入口，提供选择运行、并行运行、依赖检查和结果展示能力。
 - 新增 `_shared/matlab/resolve_project_input.m`，让 MATLAB 脚本可以从脚本目录和项目内候选目录寻找数据。
 - 新增 `tools/project_health_check.py`，静态检查 Python 语法、重复代码快照和相对输入文件。
 - 新增 `tests/test_project_health.py`，用标准库 `unittest` 验证健康检查和共享路径解析。

@@ -40,7 +40,41 @@ python -m unittest discover -s tests -q
 
 这两个命令不会训练模型。它们用于确认 Python 文件可解析、输入文件能找到、核心输出管理约束没有被破坏。
 
-## 3. 推荐完整运行顺序
+## 3. 总控入口与并行关系
+
+如果只想用一个开关式入口运行或查看结果，可以使用：
+
+```powershell
+python 2025\run_project.py --list
+python 2025\run_project.py --run 1
+python 2025\run_project.py --run 2,3,4 --parallel
+python 2025\run_project.py --show 4
+```
+
+任务关系如下：
+
+| 任务 | 是否依赖其他任务 | 说明 |
+| --- | --- | --- |
+| `1` | 否 | 运行问题 1 的理论功率 Python 脚本。 |
+| `2` | 否 | 运行问题 2 三模型基准日前预测。 |
+| `3` | 否 | 运行问题 3 气象特征日前预测主脚本。 |
+| `4` | 否 | 运行问题 4 输入特征消融主脚本。 |
+| `3-analysis` | 依赖 `2` 和 `3` 的预测表 | 运行问题 3 场景划分、提升来源和典型曲线分析。 |
+
+因此，`1`、`2`、`3`、`4` 可以同时运行；`3-analysis` 会在 `2` 和 `3` 完成后再运行。`main` 等价于 `1,2,3,4`，`all` 等价于 `1,2,3,4,3-analysis`。
+
+常用控制参数：
+
+```powershell
+python 2025\run_project.py --run all --parallel --dry-run
+python 2025\run_project.py --run 4 --q4-modes mixed --q4-fast
+python 2025\run_project.py --run 2,3 --force-retrain --epochs 20
+python 2025\run_project.py --show all --open-output
+```
+
+`--show` 只读取 `outputs/` 下已有摘要、指标和预测表路径，不触发训练。`--dry-run` 只打印运行计划，适合在正式长时间运行前确认依赖和并行批次。
+
+## 4. 推荐完整运行顺序
 
 ### 步骤 1：问题 1 数据分析
 
@@ -203,7 +237,7 @@ outputs/reports/run_summary.json
 
 当前默认结果中，`FusionModel_mixed` 的综合表现最好：`E_rmse=0.0465`、`C_R=95.35%`、`Q_R=99.84%`。完整指标以 `outputs/metrics/Q4_模型输入对比结果.csv` 为准。
 
-## 4. 模型保存与复用逻辑
+## 5. 模型保存与复用逻辑
 
 问题 2、问题 3、问题 4 的主训练脚本都使用相同的 checkpoint 逻辑：
 
@@ -229,7 +263,7 @@ problem4_FusionModel_lmd.pth
 problem4_FusionModel_mixed.pth
 ```
 
-## 5. 输出保存逻辑
+## 6. 输出保存逻辑
 
 正式问题脚本使用统一输出结构：
 
@@ -255,7 +289,7 @@ Get-Content .\outputs\reports\run_summary.json
 Get-ChildItem .\outputs -Recurse
 ```
 
-## 6. 结果查看顺序
+## 7. 结果查看顺序
 
 每个问题运行结束后，建议按下面顺序查看结果。
 
@@ -349,7 +383,7 @@ outputs/figures/*.html
 
 HTML 图可以直接用浏览器打开，适合放大查看某一天的预测曲线。
 
-## 7. 快速查看命令
+## 8. 快速查看命令
 
 查看某个问题所有输出：
 
@@ -375,7 +409,7 @@ explorer .\outputs
 explorer .\outputs\figures
 ```
 
-## 8. 推荐复现实验记录方式
+## 9. 推荐复现实验记录方式
 
 每次正式运行后，建议记录：
 
@@ -391,7 +425,7 @@ explorer .\outputs\figures
 
 本项目根目录已有 `PROJECT_LOG.md`，用于记录重要结构调整和代码维护；单次训练实验记录可以另建实验日志，也可以在论文整理时从 `outputs/reports/run_summary.json` 回溯。
 
-## 9. 常见问题
+## 10. 常见问题
 
 ### 运行很慢怎么办？
 

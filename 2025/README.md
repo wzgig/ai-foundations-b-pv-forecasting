@@ -88,6 +88,14 @@ pip install -r 2025\requirements.txt
 python 2025\tools\project_health_check.py
 ```
 
+按开关方式运行或查看某一问：
+
+```powershell
+python 2025\run_project.py --list
+python 2025\run_project.py --run main --parallel
+python 2025\run_project.py --show 1,4
+```
+
 运行单个问题脚本时，可以直接进入问题目录：
 
 ```powershell
@@ -100,6 +108,8 @@ python .\problem3_scenario_ieee_analysis.py
 问题 1 的理论功率脚本、问题 2-4 的主脚本和问题 3 二次分析脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测或理论功率明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存运行摘要。问题 3 主训练脚本保留 `run_summary.json`，二次分析脚本写入各自独立的 `problem3_*_summary.json`。这些脚本默认不弹出图窗，适合长时间运行后自动保留所有结果。
 
 问题 4 主脚本默认运行 `FusionModel` 的 `nwp`、`lmd`、`mixed` 三种输入消融。可用 `PV_Q4_MODES` 选择输入模式、`PV_Q4_MODELS` 选择模型、`PV_Q4_SAVE_RUN_DIAGNOSTICS=0` 临时跳过逐运行诊断图刷新。
+
+`run_project.py` 是项目级总控入口：问题 1、2、3 主训练和问题 4 可并行运行；`3-analysis` 会读取问题 2 与问题 3 的预测结果，因此只有在依赖输出存在或同次运行了问题 2、3 后才会执行。
 
 ## 维护约定
 
