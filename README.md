@@ -6,6 +6,8 @@
 
 项目基于光伏电站历史功率、数值天气预报和相关气象数据，完成从数据理解、理论功率分析、日前预测建模、场景划分到输入特征消融的完整课程作业流程。
 
+期末大作业提交规范、当前项目适配情况和后续改造路线见 `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`。
+
 主要问题包括：
 
 - 问题 1：光伏电站数据分析、理论功率建模和可视化。
@@ -26,6 +28,7 @@
 │   ├── _shared/                   Python 与 MATLAB 公共工具
 │   ├── tools/                     项目健康检查脚本
 │   ├── CODE_AUDIT.md              代码审计与优化记录
+│   ├── ASSIGNMENT_REQUIREMENTS_ANALYSIS.md  期末大作业要求分析
 │   ├── README.md                  2025 目录说明
 │   └── requirements.txt           Python 依赖清单
 ├── tests/                         轻量级回归检查
