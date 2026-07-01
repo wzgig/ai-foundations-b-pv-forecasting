@@ -2,6 +2,46 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-07-01 按长沙理工大学样张重排项目主报告终稿
+
+### 调整目标
+
+- 阅读并对照 `长沙理工大学本科毕业设计（论文）撰写规范样张.doc` 的页面风格，对已生成的项目主报告终稿做正式论文式排版。
+- 保留工程项目叙事和课程大作业内容，不改写教师模板文件，不补未确认团队成员姓名学号。
+- 让 Word/PDF 终稿更接近落地项目材料：页眉页脚、摘要、英文摘要、目录、标题层级、图表编号和表格样式统一。
+
+### 主要改动
+
+- 更新 `2025/05_delivery/项目主报告_终稿.md`：
+  - 增补英文题名、英文摘要和 Key words。
+  - 将系统架构处的箭头式草稿表达改为工程链路叙述。
+- 新增 `2025/tools/generate_csust_report.py`：
+  - 按 A4、左 3cm/右 2cm/上 2.5cm/下 2cm、页眉校名标识、页脚页码、黑体标题、宋体正文、Times New Roman 英文等样张特征生成 DOCX。
+  - 自动处理摘要、英文摘要、目录字段、正文标题、图题编号、表题编号、三线表风格和图片插入。
+- 新增 `2025/03_figures/paper_assets/csust_header_logo.jpeg`，用于稳定复现样张页眉校名标识。
+- 新增 `2025/tools/export_csust_report.ps1`：
+  - 自动执行 DOCX 生成、Word 更新目录和页码、目录压缩、LibreOffice 导出 PDF，并在可用时渲染 PDF 页面供检查。
+- 重新生成：
+  - `2025/05_delivery/项目主报告_终稿.docx`
+  - `2025/05_delivery/项目主报告_终稿.pdf`
+- 更新 `2025/05_delivery/README.md` 和 `最终提交包清单.md`，标明终稿已按长沙理工大学样张排版，并记录导出脚本。
+
+### 验证结果
+
+- `.\2025\tools\export_csust_report.ps1`：通过，生成 Word/PDF，PDF 共 12 页。
+- `python -m py_compile 2025\tools\generate_csust_report.py`：通过。
+- `python 2025\tools\project_health_check.py`：通过，无 Python 解析错误、无未解析相对输入、无受管输出问题；仍保留两组历史实验副本重复记录。
+- `python -m unittest discover -s tests -q`：通过，23 个测试 OK。
+- `python 2025\run_project.py --show all`：通过，五条工程链路已有输出、指标和摘要可读取。
+- `git diff --check`：通过，仅提示 Windows 下 `tests/test_project_health.py` 后续可能按 CRLF 检出。
+- `pdftoppm -png -r 140 ...`：通过，已检查摘要、英文摘要、目录、正文开头、表格页、图表页和末页。
+- 视觉检查结果：目录压缩为一页，目录页码与 PDF 页脚一致；一级/二级标题为黑体黑字；图题和表题已编号；页眉页脚、页码、表格和图片无明显遮挡。
+
+### 后续注意事项
+
+- 若继续改 `项目主报告_终稿.md`，应运行 `.\2025\tools\export_csust_report.ps1` 重新生成 DOCX/PDF，并复查渲染页。
+- 真实团队成员姓名学号、演示视频 MP4 和最终平台上传仍需提交前人工确认。
+
 ## 2026-07-01 项目主报告终稿 Word/PDF 生成
 
 ### 调整目标

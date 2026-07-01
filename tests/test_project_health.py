@@ -286,9 +286,22 @@ requires_openai_auth = true
 
         final_report = (DELIVERY_DIR / "项目主报告_终稿.md").read_text(encoding="utf-8")
         self.assertIn("项目负责人与集成负责人", final_report)
+        self.assertIn("## ABSTRACT", final_report)
         self.assertIn("图表", final_report)
         self.assertGreater((DELIVERY_DIR / "项目主报告_终稿.docx").stat().st_size, 100000)
         self.assertGreater((DELIVERY_DIR / "项目主报告_终稿.pdf").stat().st_size, 100000)
+
+    def test_csust_report_export_tools_exist(self):
+        generator = PROJECT_ROOT / "2025" / "tools" / "generate_csust_report.py"
+        exporter = PROJECT_ROOT / "2025" / "tools" / "export_csust_report.ps1"
+
+        ast.parse(generator.read_text(encoding="utf-8"), filename=str(generator))
+        exporter_text = exporter.read_text(encoding="utf-8")
+
+        self.assertIn("generate_csust_report.py", exporter_text)
+        self.assertIn("TablesOfContents", exporter_text)
+        self.assertIn("UpdatePageNumbers", exporter_text)
+        self.assertIn("--convert-to pdf", exporter_text)
 
     def test_static_pages_site_references_real_assets(self):
         html = DOCS_INDEX.read_text(encoding="utf-8")
