@@ -264,6 +264,9 @@ requires_openai_auth = true
             "作业要求提取.md",
             "交付完成度复盘.md",
             "项目主报告_课程版.md",
+            "项目主报告_终稿.md",
+            "项目主报告_终稿.docx",
+            "项目主报告_终稿.pdf",
             "团队分工与项目计划.md",
             "功能性能稳定性测试表.md",
             "演示视频脚本.md",
@@ -280,6 +283,12 @@ requires_openai_auth = true
         self.assertIn("光伏电站日前计划与功率预测工作台", report)
         self.assertIn("FusionModel_mixed", report)
         self.assertIn("E_rmse=0.0465", report)
+
+        final_report = (DELIVERY_DIR / "项目主报告_终稿.md").read_text(encoding="utf-8")
+        self.assertIn("项目负责人与集成负责人", final_report)
+        self.assertIn("图表", final_report)
+        self.assertGreater((DELIVERY_DIR / "项目主报告_终稿.docx").stat().st_size, 100000)
+        self.assertGreater((DELIVERY_DIR / "项目主报告_终稿.pdf").stat().st_size, 100000)
 
     def test_static_pages_site_references_real_assets(self):
         html = DOCS_INDEX.read_text(encoding="utf-8")
