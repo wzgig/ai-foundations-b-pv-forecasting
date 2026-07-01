@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Project result assistant with offline-first LLM behavior."""
+"""Project operation assistant with offline-first language behavior."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ REMOTE_PROVIDERS = {
     "api",
     "openai",
     "openai-compatible",
+    "compatible-http",
     "remote",
     "local",
     "local-codex",
@@ -27,7 +28,7 @@ REMOTE_PROVIDERS = {
     "codex-local",
     "codex-config",
 }
-LOCAL_PROVIDERS = {"local", "local-codex", "codex", "codex-local", "openai-compatible"}
+LOCAL_PROVIDERS = {"local", "local-codex", "codex", "codex-local", "openai-compatible", "compatible-http"}
 
 
 @dataclass(frozen=True)
@@ -188,20 +189,20 @@ def _offline_answer(question: str, contexts: dict[str, TaskContext]) -> str:
     row3 = best_row_by_metric(task3) if task3 else None
     row4 = best_row_by_metric(task4) if task4 else None
 
-    if any(key in q for key in ("lmd", "mixed", "混合", "降尺度", "问题4")):
+    if any(key in q for key in ("lmd", "mixed", "混合", "降尺度", "局地", "校正", "输入评估")):
         return (
-            "问题4比较了NWP、LMD和NWP+LMD混合输入。LMD代表更贴近站点局地状态的实测气象信息，"
+            "局地校正融合链路比较了NWP、LMD和NWP+LMD混合输入。LMD代表更贴近站点局地状态的实测气象信息，"
             "混合输入同时保留NWP的日前预报性和LMD的局地尺度特征。"
             f"当前最优组合为{_label(row4)}，E_rmse={_metric(row4, 'E_rmse')}，"
             f"C_R={_metric(row4, 'C_R')}%，Q_R={_metric(row4, 'Q_R')}%。"
             "该结果支持“空间降尺度或局地气象补充可以改善光伏功率预测”的结论。"
         )
 
-    if any(key in q for key in ("nwp", "气象", "问题3", "提升")):
+    if any(key in q for key in ("nwp", "气象", "预报融合", "提升")):
         return (
-            "问题3在历史功率序列之外加入目标日NWP气象序列，使模型提前看到辐照、温度、湿度、风速等未来天气条件。"
-            f"当前结果中，问题2最优为{_label(row2)}，E_rmse={_metric(row2, 'E_rmse')}，C_R={_metric(row2, 'C_R')}%；"
-            f"问题3最优为{_label(row3)}，E_rmse={_metric(row3, 'E_rmse')}，C_R={_metric(row3, 'C_R')}%。"
+            "气象预报融合链路在历史功率序列之外加入目标日NWP气象序列，使模型提前看到辐照、温度、湿度、风速等未来天气条件。"
+            f"当前结果中，历史功率基线最优为{_label(row2)}，E_rmse={_metric(row2, 'E_rmse')}，C_R={_metric(row2, 'C_R')}%；"
+            f"气象预报融合最优为{_label(row3)}，E_rmse={_metric(row3, 'E_rmse')}，C_R={_metric(row3, 'C_R')}%。"
             "这说明气象信息能降低白昼归一化误差，并提升日前预测对天气扰动的响应能力。"
         )
 
@@ -209,30 +210,30 @@ def _offline_answer(question: str, contexts: dict[str, TaskContext]) -> str:
         return (
             "附件1指标采用装机容量归一化误差。E_rmse越小，说明预测曲线相对容量的均方误差越低；"
             "C_R=(1-E_rmse)*100%，越高表示准确率越好；Q_R统计归一化绝对误差小于0.25的样本比例，"
-            "越高表示预测点更稳定地落在合格阈值内。本项目所有问题2-4的核心指标都只在白昼时段统计。"
+            "越高表示预测点更稳定地落在合格阈值内。本项目核心预测链路的指标都只在白昼时段统计。"
         )
 
     if any(key in q for key in ("不足", "改进", "展望", "材料", "期末")):
         return (
             "当前项目的主要不足包括：深度模型定义仍有重复、历史工作区体积较大、LLM模块默认采用离线模板兜底、"
-            "最终课程主报告仍需和最新outputs指标完全同步。后续可继续抽取统一预测模型模块，压缩提交包，"
-            "并接入本地轻量大模型或稳定API来增强自然语言问答能力。"
+            "交付报告仍需和最新outputs指标完全同步。后续可继续抽取统一预测模型模块，压缩提交包，"
+            "并接入本地轻量语言接口或稳定API来增强自然语言问答能力。"
         )
 
     if any(key in q for key in ("app.py", "run_project", "llm", "代码", "协同", "入口")):
         return (
             "软件入口采用三层协同：run_project.py 负责项目级任务编排、依赖顺序和 outputs 查看；"
-            "llm/result_context.py 把各问题运行摘要和指标表整理成结构化上下文；"
-            "app.py 负责 Streamlit 交互界面，把结果浏览、代码查看、安全命令和大模型问答组织到同一个控制台。"
+            "llm/result_context.py 把各条链路的运行摘要和指标表整理成结构化上下文；"
+            "app.py 负责 Streamlit 交互界面，把结果浏览、代码查看、安全命令和运行解读组织到同一个控制台。"
             "这样教师或演示视频可以先双击 start_software.vbs 进入桌面启动器，再按页面查看结果或提问，不必直接接触训练脚本。"
         )
 
     return (
-        "本项目围绕光伏电站日前功率预测建立了完整工程闭环：问题1进行理论功率与发电特性分析，"
-        "问题2建立历史功率基准深度学习模型，问题3加入NWP气象信息并做场景划分，"
-        "问题4比较NWP、LMD和混合输入以验证空间降尺度价值。"
-        f"当前关键结论是：问题2最优{_label(row2)}，问题3最优{_label(row3)}，"
-        f"问题4最优{_label(row4)}。"
+        "本项目围绕光伏电站日前功率预测建立了完整工程闭环：站点机理诊断用于把握理论功率与发电特性，"
+        "历史功率基线提供无天气输入时的保底预测能力，气象预报融合把NWP信息纳入日前计划，"
+        "局地校正融合比较NWP、LMD和混合输入以验证空间降尺度价值。"
+        f"当前关键结论是：历史功率基线最优{_label(row2)}，气象预报融合最优{_label(row3)}，"
+        f"局地校正融合最优{_label(row4)}。"
     )
 
 
@@ -345,7 +346,7 @@ def answer_question(
         except (ValueError, urllib.error.URLError, TimeoutError) as exc:
             fallback = _offline_answer(question, contexts)
             return LLMResponse(
-                text=f"{fallback}\n\n远程大模型调用失败，已使用离线模板兜底。错误：{exc}",
+                text=f"{fallback}\n\n远程语言接口调用失败，已使用离线模板兜底。错误：{exc}",
                 provider="offline-fallback",
                 used_remote=False,
                 error=str(exc),

@@ -1,19 +1,19 @@
 # 光伏电站发电功率日前预测
 
-这是《人工智能基础B》课程大作业仓库，围绕 2025 年 A 题“光伏电站发电功率日前预测问题”整理代码、数据分析、模型实验、结果图表和最终论文。
+这是一个面向光伏电站日前发电计划的预测项目仓库，围绕站点历史功率、数值天气预报和局地气象数据整理代码、数据分析、模型实验、结果图表和交付报告。
 
 ## 项目概览
 
-项目基于光伏电站历史功率、数值天气预报和相关气象数据，完成从数据理解、理论功率分析、日前预测建模、场景划分到输入特征消融的完整课程作业流程。
+项目基于光伏电站历史功率、数值天气预报和相关气象数据，完成从站点机理诊断、日前预测建模、天气场景归因到多源气象输入评估的完整工程链路。
 
-期末大作业提交规范、当前项目适配情况和后续改造路线见 `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`。
+原始交付规范、当前项目适配情况和后续改造路线见 `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`。
 
-主要问题包括：
+主要工程链路包括：
 
-- 问题 1：光伏电站数据分析、理论功率建模和可视化。
-- 问题 2：基于历史功率序列的日前功率预测和三模型对比。
-- 问题 3：引入气象变量后的场景划分、误差来源分析和模型改进。
-- 问题 4：比较不同输入特征组合下的预测效果。
+- 站点机理诊断：分析理论功率、发电特性和可视化诊断图。
+- 历史功率基线：基于历史功率序列进行日前预测和三模型对比。
+- 气象预报融合：引入 NWP 气象变量，分析天气场景和误差来源。
+- 局地校正融合：比较 NWP、LMD 与 mixed 输入组合的预测收益。
 
 ## 目录结构
 
@@ -21,12 +21,12 @@
 .
 ├── AGENTS.md                     项目级代理协作规则
 ├── 2025/
-│   ├── 00_course_materials/       题面和课程附件
+│   ├── 00_course_materials/       原始业务目标和评价附件
 │   ├── 01_modeling_workspace/     完整 PVOD 建模实验工作区
-│   ├── 02_problem_solutions/      问题 1-4 的代码、数据、结果和图表
+│   ├── 02_problem_solutions/      各条工程链路的代码、数据、结果和图表
 │   ├── 03_figures/                探索图、论文素材图和场景对比图
 │   ├── 04_paper/                  最终论文 PDF 与 Word 文件
-│   ├── llm/                       结果解释模块与可选语言接口
+│   ├── llm/                       运行解读模块与可选语言接口
 │   ├── _shared/                   Python 与 MATLAB 公共工具
 │   ├── tools/                     项目健康检查脚本
 │   ├── app.py                     Streamlit 预测工作台
@@ -34,7 +34,7 @@
 │   ├── start_software.vbs         无终端双击启动入口
 │   ├── run.bat                    Windows 一键启动脚本
 │   ├── CODE_AUDIT.md              代码审计与优化记录
-│   ├── ASSIGNMENT_REQUIREMENTS_ANALYSIS.md  期末大作业要求分析
+│   ├── ASSIGNMENT_REQUIREMENTS_ANALYSIS.md  原始交付要求分析
 │   ├── README.md                  2025 目录说明
 │   ├── requirements.txt           Python 运行依赖清单
 │   └── requirements-optional.txt  可选实验依赖清单
@@ -47,8 +47,8 @@
 ## 技术栈
 
 - Python：`numpy`、`pandas`、`matplotlib`、`seaborn`、`scikit-learn`、`scipy`、`torch`、`plotly`、`streamlit`
-- MATLAB：问题 1 理论功率建模和探索性绘图
-- Office 文档：论文终稿、分问题说明和补充材料
+- MATLAB：理论功率建模和探索性绘图
+- Office 文档：交付报告、链路说明和补充材料
 
 ## 复现与检查
 
@@ -70,7 +70,7 @@ python 2025\tools\project_health_check.py
 python -m unittest discover -s tests -q
 ```
 
-使用总控入口选择运行或查看某一问：
+使用总控入口选择运行或查看某条链路：
 
 ```powershell
 python 2025\run_project.py --list
@@ -78,7 +78,7 @@ python 2025\run_project.py --run 2,3,4 --parallel
 python 2025\run_project.py --show 4
 ```
 
-启动课程大作业软件控制台。演示时优先双击无终端桌面启动器：
+启动本地预测软件控制台。演示时优先双击无终端桌面启动器：
 
 ```powershell
 2025\start_software.vbs
@@ -96,7 +96,7 @@ python 2025\run_project.py --show 4
 python -m streamlit run 2025\app.py
 ```
 
-不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。界面包含工作台、运行结果、交付引用、代码与命令、结果解释和受保护运行控制页面。结果解释模块默认离线可用，也可读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，或通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
+不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。界面包含工作台、运行结果、交付引用、代码与命令、运行解读和受保护运行控制页面。运行解读模块默认离线可用，也可读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，或通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
 
 GitHub Pages 静态展示页位于 `docs/index.html`。Pages 只展示项目摘要、核心指标、图表和本地运行方式；完整 Streamlit 工作台需要本地运行。
 
@@ -115,22 +115,22 @@ python .\problem2_baseline_three_model_forecast.py
 
 2026-06-01 已完成第一轮代码工程化优化：新增公共路径解析、中文绘图配置、随机种子设置、训练集归一化工具、MATLAB 数据定位函数和项目健康检查。
 
-2026-06-02 已完成模型训练缓存专项优化：问题 2-4 的主训练脚本会按实验/模型保存独立 PyTorch checkpoint，并在训练前复用签名匹配的已有模型，避免每次修改绘图或分析代码都重新训练。需要强制重新训练时，可在 `train_model(..., force_retrain=True)` 中开启。
+2026-06-02 已完成模型训练缓存专项优化：核心预测链路会按实验/模型保存独立 PyTorch checkpoint，并在训练前复用签名匹配的已有模型，避免每次修改绘图或分析代码都重新训练。需要强制重新训练时，可在 `train_model(..., force_retrain=True)` 中开启。
 
-2026-06-02 已完成输出产物标准化：问题 2-4 的主训练脚本和 `01_modeling_workspace` 对应副本会把预测表、指标表、图片和运行摘要统一写入脚本目录下的 `outputs/predictions/`、`outputs/metrics/`、`outputs/figures/`、`outputs/reports/`，不再只弹出绘图窗口或把 CSV 散落在脚本目录。
+2026-06-02 已完成输出产物标准化：核心预测脚本和 `01_modeling_workspace` 对应副本会把预测表、指标表、图片和运行摘要统一写入脚本目录下的 `outputs/predictions/`、`outputs/metrics/`、`outputs/figures/`、`outputs/reports/`，不再只弹出绘图窗口或把 CSV 散落在脚本目录。
 
-2026-06-02 已完成问题 1 理论功率诊断优化：`theoretical_power_diagnostics.py` 会把理论功率时序、月统计、白昼误差指标、诊断图和运行摘要统一写入 `problem1_data_analysis/outputs/`，并保留原大气修正口径作为对照。
+2026-06-02 已完成站点理论功率诊断优化：`theoretical_power_diagnostics.py` 会把理论功率时序、月统计、白昼误差指标、诊断图和运行摘要统一写入 `problem1_data_analysis/outputs/`，并保留原大气修正口径作为对照。
 
-2026-06-02 已完成问题 3 气象特征预测优化：`problem3_weather_feature_forecast.py` 改为以前一日实测功率和目标日 NWP 气象序列预测目标日 96 点功率，修正预测表时间对齐、PyTorch DLL 运行库兜底、checkpoint 复用、中文期刊风格图和二次分析脚本的目标日场景合并。
+2026-06-02 已完成气象预报融合链路优化：`problem3_weather_feature_forecast.py` 改为以前一日实测功率和目标日 NWP 气象序列预测目标日 96 点功率，修正预测表时间对齐、PyTorch DLL 运行库兜底、checkpoint 复用、中文期刊风格图和二次分析脚本的目标日场景合并。
 
-2026-06-02 已完成问题 4 输入特征消融优化：`problem4_feature_ablation_forecast.py` 改为严格日前口径，比较 NWP、LMD 与 NWP+LMD 三类输入，支持 `PV_Q4_MODES`、`PV_Q4_MODELS` 和 `PV_Q4_SAVE_RUN_DIAGNOSTICS`，当前默认结果中 `FusionModel_mixed` 综合表现最好。
+2026-06-02 已完成局地校正融合链路优化：`problem4_feature_ablation_forecast.py` 改为严格日前口径，比较 NWP、LMD 与 NWP+LMD 三类输入，支持 `PV_Q4_MODES`、`PV_Q4_MODELS` 和 `PV_Q4_SAVE_RUN_DIAGNOSTICS`，当前默认结果中 `FusionModel_mixed` 综合表现最好。
 
-2026-06-03 已新增项目总控入口：`2025/run_project.py` 支持用 `--run` 选择问题 1-4、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出；问题 3 场景分析会显式检查问题 2 和问题 3 预测表依赖。
+2026-06-03 已新增项目总控入口：`2025/run_project.py` 支持用 `--run` 选择工程链路、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出；运行场景归因会显式检查历史功率基线和气象预报融合预测表依赖。
 
-2026-06-03 已新增课程交付展示层：`2025/app.py` 提供 Streamlit 预测工作台，后续已升级为带真实预测图首屏、结果摘要、交付引用索引和受控运行页的软件界面；`2025/llm/` 提供离线优先且支持本机 Codex 配置、Responses API 与 OpenAI-compatible 接口的结果解释能力，`2025/start_software.vbs` 和 `2025/software_launcher.py` 提供无终端桌面启动入口，`2025/run.bat` 保留为命令行调试启动脚本，`requirements.txt` 改为固定版本运行依赖。
+2026-06-03 已新增工程交付展示层：`2025/app.py` 提供 Streamlit 预测工作台，后续已升级为带真实预测图首屏、结果摘要、交付引用索引和受控运行页的软件界面；`2025/llm/` 提供离线优先且支持本机 Codex 配置、Responses API 与兼容 HTTP 接口的运行解读能力，`2025/start_software.vbs` 和 `2025/software_launcher.py` 提供无终端桌面启动入口，`2025/run.bat` 保留为命令行调试启动脚本，`requirements.txt` 改为固定版本运行依赖。
 
-2026-06-02 已完成输出模块和中文期刊绘图规范整理：正式问题脚本统一使用 `outputs/` 目录和 `run_summary.json`，共享绘图配置改为中文字体兜底、600 dpi 保存、弱网格、统一配色和期刊式坐标轴；MATLAB 增加对应的输出与绘图 helper。
+2026-06-02 已完成输出模块和中文期刊绘图规范整理：正式链路脚本统一使用 `outputs/` 目录和 `run_summary.json`，共享绘图配置改为中文字体兜底、600 dpi 保存、弱网格、统一配色和期刊式坐标轴；MATLAB 增加对应的输出与绘图 helper。
 
-2026-06-02 已完成脚本语义化命名：将早期的数字编号、临时中文名脚本统一改为按问题和功能命名，例如 `problem2_baseline_three_model_forecast.py`、`problem3_weather_feature_forecast.py`、`problem4_feature_ablation_forecast.py` 和 `theoretical_power_diagnostics.py`。
+2026-06-02 已完成脚本语义化命名：将早期的数字编号、临时中文名脚本统一改为按功能命名，例如 `problem2_baseline_three_model_forecast.py`、`problem3_weather_feature_forecast.py`、`problem4_feature_ablation_forecast.py` 和 `theoretical_power_diagnostics.py`。
 
 后续如果继续重构，建议优先把重复的 PyTorch 模型定义和训练循环抽取为统一模块。

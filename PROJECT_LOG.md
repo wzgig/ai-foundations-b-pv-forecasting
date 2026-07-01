@@ -2,6 +2,51 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-07-01 工程链路叙事、运行视角交互与 Pages 资产去编号
+
+### 调整目标
+
+- 按用户要求进一步去掉“问题二/三/四”式展示，把公开页面和本地工作台改为更贴近工程实际的光伏电站日前计划、调度复盘和模型维护项目。
+- 在不破坏既有目录、脚本 key 和输出路径的前提下，将前台叙事统一为“站点机理诊断、历史功率基线、气象预报融合、运行场景归因、局地校正融合”。
+- 继续降低 AI 生成/总结感，结果解读模块前台改称“运行解读”，文档中改用“交付说明、兼容 HTTP 端点、语言接口”等更工程化表达。
+
+### 主要改动
+
+- 优化 `2025/app.py`：
+  - 新增“运行视角”分段控件，支持 `日前计划`、`调度复盘`、`模型维护`、`交付审查` 四类使用语境。
+  - 新增“模型链路对比”交互表，支持用 `st.pills` 选择链路、用 `st.dataframe(..., on_select="rerun")` 点选链路并显示工程含义。
+  - 将指标卡、洞察卡、精选图表、交付引用、运行解读、侧边栏和空态文案全部改为工程链路语言。
+- 更新 `docs/index.html`：
+  - 将 GitHub Pages 首屏改成“光伏电站日前计划与功率预测工作台”，核心结果卡改为历史功率基线、气象预报融合、局地校正融合。
+  - 新增静态页“运行视角”按钮组，用少量原生 JS 切换日前计划、调度复盘、模型维护和交付审查说明。
+  - 裁剪 `docs/assets/forecast-curve.png` 顶部旧图题，避免首屏背景或图表卡露出“问题3”式标题。
+- 更新运行解读与总控入口：
+  - `2025/llm/result_context.py` 的任务标题改为工程链路名。
+  - `2025/llm/prompts.py` 和 `2025/llm/assistant.py` 改为工程交付/运行解读口吻。
+  - `2025/llm/assistant.py` 新增 `compatible-http` provider 名称，支持文档中的中性配置示例。
+  - `2025/run_project.py --list` 输出改为站点机理诊断、历史功率基线、气象预报融合、运行场景归因、局地校正融合。
+- 更新文档与测试：
+  - 同步 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md`、`2025/CODE_INDEX.md` 的公开说明。
+  - 更新 `tests/test_project_health.py`，增加新链路名、运行视角和旧“问题 2/3/4”公开文案缺失检查。
+
+### 验证结果
+
+- `python -m py_compile 2025\app.py 2025\run_project.py 2025\llm\assistant.py 2025\llm\result_context.py 2025\llm\prompts.py 2025\software_launcher.py`：通过。
+- `python 2025\app.py`：通过，只输出正确 Streamlit 启动提示。
+- `python 2025\run_project.py --list`：通过，任务列表已按工程链路显示。
+- `python 2025\tools\project_health_check.py`：通过，未发现 Python 解析错误、缺失相对输入或受管输出问题；仍保留两组已知历史实验副本重复。
+- `python -m unittest discover -s tests -q`：通过，21 个测试 OK。
+- `python 2025\run_project.py --show all`：通过，能读取五条工程链路的已有输出。
+- `npx playwright screenshot --wait-for-timeout=7000 --viewport-size=1440,1100 http://127.0.0.1:8510 tmp\pv_engineering_desktop.png`：通过，桌面工作台首屏正常。
+- `npx playwright screenshot --wait-for-timeout=7000 --viewport-size=390,900 http://127.0.0.1:8511 tmp\pv_engineering_mobile.png`：通过，移动端首屏无明显遮挡。
+- `npx playwright screenshot --wait-for-timeout=1500 --viewport-size=1440,1100 file:///.../docs/index.html tmp\pages_engineering.png`：通过，静态页首屏正常，旧图题不再露出。
+
+### 后续注意事项
+
+- 本轮不重训模型，不改变 CSV 指标与 checkpoint；展示结果仍以仓库现有 `outputs/` 为准。
+- 静态 Pages 的原生 JS 视角切换已写入页面；额外 Node 点击测试因当前环境无法直接 `require('playwright')` 未执行成功，但 Playwright CLI 截图验证已通过。
+- 底层文件夹和脚本名仍保留 `problemN_...` 历史前缀，避免破坏复现路径；前台和公开文档按工程链路解释这些文件。
+
 ## 2026-07-01 去 AI 味、预测工作台与 GitHub Pages 静态页优化
 
 ### 调整目标

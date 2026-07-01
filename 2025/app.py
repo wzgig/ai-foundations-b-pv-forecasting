@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Streamlit console for the PV forecasting coursework project."""
+"""Streamlit console for the PV day-ahead forecasting project."""
 
 from __future__ import annotations
 
@@ -31,12 +31,12 @@ EXCLUDED_TEXT_DIRS = {
     "node_modules",
 }
 CORE_FILES = [
-    ("run_project.py", "项目总控入口，负责列出、运行、查看问题 1-4 的实验任务。"),
-    ("app.py", "当前 Streamlit 工作台入口，负责结果浏览、交付索引、代码交互和结果解释。"),
+    ("run_project.py", "项目总控入口，负责列出、运行、查看各条工程链路的实验任务。"),
+    ("app.py", "当前 Streamlit 工作台入口，负责结果浏览、交付索引、代码交互和运行解读。"),
     ("run.bat", "Windows 一键启动脚本，推荐双击或在 PowerShell 中运行。"),
     ("llm/result_context.py", "读取 outputs 中的 run_summary.json 和指标 CSV，组织解释上下文。"),
-    ("llm/assistant.py", "离线规则解释与可选兼容 HTTP 接口入口。"),
-    ("llm/prompts.py", "结果解释和报告整理提示词。"),
+    ("llm/assistant.py", "离线规则解读与可选兼容 HTTP 接口入口。"),
+    ("llm/prompts.py", "运行解读和交付说明整理提示词。"),
     ("tools/project_health_check.py", "静态健康检查，验证代码语法、输出管理约束和输入文件引用。"),
 ]
 HERO_VISUAL = (
@@ -56,7 +56,7 @@ FEATURED_VISUALS = [
         / "outputs"
         / "figures"
         / "三模型每日预测对比图_白昼.png",
-        "问题3 · NWP信息融入后的单日预测对比",
+        "日前气象融合链路的单日预测对比",
     ),
     (
         "输入消融",
@@ -66,25 +66,51 @@ FEATURED_VISUALS = [
         / "outputs"
         / "figures"
         / "FusionModel_输入对比雷达图.png",
-        "问题4 · NWP、LMD、NWP+LMD综合得分",
+        "NWP、LMD、NWP+LMD 在局地校正链路中的综合得分",
     ),
     (
         "系统流程",
         ROOT / "03_figures" / "paper_assets" / "光伏发电数据驱动预测流程图.png",
-        "论文素材 · 数据驱动预测流程",
+        "工程链路 · 数据驱动预测流程",
     ),
 ]
 REFERENCE_FILES = [
-    ("题目要求", ROOT / "00_course_materials" / "A题：光伏电站发电功率日前预测问题.pdf", "课程题面"),
-    ("评价附件", ROOT / "00_course_materials" / "附件1.pdf", "指标定义与约束"),
-    ("最终论文", ROOT / "04_paper" / "final_submission" / "003158 A.pdf", "PDF提交件"),
-    ("最终论文", ROOT / "04_paper" / "final_submission" / "003158 A.docx", "可编辑提交件"),
+    ("业务目标", ROOT / "00_course_materials" / "A题：光伏电站发电功率日前预测问题.pdf", "任务边界与评价口径"),
+    ("评价口径", ROOT / "00_course_materials" / "附件1.pdf", "指标定义与约束"),
+    ("交付报告", ROOT / "04_paper" / "final_submission" / "003158 A.pdf", "PDF交付件"),
+    ("交付报告", ROOT / "04_paper" / "final_submission" / "003158 A.docx", "可编辑交付件"),
     ("运行说明", ROOT / "README.md", "项目说明"),
     ("运行说明", ROOT / "RUN_GUIDE.md", "复现流程"),
     ("代码索引", ROOT / "CODE_INDEX.md", "文件用途表"),
     ("维护记录", ROOT.parent / "PROJECT_LOG.md", "改动备注"),
 ]
-NAVIGATION = ["工作台", "运行结果", "交付引用", "代码与命令", "结果解释", "运行控制"]
+NAVIGATION = ["工作台", "运行结果", "交付引用", "代码与命令", "运行解读", "运行控制"]
+PIPELINE_CARDS = {
+    "2": {
+        "name": "历史功率基线",
+        "input": "历史功率序列",
+        "purpose": "缺少未来气象时的保底日前预测能力",
+        "decision": "作为调度计划的兜底参考，衡量纯数据驱动模型的基本误差边界。",
+    },
+    "3": {
+        "name": "气象预报融合",
+        "input": "前一日功率 + 目标日 NWP",
+        "purpose": "把辐照、温度、湿度和风速等未来天气条件纳入计划",
+        "decision": "用于日前计划编制和天气扰动复盘，重点观察相对基线的误差下降。",
+    },
+    "4": {
+        "name": "局地校正融合",
+        "input": "NWP / LMD / mixed",
+        "purpose": "评估局地气象校正和空间降尺度价值",
+        "decision": "用于模型维护和传感器接入决策，判断新增局地数据是否带来稳定收益。",
+    },
+}
+OPERATION_VIEWS = {
+    "日前计划": "关注下一日 96 点功率曲线和白昼误差，优先使用气象预报融合与局地校正融合结果。",
+    "调度复盘": "对比实际功率、预测曲线和天气场景，定位高误差时段及天气扰动来源。",
+    "模型维护": "检查 checkpoint 复用、输入模式收益和指标漂移，决定是否重训或扩展局地数据。",
+    "交付审查": "核对指标 CSV、图表、运行摘要、报告和维护日志，确保结果可追溯。",
+}
 
 
 STYLE = """
@@ -318,6 +344,32 @@ section[data-testid="stSidebar"] [data-testid="stRadio"] label {
   padding: .78rem .95rem;
   margin: .35rem 0 1rem 0;
 }
+.operation-panel {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: .9rem;
+  align-items: start;
+  border: 1px solid var(--hairline);
+  border-left: 5px solid var(--cyan);
+  border-radius: 8px;
+  background: rgba(255,255,255,.78);
+  padding: .86rem .95rem;
+  margin: .5rem 0 1rem 0;
+}
+.operation-panel b {
+  color: var(--ink);
+}
+.operation-panel span {
+  color: var(--muted);
+}
+.comparison-note {
+  border: 1px solid rgba(43, 119, 131, .18);
+  border-radius: 8px;
+  background: rgba(43, 119, 131, .07);
+  padding: .72rem .85rem;
+  margin-top: .65rem;
+  color: var(--graphite);
+}
 .note {
   border-left: 4px solid var(--solar);
   border-radius: 0 8px 8px 0;
@@ -440,6 +492,9 @@ pre, code {
   .hero-panel::after {
     background: linear-gradient(180deg, rgba(251, 250, 246, .96), rgba(251, 250, 246, .72));
   }
+  .operation-panel {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 560px) {
   .status-grid,
@@ -556,6 +611,21 @@ def improvement_label(before: pd.Series | None, after: pd.Series | None, column:
     return f"{column} 上升 {abs(change):.1f}%"
 
 
+def improvement_value(before: pd.Series | None, after: pd.Series | None, column: str = "E_rmse") -> float | None:
+    before_value = numeric_from_row(before, column)
+    after_value = numeric_from_row(after, column)
+    if before_value is None or after_value is None or before_value == 0:
+        return None
+    return (before_value - after_value) / abs(before_value) * 100
+
+
+def formatted_metric(row: pd.Series | None, column: str) -> float | None:
+    value = numeric_from_row(row, column)
+    if value is None:
+        return None
+    return round(value, 4)
+
+
 def render_section_title(title: str, caption: str = "") -> None:
     st.markdown(
         f"""
@@ -644,10 +714,10 @@ def render_status_grid(contexts: dict[str, TaskContext]) -> None:
     st.markdown(
         f"""
         <div class="status-grid">
-          <div class="status-cell"><b>任务识别</b><span>{len(contexts)} 个任务</span></div>
-          <div class="status-cell"><b>摘要/指标</b><span>{ready_count} 项可读</span></div>
+          <div class="status-cell"><b>链路识别</b><span>{len(contexts)} 条链路</span></div>
+          <div class="status-cell"><b>产物/指标</b><span>{ready_count} 项可读</span></div>
           <div class="status-cell"><b>图表产物</b><span>{total_figures} 条记录</span></div>
-          <div class="status-cell"><b>解释接口</b><span>{html_text(llm_status_label(llm_config))}</span></div>
+          <div class="status-cell"><b>解读接口</b><span>{html_text(llm_status_label(llm_config))}</span></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -658,10 +728,10 @@ def render_workflow_band() -> None:
     st.markdown(
         """
         <div class="workflow-band">
-          <div class="workflow-step"><b>1. 数据与物理分析</b><span>读取站点数据、理论功率、周期性和偏差诊断。</span></div>
+          <div class="workflow-step"><b>1. 站点机理诊断</b><span>读取站点数据、理论功率、周期性和偏差边界。</span></div>
           <div class="workflow-step"><b>2. 日前预测模型</b><span>复用 checkpoint，比较 PureLSTM、FusionModel、BiFusionModel。</span></div>
-          <div class="workflow-step"><b>3. 场景与特征解释</b><span>融入 NWP/LMD，查看场景划分、误差来源和特征重要性。</span></div>
-          <div class="workflow-step"><b>4. 解释与交付</b><span>读取 outputs，形成指标解释、报告段落和演示口播素材。</span></div>
+          <div class="workflow-step"><b>3. 场景与输入评估</b><span>融入 NWP/LMD，查看天气场景、误差来源和特征重要性。</span></div>
+          <div class="workflow-step"><b>4. 复盘与交付</b><span>读取 outputs，形成指标解读、运行说明和可追溯材料。</span></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -719,7 +789,7 @@ def render_title() -> None:
           <div class="hero-content">
           <div class="pv-kicker">PV day-ahead forecasting · Station operation console</div>
           <h1>光伏电站发电功率日前预测工作台</h1>
-          <p>面向电站调度复盘和课程交付的结果工作台：从真实预测曲线进入指标、图表、脚本、材料和受控运行流程，默认只读取已有 outputs。</p>
+          <p>面向电站日前计划、调度复盘和模型维护的结果工作台：从真实预测曲线进入指标、图表、脚本、材料和受控运行流程，默认只读取已有 outputs。</p>
           <div class="hero-actions">
             <span class="hero-chip">白昼附件指标</span>
             <span class="hero-chip">日前曲线复盘</span>
@@ -736,9 +806,9 @@ def render_title() -> None:
 def render_metric_cards(contexts: dict[str, TaskContext]) -> None:
     tables = {key: read_metric_table(task) for key, task in contexts.items()}
     cards = [
-        ("问题2 基准预测", best_row(tables.get("2", pd.DataFrame())), "仅历史功率序列"),
-        ("问题3 融入NWP", best_row(tables.get("3", pd.DataFrame())), "前一日功率 + 目标日NWP"),
-        ("问题4 输入消融", best_row(tables.get("4", pd.DataFrame())), "NWP / LMD / mixed"),
+        ("历史功率基线", best_row(tables.get("2", pd.DataFrame())), "仅依赖历史功率序列，作为缺少天气预报时的兜底预测"),
+        ("气象预报融合", best_row(tables.get("3", pd.DataFrame())), "前一日功率 + 目标日 NWP，服务日前计划编制"),
+        ("局地校正融合", best_row(tables.get("4", pd.DataFrame())), "比较 NWP、LMD 与 mixed 输入，评估局地气象增益"),
     ]
     cols = st.columns(3)
     for col, (title, row, caption) in zip(cols, cards):
@@ -764,14 +834,14 @@ def render_model_insights(contexts: dict[str, TaskContext]) -> None:
     row4 = best_row(tables.get("4", pd.DataFrame()))
     insights = [
         (
-            "NWP增益",
+            "气象预报增益",
             improvement_label(row2, row3),
-            f"问题2最优 {label_from_row(row2)}；问题3最优 {label_from_row(row3)}。",
+            f"历史功率基线最优 {label_from_row(row2)}；气象预报融合最优 {label_from_row(row3)}。",
         ),
         (
-            "降尺度输入",
+            "局地校正收益",
             label_from_row(row4),
-            f"问题4当前最优输入，E_rmse={value_from_row(row4, 'E_rmse')}。",
+            f"多源气象输入评估当前最优，E_rmse={value_from_row(row4, 'E_rmse')}。",
         ),
         (
             "交付闭环",
@@ -796,11 +866,11 @@ def render_model_insights(contexts: dict[str, TaskContext]) -> None:
 
 def render_pipeline_nodes() -> None:
     nodes = [
-        ("课程题面", "约束与指标"),
-        ("数据处理", "功率/NWP/LMD"),
-        ("模型预测", "LSTM与融合模型"),
-        ("结果解释", "场景、消融、图表"),
-        ("提交材料", "论文与软件演示"),
+        ("业务目标", "预测边界与评价口径"),
+        ("站点数据", "功率/NWP/LMD"),
+        ("模型链路", "LSTM与融合模型"),
+        ("运行复盘", "场景、输入、图表"),
+        ("工程交付", "报告与软件工作台"),
     ]
     html_nodes = "\n".join(
         f'<div class="pipeline-node"><b>{html_text(title)}</b><span>{html_text(caption)}</span></div>'
@@ -828,26 +898,117 @@ def render_featured_visuals() -> None:
         st.markdown(f'<div class="visual-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
 
 
+def build_pipeline_comparison(contexts: dict[str, TaskContext]) -> pd.DataFrame:
+    tables = {key: read_metric_table(task) for key, task in contexts.items()}
+    best_rows = {key: best_row(tables.get(key, pd.DataFrame())) for key in ("2", "3", "4")}
+    rows: list[dict[str, object]] = []
+    previous_key_by_key = {"2": None, "3": "2", "4": "3"}
+
+    for key in ("2", "3", "4"):
+        spec = PIPELINE_CARDS[key]
+        row = best_rows[key]
+        previous_key = previous_key_by_key[key]
+        previous_row = best_rows.get(previous_key) if previous_key else None
+        rows.append(
+            {
+                "链路": spec["name"],
+                "输入来源": spec["input"],
+                "最优模型/输入": label_from_row(row),
+                "E_rmse": formatted_metric(row, "E_rmse"),
+                "C_R(%)": formatted_metric(row, "C_R"),
+                "Q_R(%)": formatted_metric(row, "Q_R"),
+                "较上一链路误差变化(%)": (
+                    round(improvement_value(previous_row, row), 1)
+                    if previous_row is not None and improvement_value(previous_row, row) is not None
+                    else None
+                ),
+                "工程用途": spec["purpose"],
+                "决策解释": spec["decision"],
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def render_operation_view() -> None:
+    selected = st.segmented_control("运行视角", list(OPERATION_VIEWS), default="日前计划")
+    selected = str(selected or "日前计划")
+    st.markdown(
+        f"""
+        <div class="operation-panel">
+          <b>{html_text(selected)}</b>
+          <span>{html_text(OPERATION_VIEWS[selected])}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_pipeline_comparison(contexts: dict[str, TaskContext]) -> None:
+    comparison = build_pipeline_comparison(contexts)
+    options = comparison["链路"].tolist()
+    selected_pipelines = st.pills("显示链路", options, default=options, selection_mode="multi")
+    if isinstance(selected_pipelines, str):
+        selected_pipelines = [selected_pipelines]
+    if not selected_pipelines:
+        selected_pipelines = options
+
+    visible = comparison[comparison["链路"].isin(selected_pipelines)].reset_index(drop=True)
+    event = st.dataframe(
+        visible,
+        width="stretch",
+        hide_index=True,
+        on_select="rerun",
+        selection_mode="single-row",
+        column_config={
+            "E_rmse": st.column_config.NumberColumn("E_rmse", format="%.4f"),
+            "C_R(%)": st.column_config.NumberColumn("C_R(%)", format="%.2f"),
+            "Q_R(%)": st.column_config.NumberColumn("Q_R(%)", format="%.2f"),
+            "较上一链路误差变化(%)": st.column_config.NumberColumn("较上一链路误差变化(%)", format="%.1f"),
+        },
+    )
+
+    selected_index = 0
+    try:
+        selected_rows = event.selection.rows
+        if selected_rows:
+            selected_index = int(selected_rows[0])
+    except AttributeError:
+        selected_rows = []
+    if not visible.empty:
+        row = visible.iloc[selected_index]
+        st.markdown(
+            f"""
+            <div class="comparison-note">
+              <b>{html_text(row['链路'])}</b>：{html_text(row['决策解释'])}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
 def render_workbench(contexts: dict[str, TaskContext]) -> None:
-    render_section_title("工作台", "现有 outputs 驱动的软件总览")
+    render_section_title("工作台", "现有 outputs 驱动的工程总览")
     render_status_grid(contexts)
+    render_operation_view()
     render_metric_cards(contexts)
     render_model_insights(contexts)
-    render_section_title("建模链路", "从题面到交付材料")
+    render_section_title("模型链路对比", "点选一行查看工程含义")
+    render_pipeline_comparison(contexts)
+    render_section_title("工程链路", "从运行数据到调度交付")
     render_pipeline_nodes()
-    render_section_title("精选图表", "直接来自项目输出与论文素材")
+    render_section_title("精选图表", "直接来自项目输出与交付材料")
     render_featured_visuals()
     st.markdown(
         '<div class="note">界面默认只读取已有 outputs，不触发长时间训练；需要重训时请到“运行控制”页显式勾选确认。</div>',
         unsafe_allow_html=True,
     )
 
-    render_section_title("功能入口", "核心工作区")
+    render_section_title("工作区入口", "核心操作面")
     tool_cols = st.columns(3)
     tools = [
         ("查看运行结果", "指标表、静态 PNG、交互 HTML 和摘要文件集中浏览。"),
-        ("交付引用", "题面、附件、论文、日志和关键输出形成可追溯索引。"),
-        ("结果解释", "默认离线可用，也可接入本地或远程语言接口。"),
+        ("交付引用", "业务目标、评价口径、报告、日志和关键输出形成可追溯索引。"),
+        ("运行解读", "默认离线可用，也可接入本地或远程语言接口。"),
     ]
     for col, (title, caption) in zip(tool_cols, tools):
         with col:
@@ -889,13 +1050,13 @@ def artifact_paths(task: TaskContext, category: str) -> list[Path]:
 def render_figures(contexts: dict[str, TaskContext]) -> None:
     render_section_title("图表展示", "静态图与交互 HTML")
     choices = {task.title: task for task in contexts.values()}
-    selected_title = st.selectbox("选择问题", list(choices), index=4 if len(choices) > 4 else 0)
+    selected_title = st.selectbox("选择工程链路", list(choices), index=4 if len(choices) > 4 else 0)
     task = choices[selected_title]
     figures = [path for path in artifact_paths(task, "figures") if path.suffix.lower() in {".png", ".jpg", ".jpeg"}]
     html_files = [path for path in artifact_paths(task, "figures") if path.suffix.lower() == ".html"]
 
     if not figures and not html_files:
-        st.info("当前问题没有可展示图表。")
+        st.info("当前链路没有可展示图表。")
         return
 
     image_options = {path.name: path for path in figures}
@@ -917,7 +1078,7 @@ def render_artifact_summary(contexts: dict[str, TaskContext]) -> None:
     for task in contexts.values():
         rows.append(
             {
-                "任务": task.title,
+                "链路": task.title,
                 "摘要": "存在" if task.report_exists else "缺失",
                 "指标": "存在" if task.metrics_exists else "缺失",
                 "图表记录数": len(task.artifacts.get("figures", [])),
@@ -982,9 +1143,9 @@ def render_reference_cards(contexts: dict[str, TaskContext]) -> None:
     reference_df = collect_reference_rows(contexts)
     existing_count = int((reference_df["状态"] == "存在").sum()) if not reference_df.empty else 0
     rows = [
-        ("材料完整度", f"{existing_count}/{len(reference_df)}", "题面、论文、运行说明和结果文件"),
-        ("核心代码", f"{len(CORE_FILES)} 个入口", "工作台、总控、解释模块、健康检查"),
-        ("输出摘要", f"{len(contexts)} 个任务", "run_summary 与指标 CSV"),
+        ("材料完整度", f"{existing_count}/{len(reference_df)}", "业务目标、报告、运行说明和结果文件"),
+        ("核心代码", f"{len(CORE_FILES)} 个入口", "工作台、总控、解读模块、健康检查"),
+        ("链路摘要", f"{len(contexts)} 条链路", "run_summary 与指标 CSV"),
     ]
     cols = st.columns(3)
     for col, (title, value, caption) in zip(cols, rows):
@@ -1002,7 +1163,7 @@ def render_reference_cards(contexts: dict[str, TaskContext]) -> None:
 
 
 def render_reference_hub(contexts: dict[str, TaskContext]) -> None:
-    render_section_title("交付引用", "题面、结果、论文和代码入口")
+    render_section_title("交付引用", "业务目标、结果、报告和代码入口")
     render_reference_cards(contexts)
 
     reference_df = collect_reference_rows(contexts)
@@ -1018,7 +1179,7 @@ def render_reference_hub(contexts: dict[str, TaskContext]) -> None:
         hide_index=True,
     )
 
-    render_section_title("引用链", "结果文件到提交材料")
+    render_section_title("交付链", "结果文件到交付材料")
     st.markdown(
         """
         <div class="status-strip">
@@ -1078,16 +1239,16 @@ def render_code_lab() -> None:
         text = read_text_preview(selected)
         st.caption(project_relative(ROOT / selected))
         st.code(text, language="python" if selected.endswith(".py") else "text")
-        if st.toggle("把当前文件片段加入结果解释上下文"):
+        if st.toggle("把当前文件片段加入运行解读上下文"):
             st.session_state["code_context_for_llm"] = f"当前查看文件：{selected}\n\n{text[:12000]}"
             st.success("已加入本轮会话上下文。", icon=":material/check_circle:")
 
 
 def build_llm_config_from_ui() -> LLMConfig:
     env_config = LLMConfig.from_env()
-    with st.expander("解释接口配置", expanded=False):
-        st.caption("默认使用离线规则解释；也可读取本机 Codex 配置或其他 OpenAI-compatible 端点。密钥只在本机读取，不写入项目文件。")
-        provider_options = ["codex-config", "offline", "openai-compatible", "local-codex", "local", "openai"]
+    with st.expander("解读接口配置", expanded=False):
+        st.caption("默认使用离线规则解读；也可读取本机 Codex 配置或其他兼容 HTTP 端点。密钥只在本机读取，不写入项目文件。")
+        provider_options = ["codex-config", "offline", "compatible-http", "local-codex", "local", "openai"]
         if env_config.provider not in provider_options:
             provider_options.insert(0, env_config.provider)
         index = provider_options.index(env_config.provider) if env_config.provider in provider_options else 1
@@ -1115,9 +1276,9 @@ def build_llm_config_from_ui() -> LLMConfig:
         )
         st.caption(f"配置来源：{env_config.source}")
         st.code(config.endpoint_display(), language="text")
-        if st.button("测试解释接口"):
+        if st.button("测试解读接口"):
             response = answer_question(
-                "请用一句话说明当前结果解释接口可用。",
+                "请用一句话说明当前运行解读接口可用。",
                 contexts=load_contexts(),
                 config=config,
             )
@@ -1133,7 +1294,7 @@ def append_chat(role: str, content: str) -> None:
 
 
 def render_llm_chat(contexts: dict[str, TaskContext]) -> None:
-    st.subheader("结果解释")
+    st.subheader("运行解读")
     config = build_llm_config_from_ui()
     st.markdown(
         f"""
@@ -1150,16 +1311,16 @@ def render_llm_chat(contexts: dict[str, TaskContext]) -> None:
         st.session_state["chat_messages"] = [
             {
                 "role": "assistant",
-                "content": "已读取当前 outputs 指标和摘要。可以查看模型效果、指标含义、报告写法、演示口播或代码入口。",
+                "content": "已读取当前 outputs 指标和摘要。可以查看模型效果、指标含义、交付说明、复盘口径或代码入口。",
             }
         ]
 
     quick_questions = DEFAULT_QUESTIONS + [
-        "请写一段 3 分钟演示视频的口播提纲。",
+        "请写一段 3 分钟项目演示的口播提纲。",
         "请解释 app.py、run_project.py、llm/ 三者如何协同。",
-        "请指出当前项目作为期末大作业还需要补哪些材料。",
+        "请指出当前项目交付审查还需要补哪些材料。",
     ]
-    selected_quick = st.selectbox("常用分析问题", quick_questions, index=1)
+    selected_quick = st.selectbox("常用复盘问题", quick_questions, index=1)
     quick_cols = st.columns([1, 1, 3])
     pending_prompt = ""
     if quick_cols[0].button("查看解释", type="primary"):
@@ -1172,7 +1333,7 @@ def render_llm_chat(contexts: dict[str, TaskContext]) -> None:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    prompt = st.chat_input("输入关于结果、代码、报告或演示的分析问题")
+    prompt = st.chat_input("输入关于结果、代码、报告或演示的复盘问题")
     if prompt:
         pending_prompt = prompt
 
@@ -1195,8 +1356,8 @@ def render_llm_chat(contexts: dict[str, TaskContext]) -> None:
                 st.caption(response.error)
         append_chat("assistant", response.text)
 
-    with st.expander("整理报告摘要草稿", expanded=False):
-        if st.button("根据当前结果整理摘要"):
+    with st.expander("整理交付说明草稿", expanded=False):
+        if st.button("根据当前结果整理交付说明"):
             response = generate_report_brief(contexts=contexts, config=config)
             st.write(response.text)
             if response.error:
@@ -1251,7 +1412,7 @@ def main() -> None:
     st.sidebar.markdown("---")
     st.sidebar.caption(f"项目目录：{ROOT}")
     llm_config = LLMConfig.from_env()
-    st.sidebar.caption(f"解释接口：{llm_config.provider} / {llm_config.wire_api}")
+    st.sidebar.caption(f"解读接口：{llm_config.provider} / {llm_config.wire_api}")
     st.sidebar.caption(f"模型：{llm_config.model}")
     st.sidebar.caption("直接运行 app.py 只显示启动提示；演示优先用 start_software.vbs，调试用 run.bat。")
 
@@ -1263,7 +1424,7 @@ def main() -> None:
         render_reference_hub(contexts)
     elif page == "代码与命令":
         render_code_lab()
-    elif page == "结果解释":
+    elif page == "运行解读":
         render_llm_chat(contexts)
     else:
         render_runner()

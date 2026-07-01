@@ -1,13 +1,13 @@
 # 代码文件索引
 
-本文档记录 `2025` 目录下代码文件的现用名称和主要用途。脚本已统一从早期的数字编号、临时中文名改为按问题和功能命名，便于后续运行、检索和维护。
+本文档记录 `2025` 目录下代码文件的现用名称和主要用途。脚本已统一从早期的数字编号、临时中文名改为按工程链路和功能命名，便于后续运行、检索和维护。
 
 ## 命名规则
 
-- `problemN_...`：正式交付目录中的问题主线代码。
+- `problemN_...`：正式交付目录中的历史脚本前缀，当前按工程链路解释其职责。
 - `workspace_...`：`01_modeling_workspace` 中的历史实验快照或探索副本。
-- `theoretical_power_...`：问题 1 的 Python 理论功率计算与诊断脚本。
-- `matlab_...`：问题 1 或探索图中的 MATLAB 分析脚本。
+- `theoretical_power_...`：站点机理诊断中的 Python 理论功率计算与诊断脚本。
+- `matlab_...`：站点机理诊断或探索图中的 MATLAB 分析脚本。
 - `_shared/` 和 `tools/`：跨脚本复用的工程工具和检查工具。
 
 ## 公共工具
@@ -19,25 +19,25 @@
 | `_shared/matlab/configure_journal_plot.m` | MATLAB 中文期刊绘图默认值配置工具。 |
 | `_shared/matlab/project_output_path.m` | MATLAB `outputs/` 输出路径生成工具。 |
 | `_shared/matlab/save_project_figure.m` | MATLAB 期刊风格图像保存工具，默认写入 `outputs/figures/`。 |
-| `tools/project_health_check.py` | 静态健康检查脚本，检查 Python 语法、重复代码快照、相对输入文件和正式问题脚本输出约束。 |
-| `run_project.py` | 项目总控入口，支持用 `--run` 选择问题任务、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出，并显式处理问题 3 二次分析对问题 2/3 预测表的依赖。 |
-| `app.py` | Streamlit 预测工作台，读取已有 `outputs/`，提供工作台、运行结果、交付引用、代码与命令、结果解释和受保护运行控制；直接用 `python app.py` 运行时只输出正确启动提示。 |
+| `tools/project_health_check.py` | 静态健康检查脚本，检查 Python 语法、重复代码快照、相对输入文件和正式链路脚本输出约束。 |
+| `run_project.py` | 项目总控入口，支持用 `--run` 选择工程链路、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出，并显式处理运行场景归因对历史功率基线/气象预报融合预测表的依赖。 |
+| `app.py` | Streamlit 预测工作台，读取已有 `outputs/`，提供工作台、运行结果、交付引用、代码与命令、运行解读和受保护运行控制；直接用 `python app.py` 运行时只输出正确启动提示。 |
 | `software_launcher.py` | Windows 桌面启动器，通过 Tkinter 提供启动/打开软件、运行健康检查和停止后台 Streamlit 服务的可视化入口。 |
 | `start_software.vbs` | 无终端双击入口，优先通过 `pythonw` 启动 `software_launcher.py`，适合演示视频和教师复现时使用。 |
 | `run.bat` | Windows 命令行调试启动脚本，会检查 Python/Streamlit 并启动 `app.py`，适合查看依赖安装和 Streamlit 输出。 |
-| `llm/result_context.py` | 从问题 1-4 的 `run_summary.json` 和指标 CSV 中读取结果，整理为结果解释上下文。 |
-| `llm/assistant.py` | 结果解释入口，默认读取本机 Codex config/auth 并支持 Responses API；环境变量可覆盖为 OpenAI-compatible、`local-codex` 或其他本地/远程接口，失败时离线规则兜底。 |
-| `llm/prompts.py` | 项目结果解释与报告摘要整理的提示词模板。 |
+| `llm/result_context.py` | 从各条链路的 `run_summary.json` 和指标 CSV 中读取结果，整理为运行解读上下文。 |
+| `llm/assistant.py` | 运行解读入口，默认读取本机 Codex config/auth 并支持 Responses API；环境变量可覆盖为兼容 HTTP、本地或远程接口，失败时离线规则兜底。 |
+| `llm/prompts.py` | 项目运行解读与交付说明整理的提示词模板。 |
 
-## 正式问题代码
+## 正式链路代码
 
-### 问题 1：数据分析与理论功率建模
+### 站点机理诊断
 
 | 文件 | 用途 |
 | --- | --- |
-| `02_problem_solutions/problem1_data_analysis/theoretical_power_baseline.py` | 问题 1 的基础理论功率计算入口，读取单站点 Excel 并输出基线时序、指标、日均对比图和运行摘要。 |
-| `02_problem_solutions/problem1_data_analysis/theoretical_power_calculation.py` | 问题 1 的理论功率计算版本，侧重太阳角、等效辐照度、大气透射率等物理量计算，并输出计算部件表、指标和期刊风格图。 |
-| `02_problem_solutions/problem1_data_analysis/theoretical_power_diagnostics.py` | 问题 1 的诊断与可视化版本，用于检查理论功率和实际功率差异，并生成 `outputs/` 下的时序表、指标表、诊断图和运行摘要。 |
+| `02_problem_solutions/problem1_data_analysis/theoretical_power_baseline.py` | 基础理论功率计算入口，读取单站点 Excel 并输出基线时序、指标、日均对比图和运行摘要。 |
+| `02_problem_solutions/problem1_data_analysis/theoretical_power_calculation.py` | 理论功率计算版本，侧重太阳角、等效辐照度、大气透射率等物理量计算，并输出计算部件表、指标和期刊风格图。 |
+| `02_problem_solutions/problem1_data_analysis/theoretical_power_diagnostics.py` | 诊断与可视化版本，用于检查理论功率和实际功率差异，并生成 `outputs/` 下的时序表、指标表、诊断图和运行摘要。 |
 | `02_problem_solutions/problem1_data_analysis/matlab_theoretical_power_solarposition.m` | MATLAB 太阳位置法理论功率建模脚本。 |
 | `02_problem_solutions/problem1_data_analysis/matlab_theoretical_power_manual_angles.m` | MATLAB 手动太阳角计算版本。 |
 | `02_problem_solutions/problem1_data_analysis/matlab_theoretical_power_cleaned_plots.m` | MATLAB 清理版理论功率绘图脚本。 |
@@ -47,27 +47,27 @@
 | `02_problem_solutions/problem1_data_analysis/matlab_physical_model_compact_diagnostics.m` | MATLAB 精简诊断图与物理模型对比脚本。 |
 | `02_problem_solutions/problem1_data_analysis/matlab_physical_model_station_csv_diagnostics.m` | MATLAB 基于站点 CSV 的物理模型诊断脚本。 |
 
-### 问题 2：基础日前预测
+### 历史功率基线
 
 | 文件 | 用途 |
 | --- | --- |
-| `02_problem_solutions/problem2_baseline_forecasting/problem2_baseline_three_model_forecast.py` | 问题 2 主入口，使用历史功率序列训练/复用 PureLSTM、FusionModel、BiFusionModel；预测表按“输入日前一日、目标测试日 96 点”对齐，并输出指标表、期刊风格 PNG、交互 HTML、模型 checkpoint 和运行摘要。 |
+| `02_problem_solutions/problem2_baseline_forecasting/problem2_baseline_three_model_forecast.py` | 历史功率基线入口，使用历史功率序列训练/复用 PureLSTM、FusionModel、BiFusionModel；预测表按“输入日前一日、目标测试日 96 点”对齐，并输出指标表、期刊风格 PNG、交互 HTML、模型 checkpoint 和运行摘要。 |
 
-### 问题 3：气象场景与模型改进
-
-| 文件 | 用途 |
-| --- | --- |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_weather_feature_forecast.py` | 问题 3 主训练入口，使用“前一日实测功率 + 目标日 NWP 气象序列”预测目标日 96 点功率，并输出 checkpoint、预测表、指标表、期刊风格图和主运行摘要。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_scenario_ieee_analysis.py` | 中文期刊风格场景划分分析脚本，读取标准 `outputs/predictions/` 预测表，按目标日天气比较问题 2 与问题 3 的差异，并输出图、表和独立摘要。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_integrated_scenario_analysis.py` | 问题 3 综合分析脚本，整合场景划分、特征重要性和决策树策略解释，并输出到 `outputs/` 和独立摘要。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_extended_scenario_analysis.py` | 问题 3 扩展分析脚本，用于补充更细的目标日场景解释和结果输出，并保存独立摘要。 |
-| `02_problem_solutions/problem3_scenario_analysis/problem3_three_model_curve_plot.py` | 从问题 3 标准预测表中按目标日提取三模型典型日曲线，并保存期刊风格图、曲线表和独立摘要。 |
-
-### 问题 4：输入特征消融
+### 气象预报融合与运行场景归因
 
 | 文件 | 用途 |
 | --- | --- |
-| `02_problem_solutions/problem4_feature_ablation/problem4_feature_ablation_forecast.py` | 问题 4 主入口，以前一日实测功率和目标日天气序列构造严格日前样本，比较 NWP、LMD、mixed 三类输入配置下的预测效果，并输出 checkpoint、预测表、指标、期刊风格图和运行摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_weather_feature_forecast.py` | 气象预报融合主训练入口，使用“前一日实测功率 + 目标日 NWP 气象序列”预测目标日 96 点功率，并输出 checkpoint、预测表、指标表、期刊风格图和主运行摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_scenario_ieee_analysis.py` | 中文期刊风格场景划分分析脚本，读取标准 `outputs/predictions/` 预测表，按目标日天气比较历史功率基线与气象预报融合的差异，并输出图、表和独立摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_integrated_scenario_analysis.py` | 运行场景归因综合分析脚本，整合场景划分、特征重要性和决策树策略解释，并输出到 `outputs/` 和独立摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_extended_scenario_analysis.py` | 运行场景归因扩展分析脚本，用于补充更细的目标日场景解释和结果输出，并保存独立摘要。 |
+| `02_problem_solutions/problem3_scenario_analysis/problem3_three_model_curve_plot.py` | 从气象预报融合标准预测表中按目标日提取三模型典型日曲线，并保存期刊风格图、曲线表和独立摘要。 |
+
+### 局地校正融合
+
+| 文件 | 用途 |
+| --- | --- |
+| `02_problem_solutions/problem4_feature_ablation/problem4_feature_ablation_forecast.py` | 局地校正融合主入口，以前一日实测功率和目标日天气序列构造严格日前样本，比较 NWP、LMD、mixed 三类输入配置下的预测效果，并输出 checkpoint、预测表、指标、期刊风格图和运行摘要。 |
 
 ## 建模工作区代码
 
@@ -75,9 +75,9 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `problem2_baseline_three_model_forecast.py` | 问题 2 主脚本在建模工作区中的同步副本。 |
-| `problem3_weather_feature_forecast.py` | 问题 3 主训练脚本在建模工作区中的同步副本。 |
-| `problem4_feature_ablation_forecast.py` | 问题 4 主脚本在建模工作区中的同步副本，保持与正式入口一致的严格日前输入和输出逻辑。 |
+| `problem2_baseline_three_model_forecast.py` | 历史功率基线脚本在建模工作区中的同步副本。 |
+| `problem3_weather_feature_forecast.py` | 气象预报融合主训练脚本在建模工作区中的同步副本。 |
+| `problem4_feature_ablation_forecast.py` | 局地校正融合主脚本在建模工作区中的同步副本，保持与正式入口一致的严格日前输入和输出逻辑。 |
 | `workspace_fusion_baseline_forecast.py` | 早期 FusionModel 基线日前预测实验。 |
 | `workspace_fusion_visual_diagnostics.py` | FusionModel 预测结果可视化与诊断实验。 |
 | `workspace_object_oriented_fusion_pipeline.py` | 面向对象方式组织的数据处理、训练和预测流程实验。 |

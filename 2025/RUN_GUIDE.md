@@ -15,7 +15,7 @@
 2025/02_problem_solutions/problem4_feature_ablation/
 ```
 
-`01_modeling_workspace/pvod_full_experiment/` 中的问题 2、3、4 同名脚本已经和正式入口同步，可以作为备用入口；其他编号脚本多为阶段性实验快照，不建议作为第一次完整复现的主线。
+`01_modeling_workspace/pvod_full_experiment/` 中的历史功率基线、气象预报融合和局地校正融合同名脚本已经和正式入口同步，可以作为备用入口；其他编号脚本多为阶段性实验快照，不建议作为第一次完整复现的主线。
 
 ## 2. 运行前准备
 
@@ -46,9 +46,9 @@ python -m unittest discover -s tests -q
 
 这两个命令不会训练模型。它们用于确认 Python 文件可解析、输入文件能找到、核心输出管理约束没有被破坏。
 
-## 3. 课程交互展示入口
+## 3. 本地交互展示入口
 
-本项目新增了面向期末大作业演示的 Streamlit 预测工作台。该界面默认读取已有 `outputs/`，展示四问结果、指标表、图像产物、本地代码入口和结果解释，不会自动触发长时间训练。为了避免演示时先出现黑色终端窗口，当前还提供了一个 Windows 桌面启动器。
+本项目新增了面向工程交付演示的 Streamlit 预测工作台。该界面默认读取已有 `outputs/`，展示工程链路结果、指标表、图像产物、本地代码入口和运行解读，不会自动触发长时间训练。为了避免演示时先出现黑色终端窗口，当前还提供了一个 Windows 桌面启动器。
 
 Windows 演示推荐入口：
 
@@ -72,16 +72,16 @@ python -m streamlit run 2025\app.py
 
 界面功能：
 
-- 工作台：展示问题 2、问题 3、问题 4 的最优模型、附件指标和软件入口状态。
-- 运行结果：集中查看各问题 CSV 指标、PNG 图和 Plotly HTML 交互图。
-- 交付引用：索引题面、附件、最终论文、运行摘要、指标表、核心代码入口和维护日志。
-- 代码与命令：查看核心脚本/文档，执行 `--list`、`--show`、`--dry-run` 等安全命令，并可把当前代码片段加入结果解释上下文。
-- 结果解释：默认读取本机 Codex 配置和密钥，支持 Responses API；无可用 API 时使用离线规则兜底。
+- 工作台：展示历史功率基线、气象预报融合和局地校正融合的最优模型、附件指标和软件入口状态。
+- 运行结果：集中查看各链路 CSV 指标、PNG 图和 Plotly HTML 交互图。
+- 交付引用：索引业务目标、评价附件、交付报告、运行摘要、指标表、核心代码入口和维护日志。
+- 代码与命令：查看核心脚本/文档，执行 `--list`、`--show`、`--dry-run` 等安全命令，并可把当前代码片段加入运行解读上下文。
+- 运行解读：默认读取本机 Codex 配置和密钥，支持 Responses API；无可用 API 时使用离线规则兜底。
 - 运行控制：默认查看已有结果或 dry-run 预演；真正运行任务前必须勾选确认框。
 
 不要直接运行 `python 2025\app.py`。该命令现在只输出正确启动提示，避免 Streamlit bare mode 下的 `missing ScriptRunContext` 警告刷屏。
 
-结果解释接口配置优先级：
+运行解读接口配置优先级：
 
 1. 若未显式设置 `PV_LLM_PROVIDER`，软件会自动读取本机 `~\.codex\config.toml` 和 `~\.codex\auth.json`。
 2. 若设置 `PV_LLM_*` 环境变量，则优先使用环境变量。
@@ -90,7 +90,7 @@ python -m streamlit run 2025\app.py
 当前 Codex 配置使用 Responses API 时，无需把密钥写入项目文件。可选远程或本地覆盖配置：
 
 ```powershell
-$env:PV_LLM_PROVIDER="openai-compatible"
+$env:PV_LLM_PROVIDER="compatible-http"
 $env:PV_LLM_WIRE_API="chat"
 $env:PV_LLM_MODEL="your-model-name"
 $env:PV_LLM_API_KEY="your-api-key"
@@ -98,7 +98,7 @@ $env:PV_LLM_BASE_URL="https://your-compatible-endpoint/v1/chat/completions"
 python -m streamlit run 2025\app.py
 ```
 
-若本地模型服务暴露 OpenAI-compatible `chat/completions` HTTP 接口，可以改为：
+若本地模型服务暴露兼容 `chat/completions` 的 HTTP 接口，可以改为：
 
 ```powershell
 $env:PV_LLM_PROVIDER="local-codex"
@@ -127,11 +127,11 @@ python 2025\run_project.py --show 4
 
 | 任务 | 是否依赖其他任务 | 说明 |
 | --- | --- | --- |
-| `1` | 否 | 运行问题 1 的理论功率 Python 脚本。 |
-| `2` | 否 | 运行问题 2 三模型基准日前预测。 |
-| `3` | 否 | 运行问题 3 气象特征日前预测主脚本。 |
-| `4` | 否 | 运行问题 4 输入特征消融主脚本。 |
-| `3-analysis` | 依赖 `2` 和 `3` 的预测表 | 运行问题 3 场景划分、提升来源和典型曲线分析。 |
+| `1` | 否 | 运行站点机理诊断的理论功率 Python 脚本。 |
+| `2` | 否 | 运行历史功率基线三模型日前预测。 |
+| `3` | 否 | 运行气象预报融合主脚本。 |
+| `4` | 否 | 运行局地校正融合主脚本。 |
+| `3-analysis` | 依赖 `2` 和 `3` 的预测表 | 执行运行场景归因、提升来源和典型曲线分析。 |
 
 因此，`1`、`2`、`3`、`4` 可以同时运行；`3-analysis` 会在 `2` 和 `3` 完成后再运行。`main` 等价于 `1,2,3,4`，`all` 等价于 `1,2,3,4,3-analysis`。
 
@@ -148,9 +148,9 @@ python 2025\run_project.py --show all --open-output
 
 ## 5. 推荐完整运行顺序
 
-### 步骤 1：问题 1 数据分析
+### 步骤 1：站点机理诊断
 
-问题 1 主要是数据理解、理论功率建模和探索性绘图。Python 脚本入口在：
+站点机理诊断主要是数据理解、理论功率建模和探索性绘图。Python 脚本入口在：
 
 ```powershell
 cd 2025\02_problem_solutions\problem1_data_analysis
@@ -159,7 +159,7 @@ python .\theoretical_power_calculation.py
 python .\theoretical_power_diagnostics.py
 ```
 
-问题 1 的三个 Python 脚本默认采用保存结果的批处理模式，不再弹出图窗阻塞运行。它们会把理论功率时序、指标、图像和运行摘要写入当前目录的 `outputs/`。其中 `theoretical_power_diagnostics.py` 的核心产物包括：
+三个 Python 脚本默认采用保存结果的批处理模式，不再弹出图窗阻塞运行。它们会把理论功率时序、指标、图像和运行摘要写入当前目录的 `outputs/`。其中 `theoretical_power_diagnostics.py` 的核心产物包括：
 
 ```text
 outputs/predictions/problem1_theoretical_power_timeseries.csv
@@ -176,13 +176,13 @@ outputs/reports/run_summary.json
 python .\theoretical_power_diagnostics.py --show
 ```
 
-MATLAB 脚本如 `matlab_theoretical_power_solarposition.m`、`matlab_theoretical_power_manual_angles.m`、`matlab_theoretical_power_cleaned_plots.m`、`matlab_physical_model_residual_analysis.m` 等是同一问题下的物理建模和绘图补充。如果只复现 Python 深度学习主线，可以先跳过 MATLAB。
+MATLAB 脚本如 `matlab_theoretical_power_solarposition.m`、`matlab_theoretical_power_manual_angles.m`、`matlab_theoretical_power_cleaned_plots.m`、`matlab_physical_model_residual_analysis.m` 等是同一链路下的物理建模和绘图补充。如果只复现 Python 深度学习主线，可以先跳过 MATLAB。
 
 MATLAB 绘图脚本可复用 `_shared/matlab/` 下的 `configure_journal_plot.m`、`project_output_path.m` 和 `save_project_figure.m`。已整理的探索性导出脚本会把图像写到自身目录的 `outputs/figures/`。
 
-### 步骤 2：问题 2 基准日前预测
+### 步骤 2：历史功率基线
 
-问题 2 使用历史功率序列训练并比较 `PureLSTM`、`FusionModel`、`BiFusionModel` 三类模型。
+历史功率基线使用历史功率序列训练并比较 `PureLSTM`、`FusionModel`、`BiFusionModel` 三类模型。
 
 ```powershell
 cd ..\problem2_baseline_forecasting
@@ -216,16 +216,16 @@ outputs/figures/*.html
 outputs/reports/run_summary.json
 ```
 
-### 步骤 3：问题 3 引入气象变量后的预测
+### 步骤 3：气象预报融合
 
-问题 3 在问题 2 的建模框架上加入 NWP 等多维气象输入，用于比较气象变量对预测效果的提升。当前正式脚本采用严格日前口径：模型输入由“前一日实测功率曲线 + 目标日 NWP 气象序列”构成，预测输出为目标测试日 96 个 15 分钟功率点。
+气象预报融合在历史功率基线的建模框架上加入 NWP 等多维气象输入，用于比较气象变量对预测效果的提升。当前正式脚本采用严格日前口径：模型输入由“前一日实测功率曲线 + 目标日 NWP 气象序列”构成，预测输出为目标测试日 96 个 15 分钟功率点。
 
 ```powershell
 cd ..\problem3_scenario_analysis
 python .\problem3_weather_feature_forecast.py
 ```
 
-问题 3 主脚本也支持 `PV_FORECAST_EPOCHS`、`PV_FORECAST_PATIENCE`、`PV_FORECAST_BATCH_SIZE`、`PV_FORCE_RETRAIN` 等环境变量。默认训练参数为 `epochs=20`、`batch_size=128`、`patience=4`；后续复现会优先复用 `models/problem3_*.pth`。
+气象预报融合主脚本也支持 `PV_FORECAST_EPOCHS`、`PV_FORECAST_PATIENCE`、`PV_FORECAST_BATCH_SIZE`、`PV_FORCE_RETRAIN` 等环境变量。默认训练参数为 `epochs=20`、`batch_size=128`、`patience=4`；后续复现会优先复用 `models/problem3_*.pth`。
 
 主要输出：
 
@@ -244,11 +244,11 @@ outputs/reports/problem3_*_summary.json
 
 其中 `run_summary.json` 由主训练脚本写入；场景划分、综合分析、IEEE 风格解释和典型日曲线脚本会写入独立的 `problem3_*_summary.json`，避免覆盖主训练摘要。
 
-### 步骤 4：问题 3 场景划分与提升来源分析
+### 步骤 4：运行场景归因
 
-这一步使用问题 2 和问题 3 的预测结果做二次分析，解释在不同气象场景下误差改善来自哪里。
+这一步使用历史功率基线和气象预报融合的预测结果做二次分析，解释在不同气象场景下误差改善来自哪里。
 
-推荐在确认问题 2、问题 3 的预测结果已经生成后再运行：
+推荐在确认历史功率基线、气象预报融合的预测结果已经生成后再运行：
 
 ```powershell
 python .\problem3_scenario_ieee_analysis.py
@@ -260,18 +260,18 @@ python .\problem3_three_model_curve_plot.py
 注意：这些二次分析脚本是早期交付脚本，当前目录中保留了历史结果 CSV，因此即使没有重新训练也能运行。如果你要让它们严格使用刚刚重新训练得到的新结果，应先核对或同步下面两类表：
 
 ```text
-问题 2 新结果：
+历史功率基线新结果：
 2025/02_problem_solutions/problem2_baseline_forecasting/outputs/predictions/三模型预测结果对比表.csv
 
-问题 3 新结果：
+气象预报融合新结果：
 2025/02_problem_solutions/problem3_scenario_analysis/outputs/predictions/3三模型预测结果对比表.csv
 ```
 
 这些二次分析脚本也统一写入 `problem3_scenario_analysis/outputs/`，包括场景分组图、特征重要性图、典型场景对比图、场景提升表和各自独立的 `problem3_*_summary.json`。如果只是查看本仓库已保存的交付结果，可以直接运行这些二次分析脚本；如果你要做新的严格实验记录，建议以 `outputs/` 下的新表为准。
 
-### 步骤 5：问题 4 输入特征消融
+### 步骤 5：局地校正融合
 
-问题 4 比较 `nwp`、`lmd`、`mixed` 三种输入配置下的模型表现。当前正式脚本采用严格日前口径：前一日实测 `power_scaled` 与目标日天气特征序列共同作为输入，预测目标日 96 个 15 分钟功率点；预测表中 `起报时间` 为目标日前一日 00:00，`预报时间` 覆盖目标日 00:00-23:45。
+局地校正融合比较 `nwp`、`lmd`、`mixed` 三种输入配置下的模型表现。当前正式脚本采用严格日前口径：前一日实测 `power_scaled` 与目标日天气特征序列共同作为输入，预测目标日 96 个 15 分钟功率点；预测表中 `起报时间` 为目标日前一日 00:00，`预报时间` 覆盖目标日 00:00-23:45。
 
 ```powershell
 cd ..\problem4_feature_ablation
@@ -287,7 +287,7 @@ $env:PV_Q4_SAVE_RUN_DIAGNOSTICS="0"
 python .\problem4_feature_ablation_forecast.py
 ```
 
-`PV_Q4_MODES` 支持 `nwp`、`lmd`、`mixed` 或 `all`；`PV_Q4_MODELS` 支持 `PureLSTM`、`FusionModel`、`BiFusionModel` 或 `all`。问题 4 同样支持 `PV_FORECAST_EPOCHS`、`PV_FORECAST_PATIENCE`、`PV_FORECAST_BATCH_SIZE`、`PV_FORECAST_HIDDEN_DIM` 和 `PV_FORCE_RETRAIN`。
+`PV_Q4_MODES` 支持 `nwp`、`lmd`、`mixed` 或 `all`；`PV_Q4_MODELS` 支持 `PureLSTM`、`FusionModel`、`BiFusionModel` 或 `all`。局地校正融合同样支持 `PV_FORECAST_EPOCHS`、`PV_FORECAST_PATIENCE`、`PV_FORECAST_BATCH_SIZE`、`PV_FORECAST_HIDDEN_DIM` 和 `PV_FORCE_RETRAIN`。
 
 主要输出：
 
@@ -311,13 +311,13 @@ outputs/reports/run_summary.json
 
 ## 6. 模型保存与复用逻辑
 
-问题 2、问题 3、问题 4 的主训练脚本都使用相同的 checkpoint 逻辑：
+历史功率基线、气象预报融合和局地校正融合的主训练脚本都使用相同的 checkpoint 逻辑：
 
 1. 训练前先根据模型类、输入形状、训练集形状、训练轮数、学习率、早停参数等生成训练签名。
 2. 在当前脚本目录的 `models/` 下查找对应 checkpoint。
 3. 如果 checkpoint 存在且训练签名完全匹配，直接加载模型，跳过训练。
 4. 如果 checkpoint 不存在或签名不匹配，重新训练并保存新的 checkpoint。
-5. 如果想强制重训，可在对应脚本的 `train_model(...)` 调用中加入或改为 `force_retrain=True`；问题 2-4 也支持通过环境变量 `PV_FORCE_RETRAIN=1` 临时强制重训。
+5. 如果想强制重训，可在对应脚本的 `train_model(...)` 调用中加入或改为 `force_retrain=True`；核心预测链路也支持通过环境变量 `PV_FORCE_RETRAIN=1` 临时强制重训。
 
 这意味着：只改绘图、输出、结果分析代码时，正常情况下不会重新训练；只要模型结构、输入维度和训练参数不变，就会复用已保存模型。
 
@@ -337,7 +337,7 @@ problem4_FusionModel_mixed.pth
 
 ## 7. 输出保存逻辑
 
-正式问题脚本使用统一输出结构：
+正式链路脚本使用统一输出结构：
 
 ```text
 outputs/
@@ -363,7 +363,7 @@ Get-ChildItem .\outputs -Recurse
 
 ## 8. 结果查看顺序
 
-每个问题运行结束后，建议按下面顺序查看结果。
+每条链路运行结束后，建议按下面顺序查看结果。
 
 ### 先看运行摘要
 
@@ -379,7 +379,7 @@ outputs/reports/run_summary.json
 
 ### 再看指标表
 
-问题 1：
+站点机理诊断：
 
 ```text
 outputs/metrics/problem1_daylight_error_metrics.csv
@@ -388,13 +388,13 @@ outputs/metrics/problem1_baseline_error_metrics.csv
 outputs/metrics/problem1_calculation_error_metrics.csv
 ```
 
-问题 2、问题 3：
+历史功率基线、气象预报融合：
 
 ```text
 outputs/metrics/三模型白昼指标对比.csv
 ```
 
-问题 4：
+局地校正融合：
 
 ```text
 outputs/metrics/Q4_模型输入对比结果.csv
@@ -405,11 +405,11 @@ outputs/metrics/Q4_模型输入对比结果.csv
 - `RMSE`、`MAE`、`MAPE`：常规误差指标，越小越好。
 - `E_rmse`、`E_mae`、`E_me`：按装机容量归一化后的附件指标。
 - `r`：相关系数，越接近 1 越好。
-- `C_R`、`Q_R`：课程附件中的考核指标，通常越高越好。
+- `C_R`、`Q_R`：评价附件中的考核指标，通常越高越好。
 
 ### 再看预测明细
 
-问题 1：
+站点机理诊断：
 
 ```text
 outputs/predictions/problem1_theoretical_power_timeseries.csv
@@ -417,19 +417,19 @@ outputs/predictions/problem1_baseline_theoretical_power_timeseries.csv
 outputs/predictions/problem1_calculation_theoretical_power_components.csv
 ```
 
-问题 2：
+历史功率基线：
 
 ```text
 outputs/predictions/三模型预测结果对比表.csv
 ```
 
-问题 3：
+气象预报融合：
 
 ```text
 outputs/predictions/3三模型预测结果对比表.csv
 ```
 
-问题 4：
+局地校正融合：
 
 ```text
 outputs/predictions/Q4_pred_FusionModel_nwp.csv
@@ -501,7 +501,7 @@ explorer .\outputs\figures
 
 ### 运行很慢怎么办？
 
-第一次训练慢是正常的。后续只要 checkpoint 签名匹配，会直接加载模型。可以先运行问题 2，确认输出结构没问题，再继续问题 3 和问题 4。
+第一次训练慢是正常的。后续只要 checkpoint 签名匹配，会直接加载模型。可以先运行历史功率基线，确认输出结构没问题，再继续气象预报融合和局地校正融合。
 
 ### 我改了绘图代码，会重新训练吗？
 

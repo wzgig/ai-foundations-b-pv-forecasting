@@ -1,6 +1,6 @@
-# 2025 课程大作业目录说明
+# 2025 光伏日前预测工程目录说明
 
-本目录按工作流组织 2025 年《人工智能基础B》A 题材料，目标是让后续复现实验、继续改代码、查找结果和维护论文都有稳定入口。
+本目录按工程工作流组织光伏电站日前预测材料，目标是让后续复现实验、继续改代码、查找结果和维护交付报告都有稳定入口。
 
 ## 目录总览
 
@@ -43,7 +43,7 @@
 
 ### `00_course_materials/`
 
-存放题面和课程附件，只作为需求和背景资料，不放实验输出。
+存放原始业务目标和评价附件，只作为需求和背景资料，不放实验输出。
 
 ### `01_modeling_workspace/pvod_full_experiment/`
 
@@ -51,16 +51,16 @@
 
 ### `02_problem_solutions/`
 
-按题目拆分的交付材料。
+按工程链路拆分的交付材料。
 
-- `problem1_data_analysis/`：理论功率建模、物理量分析、MATLAB/Python 探索脚本、单站点 Excel 数据和 Python 诊断输出。
-- `problem2_baseline_forecasting/`：三模型日前预测、白昼指标、统一预测表和可视化图。
-- `problem3_scenario_analysis/`：气象场景划分、特征重要性、提升来源分析和典型场景图。
-- `problem4_feature_ablation/`：不同输入特征组合的严格日前预测对比、雷达图、热力图、指标图和运行摘要。
+- `problem1_data_analysis/`：站点机理诊断、理论功率建模、物理量分析、MATLAB/Python 探索脚本、单站点 Excel 数据和 Python 诊断输出。
+- `problem2_baseline_forecasting/`：历史功率基线预测、白昼指标、统一预测表和可视化图。
+- `problem3_scenario_analysis/`：气象预报融合、运行场景归因、特征重要性、提升来源分析和典型场景图。
+- `problem4_feature_ablation/`：局地校正融合，不同输入特征组合的严格日前预测对比、雷达图、热力图、指标图和运行摘要。
 
 ### `03_figures/`
 
-集中保存跨问题复用或论文展示用的图像素材。
+集中保存跨链路复用或报告展示用的图像素材。
 
 ### `04_paper/final_submission/`
 
@@ -68,7 +68,7 @@
 
 ### `llm/`
 
-课程大作业的结果解释模块。默认会优先读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，支持 Codex 当前的 Responses API 接入；若没有可用配置，则使用离线规则根据现有 `outputs/` 指标和运行摘要整理解释。配置 `PV_LLM_PROVIDER`、`PV_LLM_WIRE_API`、`PV_LLM_API_KEY`、`PV_LLM_MODEL` 和 `PV_LLM_BASE_URL` 后，可覆盖为其他远程或本地 OpenAI-compatible 接口。密钥只从本机配置或环境变量读取，不写入仓库。
+运行解读模块。默认会优先读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，支持 Codex 当前的 Responses API 接入；若没有可用配置，则使用离线规则根据现有 `outputs/` 指标和运行摘要整理解释。配置 `PV_LLM_PROVIDER`、`PV_LLM_WIRE_API`、`PV_LLM_API_KEY`、`PV_LLM_MODEL` 和 `PV_LLM_BASE_URL` 后，可覆盖为其他远程或本地兼容 HTTP 接口。密钥只从本机配置或环境变量读取，不写入仓库。
 
 ### `_shared/`
 
@@ -104,7 +104,7 @@ pip install -r 2025\requirements-optional.txt
 python 2025\tools\project_health_check.py
 ```
 
-按开关方式运行或查看某一问：
+按开关方式运行或查看某条链路：
 
 ```powershell
 python 2025\run_project.py --list
@@ -132,26 +132,26 @@ python -m streamlit run 2025\app.py
 
 不要直接运行 `python 2025\app.py`；该命令现在只会输出正确启动提示，避免 Streamlit bare mode 的 `missing ScriptRunContext` 警告刷屏。`software_launcher.py` 提供桌面窗口，可启动/打开浏览器软件界面、运行健康检查并停止后台服务。
 
-展示界面包含工作台、运行结果、交付引用、代码与命令、结果解释和运行控制六个页面。交付引用页集中索引题面、附件、论文、运行摘要、指标表和核心脚本；运行控制页默认只查看已有输出或执行 dry-run，真正启动训练前需要显式勾选确认框。根目录 `docs/index.html` 是 GitHub Pages 静态展示页，只展示项目摘要和核心结果；完整交互功能仍需本地运行 Streamlit 工作台。
+展示界面包含工作台、运行结果、交付引用、代码与命令、运行解读和运行控制六个页面。交付引用页集中索引业务目标、评价附件、报告、运行摘要、指标表和核心脚本；运行控制页默认只查看已有输出或执行 dry-run，真正启动训练前需要显式勾选确认框。根目录 `docs/index.html` 是 GitHub Pages 静态展示页，只展示项目摘要和核心结果；完整交互功能仍需本地运行 Streamlit 工作台。
 
-运行单个问题脚本时，可以直接进入问题目录：
+运行单条链路脚本时，可以直接进入对应目录：
 
 ```powershell
 cd 2025\02_problem_solutions\problem3_scenario_analysis
 python .\problem3_scenario_ieee_analysis.py
 ```
 
-模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。问题 2-4 的主脚本会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`，问题 2-4 也支持通过 `PV_FORCE_RETRAIN=1` 临时强制重训。
+模型训练脚本会在对应目录下的 `models/` 文件夹保存 checkpoint。核心预测链路会先检查已有 checkpoint；只有训练签名匹配时才直接加载。若想重新训练，在调用 `train_model` 时传入 `force_retrain=True`，也支持通过 `PV_FORCE_RETRAIN=1` 临时强制重训。
 
-问题 1 的理论功率脚本、问题 2-4 的主脚本和问题 3 二次分析脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测或理论功率明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存运行摘要。问题 3 主训练脚本保留 `run_summary.json`，二次分析脚本写入各自独立的 `problem3_*_summary.json`。这些脚本默认不弹出图窗，适合长时间运行后自动保留所有结果。
+站点机理诊断脚本、核心预测脚本和运行场景归因脚本会把运行产物统一保存到当前脚本目录的 `outputs/` 下：`predictions/` 保存预测或理论功率明细，`metrics/` 保存指标表，`figures/` 保存静态 PNG 和交互式 HTML 图，`reports/` 保存运行摘要。气象预报融合主训练脚本保留 `run_summary.json`，二次分析脚本写入各自独立的 `problem3_*_summary.json`。这些脚本默认不弹出图窗，适合长时间运行后自动保留所有结果。
 
-问题 4 主脚本默认运行 `FusionModel` 的 `nwp`、`lmd`、`mixed` 三种输入消融。可用 `PV_Q4_MODES` 选择输入模式、`PV_Q4_MODELS` 选择模型、`PV_Q4_SAVE_RUN_DIAGNOSTICS=0` 临时跳过逐运行诊断图刷新。
+局地校正融合主脚本默认运行 `FusionModel` 的 `nwp`、`lmd`、`mixed` 三种输入评估。可用 `PV_Q4_MODES` 选择输入模式、`PV_Q4_MODELS` 选择模型、`PV_Q4_SAVE_RUN_DIAGNOSTICS=0` 临时跳过逐运行诊断图刷新。
 
-`run_project.py` 是项目级总控入口：问题 1、2、3 主训练和问题 4 可并行运行；`3-analysis` 会读取问题 2 与问题 3 的预测结果，因此只有在依赖输出存在或同次运行了问题 2、3 后才会执行。
+`run_project.py` 是项目级总控入口：站点机理诊断、历史功率基线、气象预报融合和局地校正融合可并行运行；`3-analysis` 会读取历史功率基线与气象预报融合的预测结果，因此只有在依赖输出存在或同次运行了这两条链路后才会执行。
 
 ## 维护约定
 
-- 新代码优先放到对应问题目录；跨问题复用逻辑放到 `_shared/`。
+- 新代码优先放到对应链路目录；跨链路复用逻辑放到 `_shared/`。
 - 不再提交重复压缩包、IDE 配置、缓存文件和临时转换文档。
 - 移动数据文件后，要同步运行 `python 2025\tools\project_health_check.py`。
 - 重要结构调整或代码优化要继续追加到根目录 `PROJECT_LOG.md`。

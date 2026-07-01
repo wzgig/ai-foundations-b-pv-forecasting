@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>光伏电站日前预测工作台</title>
-  <meta name="description" content="光伏电站发电功率日前预测项目静态展示页，包含模型指标、结果图表、复现命令和仓库材料入口。">
+  <title>光伏电站日前计划与功率预测工作台</title>
+  <meta name="description" content="光伏电站发电功率日前预测项目静态展示页，包含工程链路、模型指标、结果图表、复现命令和仓库材料入口。">
   <style>
     :root {
       --ink: #17201d;
@@ -116,6 +116,7 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
     }
+    .scenario-panel,
     .metric-card,
     .panel,
     .link-card {
@@ -123,6 +124,41 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       box-shadow: var(--shadow);
+    }
+    .scenario-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .scenario-tabs button {
+      appearance: none;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.74);
+      color: var(--ink);
+      padding: 8px 13px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .scenario-tabs button[aria-pressed="true"] {
+      background: #17201d;
+      color: #f7f4ea;
+      border-color: #17201d;
+    }
+    .scenario-panel {
+      padding: 18px;
+      border-left: 5px solid var(--cyan);
+      min-height: 128px;
+    }
+    .scenario-panel b {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+    .scenario-panel span {
+      color: var(--muted);
     }
     .metric-card {
       padding: 18px;
@@ -308,13 +344,14 @@
 <body>
   <header class="hero">
     <div class="wrap hero-copy">
-      <div class="eyebrow">PV day-ahead forecasting · Course project archive</div>
-      <h1>光伏电站发电功率日前预测工作台</h1>
-      <p class="lead">项目围绕站点历史功率、NWP 预报和 LMD 局地气象数据建立日前预测流程，并把指标、图表、论文材料和本地运行入口整理成可复现的工程交付。</p>
+      <div class="eyebrow">PV day-ahead forecasting · Station operation console</div>
+      <h1>光伏电站日前计划与功率预测工作台</h1>
+      <p class="lead">项目围绕站点历史功率、NWP 预报和 LMD 局地气象数据建立日前预测流程，用于发电计划编制、调度复盘、模型维护和交付审查。</p>
       <div class="chips">
         <span class="chip">白昼附件指标</span>
-        <span class="chip">三模型对比</span>
-        <span class="chip">NWP/LMD 输入消融</span>
+        <span class="chip">历史功率基线</span>
+        <span class="chip">气象预报融合</span>
+        <span class="chip">局地校正融合</span>
         <span class="chip">Streamlit 本地工作台</span>
       </div>
     </div>
@@ -328,23 +365,40 @@
       </div>
       <div class="metric-grid">
         <article class="metric-card">
-          <h3>问题 2 · 历史功率基准</h3>
+          <h3>历史功率基线</h3>
           <div class="metric-value">FusionModel</div>
           <div class="metric-line">E_rmse 0.0833 · C_R 91.67% · Q_R 98.07%</div>
-          <span class="delta">三模型基准最优</span>
+          <span class="delta">无天气预报时的保底链路</span>
         </article>
         <article class="metric-card">
-          <h3>问题 3 · 融入 NWP</h3>
+          <h3>气象预报融合</h3>
           <div class="metric-value">FusionModel</div>
           <div class="metric-line">E_rmse 0.0699 · C_R 93.01% · Q_R 99.76%</div>
-          <span class="delta">E_rmse 较问题 2 降低 16.0%</span>
+          <span class="delta">E_rmse 较历史功率基线降低 16.0%</span>
         </article>
         <article class="metric-card">
-          <h3>问题 4 · 输入特征消融</h3>
+          <h3>局地校正融合</h3>
           <div class="metric-value">FusionModel_mixed</div>
           <div class="metric-line">E_rmse 0.0465 · C_R 95.35% · Q_R 99.84%</div>
           <span class="delta">较纯 NWP 输入降低 47.1%</span>
         </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>运行视角</h2>
+        <p class="section-note">同一套 outputs 可以服务不同工程角色。点击切换关注点，静态页保留最关键的使用语境；完整交互请运行本地工作台。</p>
+      </div>
+      <div class="scenario-tabs" aria-label="运行视角">
+        <button type="button" data-scenario="plan" aria-pressed="true">日前计划</button>
+        <button type="button" data-scenario="review" aria-pressed="false">调度复盘</button>
+        <button type="button" data-scenario="maintain" aria-pressed="false">模型维护</button>
+        <button type="button" data-scenario="delivery" aria-pressed="false">交付审查</button>
+      </div>
+      <div class="scenario-panel" id="scenarioPanel">
+        <b>日前计划</b>
+        <span>关注下一日 96 点功率曲线、白昼误差和天气扰动，优先查看气象预报融合与局地校正融合结果。</span>
       </div>
     </section>
 
@@ -355,12 +409,12 @@
       </div>
       <div class="visuals">
         <figure class="panel">
-          <img src="assets/forecast-curve.png" alt="问题 3 三模型每日预测对比图">
-          <figcaption>问题 3：加入目标日 NWP 气象序列后的单日预测曲线对比。</figcaption>
+          <img src="assets/forecast-curve.png" alt="气象预报融合链路三模型每日预测对比图">
+          <figcaption>气象预报融合：加入目标日 NWP 气象序列后的单日预测曲线对比。</figcaption>
         </figure>
         <figure class="panel">
-          <img src="assets/feature-radar.png" alt="问题 4 FusionModel 输入对比雷达图">
-          <figcaption>问题 4：NWP、LMD 与 mixed 输入在误差和附件指标上的对比。</figcaption>
+          <img src="assets/feature-radar.png" alt="局地校正融合输入对比雷达图">
+          <figcaption>局地校正融合：NWP、LMD 与 mixed 输入在误差和附件指标上的对比。</figcaption>
         </figure>
       </div>
     </section>
@@ -371,10 +425,10 @@
         <p class="section-note">项目不是静态报告堆叠，而是从数据、模型、指标到展示入口的一条可复现链路。</p>
       </div>
       <div class="workflow">
-        <div class="step"><b>题面与附件</b><span>明确日前预测任务、装机容量归一化指标和交付约束。</span></div>
-        <div class="step"><b>数据与物理分析</b><span>整理站点功率、NWP、LMD，并进行理论功率诊断。</span></div>
+        <div class="step"><b>业务目标与评价口径</b><span>明确日前预测任务、装机容量归一化指标和交付约束。</span></div>
+        <div class="step"><b>站点机理诊断</b><span>整理站点功率、NWP、LMD，并进行理论功率与偏差诊断。</span></div>
         <div class="step"><b>深度预测模型</b><span>比较 PureLSTM、FusionModel、BiFusionModel 和 checkpoint 复用。</span></div>
-        <div class="step"><b>场景与消融</b><span>分析天气场景、输入特征和空间降尺度对误差的影响。</span></div>
+        <div class="step"><b>运行场景归因</b><span>分析天气场景、输入特征和空间降尺度对误差的影响。</span></div>
         <div class="step"><b>工作台交付</b><span>用 Streamlit 展示指标、图表、代码索引和受控运行入口。</span></div>
       </div>
     </section>
@@ -413,12 +467,29 @@ python 2025\run_project.py --show all</code></pre>
     </section>
 
     <section class="notice">
-      本项目静态页用于公开展示项目结构和结果证据；涉及模型重训、交互式 HTML 图、代码浏览和结果解释的功能，请使用本地 Streamlit 工作台。
+      本项目静态页用于公开展示项目结构和结果证据；涉及模型重训、交互式 HTML 图、代码浏览和运行解读的功能，请使用本地 Streamlit 工作台。
     </section>
   </main>
 
   <footer>
     <div class="wrap">© 2026 光伏电站日前预测项目 · Published with GitHub Pages</div>
   </footer>
+  <script>
+    const scenarios = {
+      plan: ["日前计划", "关注下一日 96 点功率曲线、白昼误差和天气扰动，优先查看气象预报融合与局地校正融合结果。"],
+      review: ["调度复盘", "对比实际功率、预测曲线和天气场景，定位高误差时段，判断误差来自天气突变、局地信息缺口还是模型偏差。"],
+      maintain: ["模型维护", "检查 checkpoint 复用、输入模式收益和指标漂移，决定是否重训模型、扩展局地气象输入或更新运行参数。"],
+      delivery: ["交付审查", "核对指标 CSV、图表、运行摘要、报告和维护日志，确保每个结论都能回溯到仓库中的真实输出。"]
+    };
+    const panel = document.getElementById("scenarioPanel");
+    document.querySelectorAll("[data-scenario]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-scenario]").forEach((item) => item.setAttribute("aria-pressed", "false"));
+        button.setAttribute("aria-pressed", "true");
+        const [title, text] = scenarios[button.dataset.scenario];
+        panel.innerHTML = `<b>${title}</b><span>${text}</span>`;
+      });
+    });
+  </script>
 </body>
 </html>

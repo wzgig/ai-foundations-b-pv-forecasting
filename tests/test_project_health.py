@@ -171,7 +171,7 @@ class ProjectHealthTests(unittest.TestCase):
         from llm.result_context import collect_all_context
 
         response = answer_question(
-            "为什么NWP+LMD混合输入在问题4中表现最好？",
+            "为什么NWP+LMD混合输入在局地校正链路中表现最好？",
             contexts=collect_all_context(),
             config=LLMConfig(provider="offline"),
         )
@@ -243,18 +243,31 @@ requires_openai_auth = true
 
         self.assertIn("交付引用", text)
         self.assertIn("FEATURED_VISUALS", text)
+        self.assertIn("模型链路对比", text)
+        self.assertIn("运行视角", text)
+        self.assertIn("局地校正融合", text)
         self.assertIn("hero-panel", text)
         self.assertIn("render_reference_hub", text)
-        self.assertIn("结果解释", text)
+        self.assertIn("运行解读", text)
         self.assertNotIn("use_container_width", text)
+        self.assertNotIn("问题2 基准预测", text)
+        self.assertNotIn("问题3 融入NWP", text)
+        self.assertNotIn("问题4 输入消融", text)
 
     def test_static_pages_site_references_real_assets(self):
         html = DOCS_INDEX.read_text(encoding="utf-8")
 
-        self.assertIn("光伏电站发电功率日前预测工作台", html)
+        self.assertIn("光伏电站日前计划与功率预测工作台", html)
+        self.assertIn("历史功率基线", html)
+        self.assertIn("气象预报融合", html)
+        self.assertIn("局地校正融合", html)
+        self.assertIn("运行视角", html)
         self.assertIn("forecast-curve.png", html)
         self.assertIn("feature-radar.png", html)
         self.assertIn("GitHub Pages 只发布静态项目页", html)
+        self.assertNotIn("问题 2 ·", html)
+        self.assertNotIn("问题 3 ·", html)
+        self.assertNotIn("问题 4 ·", html)
         self.assertTrue((PROJECT_ROOT / "docs" / "assets" / "forecast-curve.png").exists())
         self.assertTrue((PROJECT_ROOT / "docs" / "assets" / "feature-radar.png").exists())
         self.assertTrue((PROJECT_ROOT / "docs" / "assets" / "forecast-workflow.png").exists())
