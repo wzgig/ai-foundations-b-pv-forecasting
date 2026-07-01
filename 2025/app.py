@@ -79,12 +79,25 @@ REFERENCE_FILES = [
     ("评价口径", ROOT / "00_course_materials" / "附件1.pdf", "指标定义与约束"),
     ("交付报告", ROOT / "04_paper" / "final_submission" / "003158 A.pdf", "PDF交付件"),
     ("交付报告", ROOT / "04_paper" / "final_submission" / "003158 A.docx", "可编辑交付件"),
+    ("课程交付", ROOT / "05_delivery" / "项目主报告_课程版.md", "课程主报告草稿"),
+    ("课程交付", ROOT / "05_delivery" / "交付完成度复盘.md", "完成度审查"),
+    ("课程交付", ROOT / "05_delivery" / "最终提交包清单.md", "最终打包检查"),
     ("运行说明", ROOT / "README.md", "项目说明"),
     ("运行说明", ROOT / "RUN_GUIDE.md", "复现流程"),
     ("代码索引", ROOT / "CODE_INDEX.md", "文件用途表"),
     ("维护记录", ROOT.parent / "PROJECT_LOG.md", "改动备注"),
 ]
-NAVIGATION = ["工作台", "运行结果", "交付引用", "代码与命令", "运行解读", "运行控制"]
+DELIVERY_FILES = [
+    ("要求提取", ROOT / "05_delivery" / "作业要求提取.md", "课程通知、题面和附件指标的硬性要求"),
+    ("完成度复盘", ROOT / "05_delivery" / "交付完成度复盘.md", "已完成、未完成、风险和收尾动作"),
+    ("主报告草稿", ROOT / "05_delivery" / "项目主报告_课程版.md", "面向课程评分表的项目主报告"),
+    ("团队分工", ROOT / "05_delivery" / "团队分工与项目计划.md", "成员职责和最终收尾计划"),
+    ("测试记录", ROOT / "05_delivery" / "功能性能稳定性测试表.md", "功能、性能、稳定性和复核命令"),
+    ("视频脚本", ROOT / "05_delivery" / "演示视频脚本.md", "3 分钟 MP4 分镜与录屏路线"),
+    ("使用指南", ROOT / "05_delivery" / "网站使用指南与案例.md", "工作台、Pages 和使用案例"),
+    ("提交清单", ROOT / "05_delivery" / "最终提交包清单.md", "压缩包命名、内容和体积控制"),
+]
+NAVIGATION = ["工作台", "运行结果", "交付引用", "课程交付", "代码与命令", "运行解读", "运行控制"]
 PIPELINE_CARDS = {
     "2": {
         "name": "历史功率基线",
@@ -1187,11 +1200,115 @@ def render_reference_hub(contexts: dict[str, TaskContext]) -> None:
           <span class="path-pill">02_problem_solutions/*/outputs</span>
           <span class="path-pill">03_figures</span>
           <span class="path-pill">04_paper/final_submission</span>
+          <span class="path-pill">05_delivery</span>
           <span class="path-pill">PROJECT_LOG.md</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
+
+def collect_delivery_rows() -> pd.DataFrame:
+    rows = []
+    for category, path, role in DELIVERY_FILES:
+        rows.append(
+            {
+                "材料": category,
+                "文件": path.name,
+                "路径": project_relative(path),
+                "状态": path_state(path),
+                "大小": file_size_label(path),
+                "用途": role,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def render_delivery_center() -> None:
+    render_section_title("课程交付", "要求、报告、视频、测试和最终提交")
+    delivery_df = collect_delivery_rows()
+    existing_count = int((delivery_df["状态"] == "存在").sum()) if not delivery_df.empty else 0
+    total_count = len(delivery_df)
+
+    cols = st.columns(4)
+    summary = [
+        ("交付材料", f"{existing_count}/{total_count}", "已整理为课程提交口径"),
+        ("报告草稿", "已补齐", "仍需导出 Word/PDF"),
+        ("演示视频", "脚本就绪", "真实 MP4 仍需录制"),
+        ("提交包", "清单就绪", "压缩体积需最终检查"),
+    ]
+    for col, (title, value, caption) in zip(cols, summary):
+        with col:
+            st.markdown(
+                f"""
+                <div class="reference-card">
+                  <h3>{html_text(title)}</h3>
+                  <div class="value">{html_text(value)}</div>
+                  <div class="caption">{html_text(caption)}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    progress = existing_count / total_count if total_count else 0
+    st.progress(progress, text=f"课程交付文档完成度 {existing_count}/{total_count}")
+
+    tabs = st.tabs(["材料总览", "文档预览", "提交前动作"])
+    with tabs[0]:
+        selected = st.segmented_control(
+            "材料类型",
+            ["全部", *delivery_df["材料"].drop_duplicates().tolist()],
+            default="全部",
+        )
+        visible = delivery_df if selected == "全部" else delivery_df[delivery_df["材料"] == selected]
+        st.dataframe(visible, width="stretch", hide_index=True)
+
+    with tabs[1]:
+        labels = [f"{category} - {path.name}" for category, path, _role in DELIVERY_FILES]
+        label_to_file = {label: path for label, (_category, path, _role) in zip(labels, DELIVERY_FILES)}
+        selected_label = st.selectbox("选择交付文档", labels, index=2)
+        selected_path = label_to_file[selected_label]
+        st.caption(project_relative(selected_path))
+        if selected_path.exists():
+            text = selected_path.read_text(encoding="utf-8", errors="replace")
+            st.download_button(
+                "下载当前 Markdown",
+                data=text,
+                file_name=selected_path.name,
+                mime="text/markdown",
+            )
+            with st.container(border=True):
+                st.markdown(text)
+        else:
+            st.warning("文件尚未生成。")
+
+    with tabs[2]:
+        st.markdown(
+            """
+            <div class="status-strip">
+              <span class="path-pill">补团队成员</span>
+              <span class="path-pill">导出报告 PDF/DOCX</span>
+              <span class="path-pill">录制 MP4</span>
+              <span class="path-pill">压缩包小于 200M</span>
+              <span class="path-pill">平台上传截图</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.dataframe(
+            pd.DataFrame(
+                [
+                    ("团队信息", "补齐成员姓名、学号、职责", "待人工确认"),
+                    ("正式报告", "由课程版主报告草稿导出 Word/PDF", "待导出"),
+                    ("演示视频", "按脚本录制 3 分钟以内 MP4", "待录制"),
+                    ("最终压缩包", "按命名规范打包并检查体积", "待执行"),
+                    ("平台提交", "按教师确认的平台上传并保存截图", "待执行"),
+                ],
+                columns=["事项", "动作", "状态"],
+            ),
+            width="stretch",
+            hide_index=True,
+        )
 
 
 def render_code_lab() -> None:
@@ -1422,6 +1539,8 @@ def main() -> None:
         render_results(contexts)
     elif page == "交付引用":
         render_reference_hub(contexts)
+    elif page == "课程交付":
+        render_delivery_center()
     elif page == "代码与命令":
         render_code_lab()
     elif page == "运行解读":

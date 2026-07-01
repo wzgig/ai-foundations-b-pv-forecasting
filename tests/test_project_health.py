@@ -23,6 +23,7 @@ LAUNCHER = PROJECT_ROOT / "2025" / "software_launcher.py"
 START_SOFTWARE = PROJECT_ROOT / "2025" / "start_software.vbs"
 STREAMLIT_THEME = PROJECT_ROOT / ".streamlit" / "config.toml"
 DOCS_INDEX = PROJECT_ROOT / "docs" / "index.html"
+DELIVERY_DIR = PROJECT_ROOT / "2025" / "05_delivery"
 
 
 def load_health_module():
@@ -242,17 +243,43 @@ requires_openai_auth = true
         text = APP.read_text(encoding="utf-8")
 
         self.assertIn("交付引用", text)
+        self.assertIn("课程交付", text)
         self.assertIn("FEATURED_VISUALS", text)
+        self.assertIn("DELIVERY_FILES", text)
         self.assertIn("模型链路对比", text)
         self.assertIn("运行视角", text)
         self.assertIn("局地校正融合", text)
         self.assertIn("hero-panel", text)
         self.assertIn("render_reference_hub", text)
+        self.assertIn("render_delivery_center", text)
         self.assertIn("运行解读", text)
         self.assertNotIn("use_container_width", text)
         self.assertNotIn("问题2 基准预测", text)
         self.assertNotIn("问题3 融入NWP", text)
         self.assertNotIn("问题4 输入消融", text)
+
+    def test_course_delivery_documents_exist(self):
+        required = [
+            "README.md",
+            "作业要求提取.md",
+            "交付完成度复盘.md",
+            "项目主报告_课程版.md",
+            "团队分工与项目计划.md",
+            "功能性能稳定性测试表.md",
+            "演示视频脚本.md",
+            "网站使用指南与案例.md",
+            "最终提交包清单.md",
+        ]
+
+        for filename in required:
+            path = DELIVERY_DIR / filename
+            self.assertTrue(path.exists(), filename)
+            self.assertGreater(path.stat().st_size, 500, filename)
+
+        report = (DELIVERY_DIR / "项目主报告_课程版.md").read_text(encoding="utf-8")
+        self.assertIn("光伏电站日前计划与功率预测工作台", report)
+        self.assertIn("FusionModel_mixed", report)
+        self.assertIn("E_rmse=0.0465", report)
 
     def test_static_pages_site_references_real_assets(self):
         html = DOCS_INDEX.read_text(encoding="utf-8")
@@ -262,6 +289,8 @@ requires_openai_auth = true
         self.assertIn("气象预报融合", html)
         self.assertIn("局地校正融合", html)
         self.assertIn("运行视角", html)
+        self.assertIn("课程交付", html)
+        self.assertIn("2025/05_delivery", html)
         self.assertIn("forecast-curve.png", html)
         self.assertIn("feature-radar.png", html)
         self.assertIn("GitHub Pages 只发布静态项目页", html)

@@ -6,7 +6,7 @@
 
 项目基于光伏电站历史功率、数值天气预报和相关气象数据，完成从站点机理诊断、日前预测建模、天气场景归因到多源气象输入评估的完整工程链路。
 
-原始交付规范、当前项目适配情况和后续改造路线见 `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`。
+原始交付规范、当前项目适配情况和后续改造路线见 `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`。面向《人工智能基础B》最终提交的要求提取、完成度复盘、课程主报告草稿、测试表、演示视频脚本和打包清单集中放在 `2025/05_delivery/`。
 
 主要工程链路包括：
 
@@ -26,6 +26,7 @@
 │   ├── 02_problem_solutions/      各条工程链路的代码、数据、结果和图表
 │   ├── 03_figures/                探索图、论文素材图和场景对比图
 │   ├── 04_paper/                  最终论文 PDF 与 Word 文件
+│   ├── 05_delivery/               课程交付复盘、主报告草稿、测试表和视频脚本
 │   ├── llm/                       运行解读模块与可选语言接口
 │   ├── _shared/                   Python 与 MATLAB 公共工具
 │   ├── tools/                     项目健康检查脚本
@@ -96,7 +97,7 @@ python 2025\run_project.py --show 4
 python -m streamlit run 2025\app.py
 ```
 
-不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。界面包含工作台、运行结果、交付引用、代码与命令、运行解读和受保护运行控制页面。运行解读模块默认离线可用，也可读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，或通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
+不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。界面包含工作台、运行结果、交付引用、课程交付、代码与命令、运行解读和受保护运行控制页面。运行解读模块默认离线可用，也可读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，或通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
 
 GitHub Pages 静态展示页位于 `docs/index.html`。Pages 只展示项目摘要、核心指标、图表和本地运行方式；完整 Streamlit 工作台需要本地运行。
 
