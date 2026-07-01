@@ -68,7 +68,7 @@
 
 ### `llm/`
 
-课程大作业的大模型辅助解读模块。默认会优先读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，支持 Codex 当前的 Responses API 接入；若没有可用配置，则使用离线模板根据现有 `outputs/` 指标和运行摘要生成解释。配置 `PV_LLM_PROVIDER`、`PV_LLM_WIRE_API`、`PV_LLM_API_KEY`、`PV_LLM_MODEL` 和 `PV_LLM_BASE_URL` 后，可覆盖为其他远程或本地 OpenAI-compatible 接口。密钥只从本机配置或环境变量读取，不写入仓库。
+课程大作业的结果解释模块。默认会优先读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，支持 Codex 当前的 Responses API 接入；若没有可用配置，则使用离线规则根据现有 `outputs/` 指标和运行摘要整理解释。配置 `PV_LLM_PROVIDER`、`PV_LLM_WIRE_API`、`PV_LLM_API_KEY`、`PV_LLM_MODEL` 和 `PV_LLM_BASE_URL` 后，可覆盖为其他远程或本地 OpenAI-compatible 接口。密钥只从本机配置或环境变量读取，不写入仓库。
 
 ### `_shared/`
 
@@ -132,7 +132,7 @@ python -m streamlit run 2025\app.py
 
 不要直接运行 `python 2025\app.py`；该命令现在只会输出正确启动提示，避免 Streamlit bare mode 的 `missing ScriptRunContext` 警告刷屏。`software_launcher.py` 提供桌面窗口，可启动/打开浏览器软件界面、运行健康检查并停止后台服务。
 
-展示界面包含工作台、运行结果、本地代码交互、大模型问答和运行控制五个页面。运行控制页默认只查看已有输出或执行 dry-run，真正启动训练前需要显式勾选确认框。
+展示界面包含工作台、运行结果、交付引用、代码与命令、结果解释和运行控制六个页面。交付引用页集中索引题面、附件、论文、运行摘要、指标表和核心脚本；运行控制页默认只查看已有输出或执行 dry-run，真正启动训练前需要显式勾选确认框。根目录 `docs/index.html` 是 GitHub Pages 静态展示页，只展示项目摘要和核心结果；完整交互功能仍需本地运行 Streamlit 工作台。
 
 运行单个问题脚本时，可以直接进入问题目录：
 

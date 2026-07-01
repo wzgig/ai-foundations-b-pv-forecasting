@@ -2,6 +2,87 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-07-01 去 AI 味、预测工作台与 GitHub Pages 静态页优化
+
+### 调整目标
+
+- 按用户要求通读项目现状后，继续把展示层从“AI 生成/总结页”调整为真实可复现的光伏日前预测项目工作台。
+- 降低首屏、导航、功能入口和文档中的 AI 包装感，保留课程要求中的结果解释模块，但前台以“预测、指标、图表、受控复现、交付引用”为主。
+- 新增 GitHub Pages 可发布的静态项目页，明确 Pages 只展示项目摘要和核心结果，完整 Streamlit 工作台仍需本地运行。
+
+### 主要改动
+
+- 优化 `2025/app.py`：
+  - 将页面标题、导航和功能入口改为“预测工作台 / 代码与命令 / 结果解释”等工程化表达。
+  - 移除前台“AI Foundations”“大模型问答”“生成摘要”等容易显得像 AI 包装的文案。
+  - 将 Streamlit 已弃用的 `use_container_width` 替换为 `width="stretch"`，并把横向 `radio` 与设置类 `checkbox` 调整为 `segmented_control` 和 `toggle`。
+- 新增 `.streamlit/config.toml`：
+  - 为本地工作台配置项目级主题、字体、图表颜色、侧栏和控件边界，让原生控件与页面视觉一致。
+- 新增 `docs/index.html` 与 `docs/assets/`：
+  - 建立 GitHub Pages 静态展示页，直接展示真实预测曲线、问题 2/3/4 最优指标、本地运行命令和仓库材料入口。
+  - 复制核心图像为 ASCII 文件名，避免 Pages 路径编码问题。
+- 更新 `.gitignore`：
+  - 忽略 `*.baiduyun.uploading.cfg`，避免百度云同步临时文件进入提交。
+- 更新文档与测试：
+  - 同步 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md`、`2025/CODE_INDEX.md`、`2025/CODE_AUDIT.md`、`2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`。
+  - 扩展 `tests/test_project_health.py`，检查静态 Pages、主题配置、真实资产和弃用参数回归。
+
+### 验证结果
+
+- `python -m py_compile 2025\app.py 2025\software_launcher.py 2025\llm\assistant.py 2025\llm\result_context.py 2025\llm\prompts.py`：通过。
+- `python 2025\app.py`：通过，只输出正确 Streamlit 启动提示。
+- `python 2025\tools\project_health_check.py`：通过，未发现 Python 解析错误、缺失相对输入或受管输出问题；仍保留两组已知历史实验副本重复。
+- `python -m unittest discover -s tests -q`：通过，21 个测试 OK。
+- `npx playwright screenshot --wait-for-timeout=6000 --viewport-size=1440,1100 http://127.0.0.1:8510 tmp\pv_workbench_desktop.png`：通过，桌面首屏正常。
+- `npx playwright screenshot --wait-for-timeout=6000 --viewport-size=390,900 http://127.0.0.1:8510 tmp\pv_workbench_mobile.png`：通过，移动端首屏无明显遮挡。
+- `npx playwright screenshot --wait-for-timeout=1000 --viewport-size=1440,1100 file:///.../docs/index.html tmp\pages_desktop.png`：通过，静态 Pages 首屏正常。
+
+### 后续注意事项
+
+- 本轮不改训练脚本、不重训模型，结果指标仍以现有 `outputs/` 为准。
+- GitHub Pages 使用 `docs/` 静态源；Pages 无法运行 Streamlit，仓库 README 和页面中已明确本地运行命令。
+- 后续如更新核心指标或替换图表，应同步更新 `docs/index.html` 和 `docs/assets/`。
+
+## 2026-06-03 软件界面、交付引用与展示框架优化
+
+### 调整目标
+
+- 将 `2025/app.py` 从基础 Streamlit 控制台提升为更完整的软件化展示界面。
+- 用项目真实预测图、指标表、论文材料和输出摘要组织首屏、结果页和交付引用页。
+- 保持默认只读取已有 `outputs/`，不触发长时间模型训练，不写入或暴露 API 密钥。
+
+### 主要改动
+
+- 优化 `2025/app.py`：
+  - 重做视觉系统，加入浅色玻璃质感、真实预测曲线首屏、精选图表、建模链路和更清晰的状态卡。
+  - 新增 `FEATURED_VISUALS`、`REFERENCE_FILES` 和 `NAVIGATION`，集中管理页面导航、精选图表和交付材料引用。
+  - 新增 `交付引用` 页面，索引题面、附件、最终论文、运行说明、代码索引、维护日志、各任务 `run_summary.json` 与指标表。
+  - 增加 HTML 转义、图片 data URI、文件状态、文件大小和指标提升计算 helper，降低动态内容进入页面时的展示风险。
+  - 结果页增加关键洞察卡，工作台增加真实图表预览和从题面到交付的流程节点。
+- 更新项目文档：
+  - `README.md`
+  - `2025/README.md`
+  - `2025/RUN_GUIDE.md`
+  - `2025/CODE_INDEX.md`
+  - `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`
+- 更新 `tests/test_project_health.py`：
+  - 增加 UI 外壳、精选图表和交付引用页的轻量回归检查。
+
+### 验证结果
+
+- `python -m py_compile 2025\app.py 2025\software_launcher.py 2025\llm\assistant.py 2025\llm\result_context.py`：通过。
+- `python 2025\app.py`：通过，仍只输出正确 Streamlit 启动提示。
+- `python 2025\tools\project_health_check.py`：通过，未发现解析错误、缺失相对输入或受管输出问题。
+- `python -m unittest discover -s tests -q`：通过，19 个测试 OK。
+- `npx playwright screenshot --wait-for-timeout=6000 --viewport-size=1440,1100 http://localhost:8510 tmp\pv_ui_desktop.png`：通过，桌面首屏渲染正常。
+- `npx playwright screenshot --wait-for-timeout=6000 --viewport-size=390,900 http://localhost:8510 tmp\pv_ui_mobile.png`：通过，移动端首屏无明显遮挡。
+
+### 后续注意事项
+
+- 当前优化只改展示层、文档和测试，不改训练脚本、不重训模型。
+- 后续如果继续拆分框架，可把 `app.py` 中的 UI 常量、引用索引和页面渲染函数分离为 `ui/` 子模块。
+- 若新增提交材料或重跑输出，应同步更新 `REFERENCE_FILES` 或确认 `collect_reference_rows()` 能覆盖新文件。
+
 ## 2026-06-03 桌面启动器双击无反应修复
 
 ### 调整目标

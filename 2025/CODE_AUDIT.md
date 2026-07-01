@@ -53,7 +53,7 @@
 
 - 新增 `_shared/pv_project.py`，集中处理 Python 路径解析、中文绘图配置、随机种子、训练集归一化、稳健分箱和 CSV 写出。
 - 新增 `run_project.py`，作为问题 1-4 的总控入口，提供选择运行、并行运行、依赖检查和结果展示能力。
-- 新增 `app.py` 和 `llm/` 课程交付层，默认读取已有 `outputs/` 并提供指标展示、图表浏览、本地代码交互和大模型辅助解读；当前可自动读取本机 Codex 配置并支持 Responses API。
+- 新增 `app.py` 和 `llm/` 课程交付层，默认读取已有 `outputs/` 并提供指标展示、图表浏览、代码与命令和结果解释；当前可自动读取本机 Codex 配置并支持 Responses API。
 - 新增 `start_software.vbs` 与 `software_launcher.py`，作为无终端桌面启动入口；保留 `run.bat` 作为命令行调试脚本。
 - 新增 `_shared/matlab/resolve_project_input.m`，让 MATLAB 脚本可以从脚本目录和项目内候选目录寻找数据。
 - 新增 `tools/project_health_check.py`，静态检查 Python 语法、重复代码快照和相对输入文件。
@@ -144,12 +144,12 @@
 
 ### 已完成的改进
 
-- `2025/app.py` 使用 Streamlit 搭建课程展示软件，默认只读取已有结果，提供工作台、结果浏览、代码交互、LLM 问答和受保护运行控制；直接 `python app.py` 会输出正确启动提示。
+- `2025/app.py` 使用 Streamlit 搭建预测工作台，默认只读取已有结果，提供工作台、结果浏览、代码与命令、结果解释和受保护运行控制；直接 `python app.py` 会输出正确启动提示。
 - `2025/llm/result_context.py` 将问题 1-4 的运行摘要、指标表和产物路径整理为结构化上下文。
 - `2025/llm/assistant.py` 默认读取本机 `~\.codex\config.toml` 与 `~\.codex\auth.json`，支持 Responses API、Chat Completions、OpenAI-compatible、本地端点和离线模板兜底。
 - `2025/start_software.vbs` 与 `2025/software_launcher.py` 支持 Windows 无终端桌面启动；`2025/run.bat` 保留为命令行调试入口。
 - `2025/requirements.txt` 改为固定版本依赖，`2025/requirements-optional.txt` 固定可选实验依赖。
-- 回归测试新增 LLM 上下文读取、离线解读、本地 Codex Responses 配置读取、`app.py` 直接运行保护、`app.py`/启动器语法和依赖固定版本检查。
+- 回归测试新增结果上下文读取、离线解读、本地 Codex Responses 配置读取、`app.py` 直接运行保护、`app.py`/启动器语法和依赖固定版本检查。
 
 ## 当前检查结果
 

@@ -21,6 +21,8 @@ RUN_PROJECT = PROJECT_ROOT / "2025" / "run_project.py"
 APP = PROJECT_ROOT / "2025" / "app.py"
 LAUNCHER = PROJECT_ROOT / "2025" / "software_launcher.py"
 START_SOFTWARE = PROJECT_ROOT / "2025" / "start_software.vbs"
+STREAMLIT_THEME = PROJECT_ROOT / ".streamlit" / "config.toml"
+DOCS_INDEX = PROJECT_ROOT / "docs" / "index.html"
 
 
 def load_health_module():
@@ -235,6 +237,34 @@ requires_openai_auth = true
 
     def test_app_source_parses_successfully(self):
         ast.parse(APP.read_text(encoding="utf-8"), filename=str(APP))
+
+    def test_app_ui_exposes_reference_and_visual_shell(self):
+        text = APP.read_text(encoding="utf-8")
+
+        self.assertIn("交付引用", text)
+        self.assertIn("FEATURED_VISUALS", text)
+        self.assertIn("hero-panel", text)
+        self.assertIn("render_reference_hub", text)
+        self.assertIn("结果解释", text)
+        self.assertNotIn("use_container_width", text)
+
+    def test_static_pages_site_references_real_assets(self):
+        html = DOCS_INDEX.read_text(encoding="utf-8")
+
+        self.assertIn("光伏电站发电功率日前预测工作台", html)
+        self.assertIn("forecast-curve.png", html)
+        self.assertIn("feature-radar.png", html)
+        self.assertIn("GitHub Pages 只发布静态项目页", html)
+        self.assertTrue((PROJECT_ROOT / "docs" / "assets" / "forecast-curve.png").exists())
+        self.assertTrue((PROJECT_ROOT / "docs" / "assets" / "feature-radar.png").exists())
+        self.assertTrue((PROJECT_ROOT / "docs" / "assets" / "forecast-workflow.png").exists())
+
+    def test_streamlit_theme_is_project_scoped(self):
+        text = STREAMLIT_THEME.read_text(encoding="utf-8")
+
+        self.assertIn("[theme]", text)
+        self.assertIn("primaryColor = \"#315c49\"", text)
+        self.assertIn("[theme.sidebar]", text)
 
     def test_software_launcher_source_parses_successfully(self):
         ast.parse(LAUNCHER.read_text(encoding="utf-8"), filename=str(LAUNCHER))

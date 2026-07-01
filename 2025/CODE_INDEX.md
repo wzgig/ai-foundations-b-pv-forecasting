@@ -21,13 +21,13 @@
 | `_shared/matlab/save_project_figure.m` | MATLAB 期刊风格图像保存工具，默认写入 `outputs/figures/`。 |
 | `tools/project_health_check.py` | 静态健康检查脚本，检查 Python 语法、重复代码快照、相对输入文件和正式问题脚本输出约束。 |
 | `run_project.py` | 项目总控入口，支持用 `--run` 选择问题任务、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出，并显式处理问题 3 二次分析对问题 2/3 预测表的依赖。 |
-| `app.py` | Streamlit 课程展示控制台，读取已有 `outputs/`，提供工作台、运行结果、本地代码交互、大模型问答和受保护运行控制；直接用 `python app.py` 运行时只输出正确启动提示。 |
+| `app.py` | Streamlit 预测工作台，读取已有 `outputs/`，提供工作台、运行结果、交付引用、代码与命令、结果解释和受保护运行控制；直接用 `python app.py` 运行时只输出正确启动提示。 |
 | `software_launcher.py` | Windows 桌面启动器，通过 Tkinter 提供启动/打开软件、运行健康检查和停止后台 Streamlit 服务的可视化入口。 |
 | `start_software.vbs` | 无终端双击入口，优先通过 `pythonw` 启动 `software_launcher.py`，适合演示视频和教师复现时使用。 |
 | `run.bat` | Windows 命令行调试启动脚本，会检查 Python/Streamlit 并启动 `app.py`，适合查看依赖安装和 Streamlit 输出。 |
-| `llm/result_context.py` | 从问题 1-4 的 `run_summary.json` 和指标 CSV 中读取结果，整理为 LLM 上下文。 |
-| `llm/assistant.py` | 大模型辅助解读入口，默认读取本机 Codex config/auth 并支持 Responses API；环境变量可覆盖为 OpenAI-compatible、`local-codex` 或其他本地/远程接口，失败时离线模板兜底。 |
-| `llm/prompts.py` | 项目问答与报告摘要的提示词模板。 |
+| `llm/result_context.py` | 从问题 1-4 的 `run_summary.json` 和指标 CSV 中读取结果，整理为结果解释上下文。 |
+| `llm/assistant.py` | 结果解释入口，默认读取本机 Codex config/auth 并支持 Responses API；环境变量可覆盖为 OpenAI-compatible、`local-codex` 或其他本地/远程接口，失败时离线规则兜底。 |
+| `llm/prompts.py` | 项目结果解释与报告摘要整理的提示词模板。 |
 
 ## 正式问题代码
 

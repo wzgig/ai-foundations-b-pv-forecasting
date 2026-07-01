@@ -48,7 +48,7 @@ python -m unittest discover -s tests -q
 
 ## 3. 课程交互展示入口
 
-本项目新增了面向期末大作业演示的 Streamlit 控制台。该界面默认读取已有 `outputs/`，展示四问结果、指标表、图像产物、本地代码入口和大模型辅助解读，不会自动触发长时间训练。为了避免演示时先出现黑色终端窗口，当前还提供了一个 Windows 桌面启动器。
+本项目新增了面向期末大作业演示的 Streamlit 预测工作台。该界面默认读取已有 `outputs/`，展示四问结果、指标表、图像产物、本地代码入口和结果解释，不会自动触发长时间训练。为了避免演示时先出现黑色终端窗口，当前还提供了一个 Windows 桌面启动器。
 
 Windows 演示推荐入口：
 
@@ -74,17 +74,18 @@ python -m streamlit run 2025\app.py
 
 - 工作台：展示问题 2、问题 3、问题 4 的最优模型、附件指标和软件入口状态。
 - 运行结果：集中查看各问题 CSV 指标、PNG 图和 Plotly HTML 交互图。
-- 本地代码交互：查看核心脚本/文档，执行 `--list`、`--show`、`--dry-run` 等安全命令，并可把当前代码片段加入问答上下文。
-- 大模型问答：默认读取本机 Codex 配置和密钥，支持 Responses API；无可用 API 时使用离线模板兜底。
+- 交付引用：索引题面、附件、最终论文、运行摘要、指标表、核心代码入口和维护日志。
+- 代码与命令：查看核心脚本/文档，执行 `--list`、`--show`、`--dry-run` 等安全命令，并可把当前代码片段加入结果解释上下文。
+- 结果解释：默认读取本机 Codex 配置和密钥，支持 Responses API；无可用 API 时使用离线规则兜底。
 - 运行控制：默认查看已有结果或 dry-run 预演；真正运行任务前必须勾选确认框。
 
 不要直接运行 `python 2025\app.py`。该命令现在只输出正确启动提示，避免 Streamlit bare mode 下的 `missing ScriptRunContext` 警告刷屏。
 
-大模型配置优先级：
+结果解释接口配置优先级：
 
 1. 若未显式设置 `PV_LLM_PROVIDER`，软件会自动读取本机 `~\.codex\config.toml` 和 `~\.codex\auth.json`。
 2. 若设置 `PV_LLM_*` 环境变量，则优先使用环境变量。
-3. 若远程调用失败，界面会自动使用离线模板兜底，保证演示不断。
+3. 若远程调用失败，界面会自动使用离线规则兜底，保证演示不断。
 
 当前 Codex 配置使用 Responses API 时，无需把密钥写入项目文件。可选远程或本地覆盖配置：
 
@@ -108,6 +109,8 @@ python -m streamlit run 2025\app.py
 ```
 
 若使用 Responses API，则把 `PV_LLM_WIRE_API` 改为 `responses`，并将 `PV_LLM_BASE_URL` 指向 `/v1` 或 `/v1/responses`。不要把真实密钥写入 README、代码或 Git 跟踪文件。
+
+GitHub Pages 静态展示页位于根目录 `docs/index.html`。Pages 只发布项目摘要、核心指标、静态图和本地运行命令；它不能运行 Streamlit，也不能替代本地预测工作台。
 
 ## 4. 总控入口与并行关系
 

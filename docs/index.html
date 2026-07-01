@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>光伏电站日前预测工作台</title>
+  <meta name="description" content="光伏电站发电功率日前预测项目静态展示页，包含模型指标、结果图表、复现命令和仓库材料入口。">
+  <style>
+    :root {
+      --ink: #17201d;
+      --muted: #5d6763;
+      --paper: #fbfaf6;
+      --soft: #eef2ef;
+      --line: rgba(23, 32, 29, .14);
+      --leaf: #315c49;
+      --cyan: #2b7783;
+      --solar: #d1912a;
+      --blue: #356b9a;
+      --red: #b24545;
+      --shadow: 0 18px 44px rgba(27, 41, 35, .10);
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.65;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .hero {
+      min-height: 74vh;
+      display: grid;
+      align-items: center;
+      position: relative;
+      background-image:
+        linear-gradient(90deg, rgba(251,250,246,.97) 0%, rgba(251,250,246,.88) 43%, rgba(251,250,246,.42) 78%, rgba(251,250,246,.16) 100%),
+        url("assets/forecast-curve.png");
+      background-size: cover;
+      background-position: center;
+      border-bottom: 1px solid var(--line);
+    }
+    .wrap {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+    .hero-copy {
+      max-width: 760px;
+      padding: 56px 0 72px;
+    }
+    .eyebrow {
+      color: var(--cyan);
+      font-weight: 800;
+      letter-spacing: 0;
+      font-size: 14px;
+    }
+    h1 {
+      margin: 10px 0 18px;
+      max-width: 820px;
+      font-size: clamp(42px, 7vw, 84px);
+      line-height: .98;
+      letter-spacing: 0;
+    }
+    .lead {
+      max-width: 700px;
+      color: var(--muted);
+      font-size: clamp(16px, 2vw, 20px);
+      margin: 0 0 26px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.72);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #24302c;
+    }
+    main {
+      padding: 34px 0 64px;
+    }
+    section {
+      margin: 0 0 42px;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+    h2 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+    .section-note {
+      max-width: 520px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .metric-card,
+    .panel,
+    .link-card {
+      background: rgba(255,255,255,.86);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    .metric-card {
+      padding: 18px;
+      border-top: 5px solid var(--leaf);
+      min-height: 184px;
+    }
+    .metric-card:nth-child(2) {
+      border-top-color: var(--cyan);
+    }
+    .metric-card:nth-child(3) {
+      border-top-color: var(--solar);
+    }
+    .metric-card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+    .metric-value {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: var(--leaf);
+      overflow-wrap: anywhere;
+    }
+    .metric-card:nth-child(2) .metric-value {
+      color: var(--cyan);
+    }
+    .metric-card:nth-child(3) .metric-value {
+      color: #9a6418;
+    }
+    .metric-line {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .delta {
+      display: inline-block;
+      margin-top: 12px;
+      border-radius: 999px;
+      padding: 4px 9px;
+      color: #254b3a;
+      background: rgba(49, 92, 73, .10);
+      border: 1px solid rgba(49, 92, 73, .18);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .visuals {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+    figure {
+      margin: 0;
+    }
+    .panel {
+      overflow: hidden;
+    }
+    .panel img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      background: #fff;
+    }
+    .panel figcaption {
+      padding: 12px 14px 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: var(--soft);
+      min-height: 114px;
+    }
+    .step b {
+      display: block;
+      margin-bottom: 6px;
+    }
+    .step span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .run-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .panel.pad {
+      padding: 18px;
+    }
+    code,
+    pre {
+      font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+    }
+    pre {
+      margin: 12px 0 0;
+      padding: 14px;
+      border-radius: 8px;
+      background: #17201d;
+      color: #f7f4ea;
+      overflow-x: auto;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+    .links {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .link-card {
+      padding: 16px;
+      min-height: 132px;
+      transition: transform .16s ease, border-color .16s ease;
+    }
+    .link-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(43, 119, 131, .48);
+    }
+    .link-card b {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .link-card span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .notice {
+      border-left: 5px solid var(--solar);
+      background: rgba(255,255,255,.78);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 16px;
+      color: #2f3734;
+    }
+    footer {
+      padding: 24px 0 40px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: 14px;
+    }
+    @media (max-width: 900px) {
+      .hero {
+        min-height: auto;
+        background-image:
+          linear-gradient(180deg, rgba(251,250,246,.98), rgba(251,250,246,.76)),
+          url("assets/forecast-curve.png");
+      }
+      .metric-grid,
+      .visuals,
+      .run-grid,
+      .links {
+        grid-template-columns: 1fr;
+      }
+      .workflow {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .section-head {
+        display: block;
+      }
+      .section-note {
+        margin-top: 8px;
+      }
+    }
+    @media (max-width: 560px) {
+      .wrap {
+        width: min(100% - 24px, 1180px);
+      }
+      h1 {
+        font-size: 38px;
+      }
+      .workflow {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-copy">
+      <div class="eyebrow">PV day-ahead forecasting · Course project archive</div>
+      <h1>光伏电站发电功率日前预测工作台</h1>
+      <p class="lead">项目围绕站点历史功率、NWP 预报和 LMD 局地气象数据建立日前预测流程，并把指标、图表、论文材料和本地运行入口整理成可复现的工程交付。</p>
+      <div class="chips">
+        <span class="chip">白昼附件指标</span>
+        <span class="chip">三模型对比</span>
+        <span class="chip">NWP/LMD 输入消融</span>
+        <span class="chip">Streamlit 本地工作台</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section>
+      <div class="section-head">
+        <h2>核心结果</h2>
+        <p class="section-note">指标直接来自仓库已保存的 CSV。E_rmse 越低越好，C_R 与 Q_R 越高越好；统计口径为白昼时段。</p>
+      </div>
+      <div class="metric-grid">
+        <article class="metric-card">
+          <h3>问题 2 · 历史功率基准</h3>
+          <div class="metric-value">FusionModel</div>
+          <div class="metric-line">E_rmse 0.0833 · C_R 91.67% · Q_R 98.07%</div>
+          <span class="delta">三模型基准最优</span>
+        </article>
+        <article class="metric-card">
+          <h3>问题 3 · 融入 NWP</h3>
+          <div class="metric-value">FusionModel</div>
+          <div class="metric-line">E_rmse 0.0699 · C_R 93.01% · Q_R 99.76%</div>
+          <span class="delta">E_rmse 较问题 2 降低 16.0%</span>
+        </article>
+        <article class="metric-card">
+          <h3>问题 4 · 输入特征消融</h3>
+          <div class="metric-value">FusionModel_mixed</div>
+          <div class="metric-line">E_rmse 0.0465 · C_R 95.35% · Q_R 99.84%</div>
+          <span class="delta">较纯 NWP 输入降低 47.1%</span>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>结果图表</h2>
+        <p class="section-note">静态页保留最适合快速查看的两张图；完整 PNG、HTML 交互图和 CSV 明细请在本地工作台或仓库 outputs 中查看。</p>
+      </div>
+      <div class="visuals">
+        <figure class="panel">
+          <img src="assets/forecast-curve.png" alt="问题 3 三模型每日预测对比图">
+          <figcaption>问题 3：加入目标日 NWP 气象序列后的单日预测曲线对比。</figcaption>
+        </figure>
+        <figure class="panel">
+          <img src="assets/feature-radar.png" alt="问题 4 FusionModel 输入对比雷达图">
+          <figcaption>问题 4：NWP、LMD 与 mixed 输入在误差和附件指标上的对比。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>工程流程</h2>
+        <p class="section-note">项目不是静态报告堆叠，而是从数据、模型、指标到展示入口的一条可复现链路。</p>
+      </div>
+      <div class="workflow">
+        <div class="step"><b>题面与附件</b><span>明确日前预测任务、装机容量归一化指标和交付约束。</span></div>
+        <div class="step"><b>数据与物理分析</b><span>整理站点功率、NWP、LMD，并进行理论功率诊断。</span></div>
+        <div class="step"><b>深度预测模型</b><span>比较 PureLSTM、FusionModel、BiFusionModel 和 checkpoint 复用。</span></div>
+        <div class="step"><b>场景与消融</b><span>分析天气场景、输入特征和空间降尺度对误差的影响。</span></div>
+        <div class="step"><b>工作台交付</b><span>用 Streamlit 展示指标、图表、代码索引和受控运行入口。</span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>本地运行</h2>
+        <p class="section-note">GitHub Pages 只发布静态项目页，不能运行 Streamlit。完整软件界面需要在本地克隆仓库后启动。</p>
+      </div>
+      <div class="run-grid">
+        <div class="panel pad">
+          <b>启动工作台</b>
+          <pre><code>pip install -r 2025\requirements.txt
+python -m streamlit run 2025\app.py</code></pre>
+        </div>
+        <div class="panel pad">
+          <b>轻量验证</b>
+          <pre><code>python 2025\tools\project_health_check.py
+python -m unittest discover -s tests -q
+python 2025\run_project.py --show all</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>材料入口</h2>
+        <p class="section-note">这些链接指向公开仓库中的源文件。Pages 页面只保留静态摘要，详细复现和维护记录以仓库为准。</p>
+      </div>
+      <div class="links">
+        <a class="link-card" href="https://github.com/wzgig/ai-foundations-b-pv-forecasting" target="_blank" rel="noreferrer"><b>GitHub 仓库</b><span>代码、数据样例、结果图表和论文材料。</span></a>
+        <a class="link-card" href="https://github.com/wzgig/ai-foundations-b-pv-forecasting/blob/main/2025/RUN_GUIDE.md" target="_blank" rel="noreferrer"><b>运行指南</b><span>完整运行顺序、checkpoint 复用和输出查看方式。</span></a>
+        <a class="link-card" href="https://github.com/wzgig/ai-foundations-b-pv-forecasting/blob/main/2025/CODE_INDEX.md" target="_blank" rel="noreferrer"><b>代码索引</b><span>每个脚本的职责、正式入口和历史工作区说明。</span></a>
+        <a class="link-card" href="https://github.com/wzgig/ai-foundations-b-pv-forecasting/blob/main/PROJECT_LOG.md" target="_blank" rel="noreferrer"><b>维护日志</b><span>重要改动、验证命令、提交与推送记录。</span></a>
+      </div>
+    </section>
+
+    <section class="notice">
+      本项目静态页用于公开展示项目结构和结果证据；涉及模型重训、交互式 HTML 图、代码浏览和结果解释的功能，请使用本地 Streamlit 工作台。
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">© 2026 光伏电站日前预测项目 · Published with GitHub Pages</div>
+  </footer>
+</body>
+</html>

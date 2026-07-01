@@ -26,10 +26,10 @@
 │   ├── 02_problem_solutions/      问题 1-4 的代码、数据、结果和图表
 │   ├── 03_figures/                探索图、论文素材图和场景对比图
 │   ├── 04_paper/                  最终论文 PDF 与 Word 文件
-│   ├── llm/                       大模型辅助解读模块
+│   ├── llm/                       结果解释模块与可选语言接口
 │   ├── _shared/                   Python 与 MATLAB 公共工具
 │   ├── tools/                     项目健康检查脚本
-│   ├── app.py                     Streamlit 软件控制台
+│   ├── app.py                     Streamlit 预测工作台
 │   ├── software_launcher.py       Windows 桌面启动器
 │   ├── start_software.vbs         无终端双击启动入口
 │   ├── run.bat                    Windows 一键启动脚本
@@ -38,6 +38,8 @@
 │   ├── README.md                  2025 目录说明
 │   ├── requirements.txt           Python 运行依赖清单
 │   └── requirements-optional.txt  可选实验依赖清单
+├── .streamlit/                    项目级 Streamlit 主题配置
+├── docs/                          GitHub Pages 静态展示页
 ├── tests/                         轻量级回归检查
 └── PROJECT_LOG.md                 项目工作日志
 ```
@@ -94,7 +96,9 @@ python 2025\run_project.py --show 4
 python -m streamlit run 2025\app.py
 ```
 
-不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。控制台包含工作台、运行结果、本地代码交互、大模型问答和受保护运行控制页面。LLM 默认会读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，也可通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
+不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。界面包含工作台、运行结果、交付引用、代码与命令、结果解释和受保护运行控制页面。结果解释模块默认离线可用，也可读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，或通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
+
+GitHub Pages 静态展示页位于 `docs/index.html`。Pages 只展示项目摘要、核心指标、图表和本地运行方式；完整 Streamlit 工作台需要本地运行。
 
 完整运行顺序、模型复用逻辑、输出目录和结果查看方式见 `2025/RUN_GUIDE.md`。每个代码文件的现用名称和用途见 `2025/CODE_INDEX.md`。
 
@@ -123,7 +127,7 @@ python .\problem2_baseline_three_model_forecast.py
 
 2026-06-03 已新增项目总控入口：`2025/run_project.py` 支持用 `--run` 选择问题 1-4、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出；问题 3 场景分析会显式检查问题 2 和问题 3 预测表依赖。
 
-2026-06-03 已新增课程交付展示层：`2025/app.py` 提供 Streamlit 软件控制台，`2025/llm/` 提供离线优先且支持本机 Codex 配置、Responses API 与 OpenAI-compatible 接口的大模型问答，`2025/start_software.vbs` 和 `2025/software_launcher.py` 提供无终端桌面启动入口，`2025/run.bat` 保留为命令行调试启动脚本，`requirements.txt` 改为固定版本运行依赖。
+2026-06-03 已新增课程交付展示层：`2025/app.py` 提供 Streamlit 预测工作台，后续已升级为带真实预测图首屏、结果摘要、交付引用索引和受控运行页的软件界面；`2025/llm/` 提供离线优先且支持本机 Codex 配置、Responses API 与 OpenAI-compatible 接口的结果解释能力，`2025/start_software.vbs` 和 `2025/software_launcher.py` 提供无终端桌面启动入口，`2025/run.bat` 保留为命令行调试启动脚本，`requirements.txt` 改为固定版本运行依赖。
 
 2026-06-02 已完成输出模块和中文期刊绘图规范整理：正式问题脚本统一使用 `outputs/` 目录和 `run_summary.json`，共享绘图配置改为中文字体兜底、600 dpi 保存、弱网格、统一配色和期刊式坐标轴；MATLAB 增加对应的输出与绘图 helper。
 
