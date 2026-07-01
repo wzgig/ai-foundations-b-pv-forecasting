@@ -7,6 +7,7 @@
 ```text
 2025/
 ├── 00_course_materials/
+│   ├── 人工智能基础B_期末大作业布置通知.pdf
 │   ├── A题：光伏电站发电功率日前预测问题.pdf
 │   └── 附件1.pdf
 ├── 01_modeling_workspace/
@@ -28,7 +29,9 @@
 │   ├── pv_project.py
 │   └── matlab/
 ├── tools/
-│   └── project_health_check.py
+│   ├── project_health_check.py
+│   ├── generate_csust_report.py
+│   └── export_csust_report.ps1
 ├── app.py
 ├── software_launcher.py
 ├── start_software.vbs
@@ -44,7 +47,7 @@
 
 ### `00_course_materials/`
 
-存放原始业务目标和评价附件，只作为需求和背景资料，不放实验输出。
+存放课程通知、原始业务目标和评价附件，只作为需求和背景资料，不放实验输出。
 
 ### `01_modeling_workspace/pvod_full_experiment/`
 
@@ -65,7 +68,7 @@
 
 ### `04_paper/final_submission/`
 
-最终论文 PDF 和可编辑 Word 文档。
+存放早期论文/竞赛论文素材，当前课程最终报告以 `05_delivery/项目主报告_终稿.*` 为准。
 
 ### `05_delivery/`
 
@@ -85,7 +88,11 @@
 
 ### `tools/`
 
-`project_health_check.py` 会静态检查 Python 语法、重复代码快照和相对输入文件是否能在项目内找到。该脚本不会执行训练。
+维护脚本目录：
+
+- `project_health_check.py`：静态检查 Python 语法、重复代码快照和相对输入文件是否能在项目内找到；不会执行训练。
+- `generate_csust_report.py`：按长沙理工大学样张从终稿 Markdown 生成 Word 报告。
+- `export_csust_report.ps1`：更新 Word 目录和页码、导出 PDF，并在可用时渲染检查页。
 
 ## 复现建议
 

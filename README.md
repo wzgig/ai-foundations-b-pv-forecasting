@@ -21,15 +21,15 @@
 .
 ├── AGENTS.md                     项目级代理协作规则
 ├── 2025/
-│   ├── 00_course_materials/       原始业务目标和评价附件
+│   ├── 00_course_materials/       课程通知、题面和评价附件
 │   ├── 01_modeling_workspace/     完整 PVOD 建模实验工作区
 │   ├── 02_problem_solutions/      各条工程链路的代码、数据、结果和图表
 │   ├── 03_figures/                探索图、论文素材图和场景对比图
-│   ├── 04_paper/                  最终论文 PDF 与 Word 文件
-│   ├── 05_delivery/               课程交付复盘、主报告草稿、测试表和视频脚本
+│   ├── 04_paper/                  历史论文素材
+│   ├── 05_delivery/               课程交付复盘、终稿报告、测试表和视频脚本
 │   ├── llm/                       运行解读模块与可选语言接口
 │   ├── _shared/                   Python 与 MATLAB 公共工具
-│   ├── tools/                     项目健康检查脚本
+│   ├── tools/                     健康检查、报告导出等维护脚本
 │   ├── app.py                     Streamlit 预测工作台
 │   ├── software_launcher.py       Windows 桌面启动器
 │   ├── start_software.vbs         无终端双击启动入口

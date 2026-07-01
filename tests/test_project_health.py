@@ -291,6 +291,23 @@ requires_openai_auth = true
         self.assertGreater((DELIVERY_DIR / "项目主报告_终稿.docx").stat().st_size, 100000)
         self.assertGreater((DELIVERY_DIR / "项目主报告_终稿.pdf").stat().st_size, 100000)
 
+    def test_reference_materials_have_clear_paths(self):
+        course_materials = PROJECT_ROOT / "2025" / "00_course_materials"
+        paper_materials = PROJECT_ROOT / "2025" / "04_paper" / "final_submission"
+
+        expected = [
+            course_materials / "人工智能基础B_期末大作业布置通知.pdf",
+            course_materials / "A题：光伏电站发电功率日前预测问题.pdf",
+            course_materials / "附件1.pdf",
+            paper_materials / "历史论文素材_光伏日前预测.pdf",
+            paper_materials / "历史论文素材_光伏日前预测.docx",
+        ]
+        for path in expected:
+            self.assertTrue(path.exists(), str(path.relative_to(PROJECT_ROOT)))
+            self.assertGreater(path.stat().st_size, 1000)
+
+        self.assertFalse((PROJECT_ROOT / "《人工智能基础B》期末大作业布置通知.pdf").exists())
+
     def test_csust_report_export_tools_exist(self):
         generator = PROJECT_ROOT / "2025" / "tools" / "generate_csust_report.py"
         exporter = PROJECT_ROOT / "2025" / "tools" / "export_csust_report.ps1"

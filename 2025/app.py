@@ -77,8 +77,8 @@ FEATURED_VISUALS = [
 REFERENCE_FILES = [
     ("业务目标", ROOT / "00_course_materials" / "A题：光伏电站发电功率日前预测问题.pdf", "任务边界与评价口径"),
     ("评价口径", ROOT / "00_course_materials" / "附件1.pdf", "指标定义与约束"),
-    ("交付报告", ROOT / "04_paper" / "final_submission" / "003158 A.pdf", "PDF交付件"),
-    ("交付报告", ROOT / "04_paper" / "final_submission" / "003158 A.docx", "可编辑交付件"),
+    ("论文素材", ROOT / "04_paper" / "final_submission" / "历史论文素材_光伏日前预测.pdf", "历史 PDF 素材"),
+    ("论文素材", ROOT / "04_paper" / "final_submission" / "历史论文素材_光伏日前预测.docx", "历史 Word 素材"),
     ("课程交付", ROOT / "05_delivery" / "项目主报告_课程版.md", "课程主报告草稿"),
     ("课程交付", ROOT / "05_delivery" / "交付完成度复盘.md", "完成度审查"),
     ("课程交付", ROOT / "05_delivery" / "最终提交包清单.md", "最终打包检查"),

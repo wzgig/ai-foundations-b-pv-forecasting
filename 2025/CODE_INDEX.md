@@ -20,6 +20,8 @@
 | `_shared/matlab/project_output_path.m` | MATLAB `outputs/` 输出路径生成工具。 |
 | `_shared/matlab/save_project_figure.m` | MATLAB 期刊风格图像保存工具，默认写入 `outputs/figures/`。 |
 | `tools/project_health_check.py` | 静态健康检查脚本，检查 Python 语法、重复代码快照、相对输入文件和正式链路脚本输出约束。 |
+| `tools/generate_csust_report.py` | 课程主报告 Word 生成脚本，按长沙理工大学样张设置页眉页脚、摘要、目录、正文标题、图表编号和表格样式。 |
+| `tools/export_csust_report.ps1` | 报告导出脚本，更新 Word 目录和页码，导出 PDF，并渲染检查页。 |
 | `run_project.py` | 项目总控入口，支持用 `--run` 选择工程链路、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出，并显式处理运行场景归因对历史功率基线/气象预报融合预测表的依赖。 |
 | `app.py` | Streamlit 预测工作台，读取已有 `outputs/`，提供工作台、运行结果、交付引用、代码与命令、运行解读和受保护运行控制；直接用 `python app.py` 运行时只输出正确启动提示。 |
 | `software_launcher.py` | Windows 桌面启动器，通过 Tkinter 提供启动/打开软件、运行健康检查和停止后台 Streamlit 服务的可视化入口。 |

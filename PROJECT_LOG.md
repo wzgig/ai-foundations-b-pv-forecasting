@@ -2,6 +2,46 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-07-01 项目文件夹结构整理与命名优化
+
+### 调整目标
+
+- 按用户要求对当前项目文件夹做整体整理，减少根目录杂物，提升目录可读性和交付材料辨识度。
+- 保留有复现、报告、素材和交付价值的文件；只清理本地忽略缓存、百度云上传残留配置、Word 锁文件和临时渲染目录。
+- 对不清晰的文件名做低风险重命名，不改正式代码链路目录，避免破坏运行入口。
+
+### 主要改动
+
+- 将根目录课程通知 PDF 移入课程材料目录：
+  - `2025/00_course_materials/人工智能基础B_期末大作业布置通知.pdf`
+- 将旧编号论文文件重命名为更清晰的素材名：
+  - `2025/04_paper/final_submission/历史论文素材_光伏日前预测.pdf`
+  - `2025/04_paper/final_submission/历史论文素材_光伏日前预测.docx`
+- 新增目录说明文件：
+  - `2025/00_course_materials/README.md`
+  - `2025/01_modeling_workspace/README.md`
+  - `2025/02_problem_solutions/README.md`
+  - `2025/03_figures/README.md`
+  - `2025/04_paper/README.md`
+  - `2025/tools/README.md`
+- 更新 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md`、`2025/CODE_INDEX.md`、`2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md` 和 `2025/05_delivery/作业要求提取.md`，同步新的目录职责和文件路径。
+- 更新 `2025/app.py` 的交付引用，把旧论文条目标注为“论文素材”，并指向新文件名。
+- 本地清理忽略文件：删除 `tmp/`、`__pycache__/`、`*.baiduyun.uploading.cfg` 和 Word `~$*.docx` 锁文件。
+
+### 验证结果
+
+- `python 2025\tools\project_health_check.py`：通过，无 Python 解析错误、无未解析相对输入、无受管输出问题；仍保留两组历史实验副本重复记录。
+- `python -m unittest discover -s tests -q`：通过，24 个测试 OK。
+- `python -m py_compile 2025\app.py 2025\run_project.py 2025\tools\project_health_check.py 2025\tools\generate_csust_report.py`：通过。
+- 文件存在性抽检：课程通知、A 题题面、附件 1、历史论文 PDF/DOCX 均存在于新路径。
+- `python 2025\app.py`：通过，只输出 Streamlit 正确启动提示。
+- `python 2025\run_project.py --show all`：通过，五条工程链路已有输出、指标和摘要可读取。
+
+### 后续注意事项
+
+- `01_modeling_workspace/` 仍保留为历史建模工作区，体积较大；最终压缩包若超 200M，可按 `05_delivery/最终提交包清单.md` 的策略压缩或剔除历史副本。
+- 历史日志中保留旧文件名记录，用于说明当时项目状态；当前使用新路径。
+
 ## 2026-07-01 按长沙理工大学样张重排项目主报告终稿
 
 ### 调整目标
