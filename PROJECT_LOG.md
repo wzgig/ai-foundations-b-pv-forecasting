@@ -2,6 +2,25 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-07-02 GitHub Pages 同步模型与指标口径
+
+### 调整目标
+
+- 将本次名词解释的核心内容同步到 GitHub Pages 公开展示页。
+- 保持页面工程项目展示风格，不恢复此前已移除的“课程交付”入口。
+
+### 主要改动
+
+- 更新 `docs/index.html`，在“工程流程”和“本地运行”之间新增“模型与指标口径”区块。
+- 用公开页卡片解释 `PureLSTM`、`FusionModel`、`BiFusionModel`、NWP、LMD、mixed、`E_rmse`、`C_R` 和 `Q_R`。
+- 更新 `tests/test_project_health.py`，检查 Pages 页面包含新增术语区块，同时继续禁止出现“课程交付”和 `2025/05_delivery` 入口。
+
+### 验证结果
+
+- `python -m unittest discover -s tests -q`：通过，24 个测试 OK。
+- `git diff --check -- PROJECT_LOG.md docs\index.html tests\test_project_health.py`：通过，仅提示 Windows 后续可能将 `docs/index.html` 和 `tests/test_project_health.py` 写回 CRLF。
+- `rg -n "模型与指标口径|PureLSTM|BiFusionModel|LMD / mixed|课程交付|2025/05_delivery" docs\index.html`：确认新增术语区块存在，未出现“课程交付”和 `2025/05_delivery` 入口。
+
 ## 2026-07-02 新增模型与指标名词解释
 
 ### 调整目标
