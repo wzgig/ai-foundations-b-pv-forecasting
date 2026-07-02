@@ -36,11 +36,11 @@ EXCLUDED_TEXT_DIRS = {
 }
 CORE_FILES = [
     ("run_project.py", "项目总控入口，负责列出、运行、查看各条工程链路的实验任务。"),
-    ("app.py", "当前 Streamlit 工作台入口，负责结果浏览、交付索引、代码交互和运行解读。"),
+    ("app.py", "当前 Streamlit 工作台入口，负责结果浏览、工程档案索引、代码交互和运行解读。"),
     ("run.bat", "Windows 一键启动脚本，推荐双击或在 PowerShell 中运行。"),
     ("llm/result_context.py", "读取 outputs 中的 run_summary.json 和指标 CSV，组织解释上下文。"),
     ("llm/assistant.py", "离线规则解读与可选兼容 HTTP 接口入口。"),
-    ("llm/prompts.py", "运行解读和交付说明整理提示词。"),
+    ("llm/prompts.py", "运行解读和运行说明整理提示词。"),
     ("tools/project_health_check.py", "静态健康检查，验证代码语法、输出管理约束和输入文件引用。"),
 ]
 HERO_VISUAL = (
@@ -79,8 +79,9 @@ FEATURED_VISUALS = [
     ),
 ]
 REFERENCE_FILES = [
-    ("业务目标", ROOT / "00_course_materials" / "A题：光伏电站发电功率日前预测问题.pdf", "任务边界与评价口径"),
-    ("评价口径", ROOT / "00_course_materials" / "附件1.pdf", "指标定义与约束"),
+    ("需求原件", ROOT / "00_course_materials" / "A题：光伏电站发电功率日前预测问题.pdf", "任务边界与评价口径"),
+    ("质量口径", ROOT / "00_course_materials" / "附件1.pdf", "指标定义与约束"),
+    ("工程画像", ROOT / "ENGINEERING_PROFILE.md", "数据契约与质量门禁"),
     ("论文素材", ROOT / "04_paper" / "final_submission" / "历史论文素材_光伏日前预测.pdf", "历史 PDF 素材"),
     ("论文素材", ROOT / "04_paper" / "final_submission" / "历史论文素材_光伏日前预测.docx", "历史 Word 素材"),
     ("运行说明", ROOT / "README.md", "项目说明"),
@@ -88,7 +89,7 @@ REFERENCE_FILES = [
     ("代码索引", ROOT / "CODE_INDEX.md", "文件用途表"),
     ("维护记录", ROOT.parent / "PROJECT_LOG.md", "改动备注"),
 ]
-NAVIGATION = ["工作台", "运行结果", "交付引用", "代码与命令", "运行解读", "训练控制"]
+NAVIGATION = ["工作台", "运行结果", "工程档案", "代码与命令", "运行解读", "训练控制"]
 TRAINING_RUN_DIR = ROOT / "tools" / "runtime" / "training_runs"
 TASK_OPTIONS = {
     "历史功率基线": "2",
@@ -138,7 +139,7 @@ OPERATION_VIEWS = {
     "日前计划": "关注下一日 96 点功率曲线和白昼误差，优先使用气象预报融合与局地校正融合结果。",
     "调度复盘": "对比实际功率、预测曲线和天气场景，定位高误差时段及天气扰动来源。",
     "模型维护": "检查 checkpoint 复用、输入模式收益和指标漂移，决定是否重训或扩展局地数据。",
-    "交付审查": "核对指标 CSV、图表、运行摘要、报告和维护日志，确保结果可追溯。",
+    "质量审计": "核对指标 CSV、图表、运行摘要、报告和维护日志，确保结果可追溯。",
 }
 
 
@@ -148,11 +149,11 @@ STYLE = """
   --ink: #17201d;
   --muted: #5d6763;
   --hairline: rgba(23, 32, 29, .12);
-  --paper: #f6f7f3;
-  --paper-warm: #fbfaf6;
+  --paper: #f4f7f8;
+  --paper-warm: #ffffff;
   --panel: rgba(255, 255, 255, .82);
   --panel-solid: #ffffff;
-  --panel-soft: rgba(250, 250, 247, .88);
+  --panel-soft: rgba(248, 251, 252, .90);
   --graphite: #24302c;
   --solar: #d1912a;
   --leaf: #44705c;
@@ -163,8 +164,7 @@ STYLE = """
 }
 .stApp {
   background:
-    radial-gradient(circle at 72% 0%, rgba(209, 145, 42, .10), transparent 28rem),
-    linear-gradient(180deg, #fbfaf6 0%, #f2f4f0 54%, #eef2ef 100%);
+    linear-gradient(180deg, #f8fbfc 0%, #f4f7f8 48%, #e8eef0 100%);
   color: var(--ink);
 }
 section[data-testid="stSidebar"] {
@@ -211,7 +211,7 @@ section[data-testid="stSidebar"] [data-testid="stRadio"] label {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(251, 250, 246, .96) 0%, rgba(251, 250, 246, .90) 39%, rgba(251, 250, 246, .42) 78%, rgba(251, 250, 246, .18) 100%),
+    linear-gradient(90deg, rgba(248, 251, 252, .97) 0%, rgba(248, 251, 252, .91) 39%, rgba(248, 251, 252, .48) 78%, rgba(248, 251, 252, .20) 100%),
     linear-gradient(180deg, rgba(255, 255, 255, .35), rgba(255, 255, 255, .08));
 }
 .hero-content {
@@ -814,7 +814,7 @@ def render_workflow_band() -> None:
           <div class="workflow-step"><b>1. 站点机理诊断</b><span>读取站点数据、理论功率、周期性和偏差边界。</span></div>
           <div class="workflow-step"><b>2. 日前预测模型</b><span>复用 checkpoint，比较 PureLSTM、FusionModel、BiFusionModel。</span></div>
           <div class="workflow-step"><b>3. 场景与输入评估</b><span>融入 NWP/LMD，查看天气场景、误差来源和特征重要性。</span></div>
-          <div class="workflow-step"><b>4. 复盘与交付</b><span>读取 outputs，形成指标解读、运行说明和可追溯材料。</span></div>
+          <div class="workflow-step"><b>4. 复盘与归档</b><span>读取 outputs，形成指标解读、运行说明和可追溯档案。</span></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1212,9 +1212,9 @@ def render_title() -> None:
           <div class="hero-content">
           <div class="pv-kicker">PV day-ahead forecasting · Station operation console</div>
           <h1>光伏电站日前功率预测与运行工作台</h1>
-          <p>面向电站日前计划、调度复盘和模型维护的结果工作台：从真实预测曲线进入指标、图表、脚本、材料和受控运行流程，默认只读取已有 outputs。</p>
+          <p>面向电站日前计划、调度复盘和模型维护的结果工作台：从真实预测曲线进入指标、图表、脚本、运行档案和受控运行流程，默认只读取已有 outputs。</p>
           <div class="hero-actions">
-            <span class="hero-chip">白昼附件指标</span>
+            <span class="hero-chip">白昼评价指标</span>
             <span class="hero-chip">日前曲线复盘</span>
             <span class="hero-chip">输出产物索引</span>
             <span class="hero-chip">受控复现入口</span>
@@ -1242,7 +1242,7 @@ def render_metric_cards(contexts: dict[str, TaskContext]) -> None:
                   <h3>{html_text(title)}</h3>
                   <div class="value">{html_text(label_from_row(row))}</div>
                   <div class="caption">E_rmse={html_text(value_from_row(row, 'E_rmse'))} | C_R={html_text(value_from_row(row, 'C_R'))}% | Q_R={html_text(value_from_row(row, 'Q_R'))}%</div>
-                  <div class="delta">白昼附件指标</div>
+                  <div class="delta">白昼评价指标</div>
                   <div class="caption">{html_text(caption)}</div>
                 </div>
                 """,
@@ -1267,9 +1267,9 @@ def render_model_insights(contexts: dict[str, TaskContext]) -> None:
             f"多源气象输入评估当前最优，E_rmse={value_from_row(row4, 'E_rmse')}。",
         ),
         (
-            "交付闭环",
-            "结果、代码、材料同屏索引",
-            "从输出摘要追溯到指标表、图表、论文和核心脚本。",
+            "运行闭环",
+            "结果、代码、档案同屏索引",
+            "从输出摘要追溯到指标表、图表、报告和核心脚本。",
         ),
     ]
     cols = st.columns(3)
@@ -1293,7 +1293,7 @@ def render_pipeline_nodes() -> None:
         ("站点数据", "功率/NWP/LMD"),
         ("模型链路", "LSTM与融合模型"),
         ("运行复盘", "场景、输入、图表"),
-        ("工程交付", "报告与软件工作台"),
+        ("工程档案", "报告与软件工作台"),
     ]
     html_nodes = "\n".join(
         f'<div class="pipeline-node"><b>{html_text(title)}</b><span>{html_text(caption)}</span></div>'
@@ -1417,9 +1417,9 @@ def render_workbench(contexts: dict[str, TaskContext]) -> None:
     render_model_insights(contexts)
     render_section_title("模型链路对比", "点选一行查看工程含义")
     render_pipeline_comparison(contexts)
-    render_section_title("工程链路", "从运行数据到调度交付")
+    render_section_title("工程链路", "从运行数据到调度决策")
     render_pipeline_nodes()
-    render_section_title("精选图表", "直接来自项目输出与交付材料")
+    render_section_title("精选图表", "直接来自项目输出与运行档案")
     render_featured_visuals()
     st.markdown(
         '<div class="note">界面默认只读取已有 outputs，不触发长时间训练；需要重训时请到“训练控制”页显式勾选确认。</div>',
@@ -1430,7 +1430,7 @@ def render_workbench(contexts: dict[str, TaskContext]) -> None:
     tool_cols = st.columns(3)
     tools = [
         ("查看运行结果", "指标表、静态 PNG、交互 HTML 和摘要文件集中浏览。"),
-        ("交付引用", "业务目标、评价口径、报告、日志和关键输出形成可追溯索引。"),
+        ("工程档案", "业务目标、评价口径、工程画像、报告、日志和关键输出形成可追溯索引。"),
         ("运行解读", "默认离线可用，也可接入本地或远程语言接口。"),
     ]
     for col, (title, caption) in zip(tool_cols, tools):
@@ -1527,11 +1527,19 @@ def render_results(contexts: dict[str, TaskContext]) -> None:
 def collect_reference_rows(contexts: dict[str, TaskContext]) -> pd.DataFrame:
     rows = []
     for category, path, role in REFERENCE_FILES:
+        display_file = path.name
+        display_path = project_relative(path)
+        if category == "需求原件":
+            display_file = "光伏日前预测需求原件.pdf"
+            display_path = "00_course_materials/光伏日前预测需求原件.pdf"
+        elif category == "质量口径":
+            display_file = "白昼评价指标附件.pdf"
+            display_path = "00_course_materials/白昼评价指标附件.pdf"
         rows.append(
             {
                 "类别": category,
-                "文件": path.name,
-                "路径": project_relative(path),
+                "文件": display_file,
+                "路径": display_path,
                 "状态": path_state(path),
                 "大小": file_size_label(path),
                 "用途": role,
@@ -1566,7 +1574,7 @@ def render_reference_cards(contexts: dict[str, TaskContext]) -> None:
     reference_df = collect_reference_rows(contexts)
     existing_count = int((reference_df["状态"] == "存在").sum()) if not reference_df.empty else 0
     rows = [
-        ("材料完整度", f"{existing_count}/{len(reference_df)}", "业务目标、报告、运行说明和结果文件"),
+        ("档案完整度", f"{existing_count}/{len(reference_df)}", "业务目标、报告、运行说明和结果文件"),
         ("核心代码", f"{len(CORE_FILES)} 个入口", "工作台、总控、解读模块、健康检查"),
         ("链路摘要", f"{len(contexts)} 条链路", "run_summary 与指标 CSV"),
     ]
@@ -1586,7 +1594,7 @@ def render_reference_cards(contexts: dict[str, TaskContext]) -> None:
 
 
 def render_reference_hub(contexts: dict[str, TaskContext]) -> None:
-    render_section_title("交付引用", "业务目标、结果、报告和代码入口")
+    render_section_title("工程档案", "业务目标、结果、报告和代码入口")
     render_reference_cards(contexts)
 
     reference_df = collect_reference_rows(contexts)
@@ -1602,7 +1610,7 @@ def render_reference_hub(contexts: dict[str, TaskContext]) -> None:
         hide_index=True,
     )
 
-    render_section_title("交付链", "结果文件到交付材料")
+    render_section_title("审计链路", "结果文件到运行档案")
     st.markdown(
         """
         <div class="status-strip">
@@ -1735,14 +1743,14 @@ def render_llm_chat(contexts: dict[str, TaskContext]) -> None:
         st.session_state["chat_messages"] = [
             {
                 "role": "assistant",
-                "content": "已读取当前 outputs 指标和摘要。可以查看模型效果、指标含义、交付说明、复盘口径或代码入口。",
+                "content": "已读取当前 outputs 指标和摘要。可以查看模型效果、指标含义、运行说明、复盘口径或代码入口。",
             }
         ]
 
     quick_questions = DEFAULT_QUESTIONS + [
         "请写一段 3 分钟项目演示的口播提纲。",
         "请解释 app.py、run_project.py、llm/ 三者如何协同。",
-        "请指出当前项目交付审查还需要补哪些材料。",
+        "请指出当前项目质量审计还需要补哪些运行证据。",
     ]
     selected_quick = st.selectbox("常用复盘问题", quick_questions, index=1)
     quick_cols = st.columns([1, 1, 3])
@@ -1780,8 +1788,8 @@ def render_llm_chat(contexts: dict[str, TaskContext]) -> None:
                 st.caption(response.error)
         append_chat("assistant", response.text)
 
-    with st.expander("整理交付说明草稿", expanded=False):
-        if st.button("根据当前结果整理交付说明"):
+    with st.expander("整理运行说明草稿", expanded=False):
+        if st.button("根据当前结果整理运行说明"):
             response = generate_report_brief(contexts=contexts, config=config)
             st.write(response.text)
             if response.error:
@@ -1918,7 +1926,7 @@ def main() -> None:
         render_workbench(contexts)
     elif page == "运行结果":
         render_results(contexts)
-    elif page == "交付引用":
+    elif page == "工程档案":
         render_reference_hub(contexts)
     elif page == "代码与命令":
         render_code_lab()

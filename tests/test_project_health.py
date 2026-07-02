@@ -24,6 +24,7 @@ START_SOFTWARE = PROJECT_ROOT / "2025" / "start_software.vbs"
 STREAMLIT_THEME = PROJECT_ROOT / ".streamlit" / "config.toml"
 DOCS_INDEX = PROJECT_ROOT / "docs" / "index.html"
 DELIVERY_DIR = PROJECT_ROOT / "2025" / "05_delivery"
+ENGINEERING_PROFILE = PROJECT_ROOT / "2025" / "ENGINEERING_PROFILE.md"
 
 
 def load_health_module():
@@ -242,7 +243,9 @@ requires_openai_auth = true
     def test_app_ui_exposes_reference_and_visual_shell(self):
         text = APP.read_text(encoding="utf-8")
 
-        self.assertIn("交付引用", text)
+        self.assertIn("工程档案", text)
+        self.assertIn("质量审计", text)
+        self.assertIn("白昼评价指标", text)
         self.assertIn("FEATURED_VISUALS", text)
         self.assertIn("模型链路对比", text)
         self.assertIn("运行视角", text)
@@ -255,6 +258,9 @@ requires_openai_auth = true
         self.assertIn("Epoch 进度解析", text)
         self.assertIn("运行解读", text)
         self.assertNotIn("render_delivery_center", text)
+        self.assertNotIn("交付引用", text)
+        self.assertNotIn("交付审查", text)
+        self.assertNotIn("白昼附件指标", text)
         self.assertNotIn("课程交付", text)
         self.assertNotIn("use_container_width", text)
         self.assertNotIn("问题2 基准预测", text)
@@ -311,6 +317,16 @@ requires_openai_auth = true
         self.assertIn("FusionModel_mixed", glossary)
         self.assertIn("daylight_metrics", glossary)
 
+    def test_engineering_profile_exists_and_sets_operational_tone(self):
+        text = ENGINEERING_PROFILE.read_text(encoding="utf-8")
+
+        self.assertIn("工程化运行画像", text)
+        self.assertIn("数据契约", text)
+        self.assertIn("质量门禁", text)
+        self.assertIn("运行档案", text)
+        self.assertIn("FusionModel", text)
+        self.assertIn("python -m unittest discover -s tests -q", text)
+
     def test_reference_materials_have_clear_paths(self):
         course_materials = PROJECT_ROOT / "2025" / "00_course_materials"
         paper_materials = PROJECT_ROOT / "2025" / "04_paper" / "final_submission"
@@ -348,12 +364,18 @@ requires_openai_auth = true
         self.assertIn("气象预报融合", html)
         self.assertIn("局地校正融合", html)
         self.assertIn("运行视角", html)
+        self.assertIn("质量审计", html)
+        self.assertIn("工程资料", html)
+        self.assertIn("ENGINEERING_PROFILE.md", html)
         self.assertIn("模型与指标口径", html)
         self.assertIn("PureLSTM", html)
         self.assertIn("BiFusionModel", html)
         self.assertIn("LMD / mixed", html)
         self.assertNotIn("课程交付", html)
         self.assertNotIn("2025/05_delivery", html)
+        self.assertNotIn("交付审查", html)
+        self.assertNotIn("材料入口", html)
+        self.assertNotIn("附件指标", html)
         self.assertIn("forecast-curve.png", html)
         self.assertIn("feature-radar.png", html)
         self.assertIn("GitHub Pages 只发布静态项目页", html)
@@ -368,7 +390,8 @@ requires_openai_auth = true
         text = STREAMLIT_THEME.read_text(encoding="utf-8")
 
         self.assertIn("[theme]", text)
-        self.assertIn("primaryColor = \"#315c49\"", text)
+        self.assertIn("primaryColor = \"#2b7783\"", text)
+        self.assertIn("backgroundColor = \"#f4f7f8\"", text)
         self.assertIn("[theme.sidebar]", text)
 
     def test_software_launcher_source_parses_successfully(self):

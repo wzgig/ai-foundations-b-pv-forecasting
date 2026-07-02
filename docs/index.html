@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>光伏电站日前功率预测与运行工作台</title>
-  <meta name="description" content="光伏电站发电功率日前预测项目静态展示页，包含工程链路、模型指标、结果图表、复现命令和仓库材料入口。">
+  <meta name="description" content="光伏电站发电功率日前预测项目静态展示页，包含工程链路、模型指标、结果图表、复现命令和运行档案入口。">
   <style>
     :root {
       --ink: #17201d;
       --muted: #5d6763;
-      --paper: #fbfaf6;
-      --soft: #eef2ef;
+      --paper: #f4f7f8;
+      --soft: #e8eef0;
       --line: rgba(23, 32, 29, .14);
       --leaf: #315c49;
       --cyan: #2b7783;
@@ -39,7 +39,7 @@
       align-items: center;
       position: relative;
       background-image:
-        linear-gradient(90deg, rgba(251,250,246,.97) 0%, rgba(251,250,246,.88) 43%, rgba(251,250,246,.42) 78%, rgba(251,250,246,.16) 100%),
+        linear-gradient(90deg, rgba(248,251,252,.97) 0%, rgba(248,251,252,.88) 43%, rgba(248,251,252,.46) 78%, rgba(248,251,252,.18) 100%),
         url("assets/forecast-curve.png");
       background-size: cover;
       background-position: center;
@@ -294,7 +294,7 @@
     }
     .links {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
     }
     .link-card {
@@ -331,7 +331,7 @@
       .hero {
         min-height: auto;
         background-image:
-          linear-gradient(180deg, rgba(251,250,246,.98), rgba(251,250,246,.76)),
+          linear-gradient(180deg, rgba(248,251,252,.98), rgba(248,251,252,.76)),
           url("assets/forecast-curve.png");
       }
       .metric-grid,
@@ -369,9 +369,9 @@
     <div class="wrap hero-copy">
       <div class="eyebrow">PV day-ahead forecasting · Station operation console</div>
       <h1>光伏电站日前功率预测与运行工作台</h1>
-      <p class="lead">项目围绕站点历史功率、NWP 预报和 LMD 局地气象数据建立日前预测流程，用于发电计划编制、调度复盘、模型维护和交付审查。</p>
+      <p class="lead">项目围绕站点历史功率、NWP 预报和 LMD 局地气象数据建立日前预测流程，用于发电计划编制、调度复盘、模型维护和质量审计。</p>
       <div class="chips">
-        <span class="chip">白昼附件指标</span>
+        <span class="chip">白昼评价指标</span>
         <span class="chip">历史功率基线</span>
         <span class="chip">气象预报融合</span>
         <span class="chip">局地校正融合</span>
@@ -417,7 +417,7 @@
         <button type="button" data-scenario="plan" aria-pressed="true">日前计划</button>
         <button type="button" data-scenario="review" aria-pressed="false">调度复盘</button>
         <button type="button" data-scenario="maintain" aria-pressed="false">模型维护</button>
-        <button type="button" data-scenario="delivery" aria-pressed="false">交付审查</button>
+        <button type="button" data-scenario="audit" aria-pressed="false">质量审计</button>
       </div>
       <div class="scenario-panel" id="scenarioPanel">
         <b>日前计划</b>
@@ -437,7 +437,7 @@
         </figure>
         <figure class="panel">
           <img src="assets/feature-radar.png" alt="局地校正融合输入对比雷达图">
-          <figcaption>局地校正融合：NWP、LMD 与 mixed 输入在误差和附件指标上的对比。</figcaption>
+        <figcaption>局地校正融合：NWP、LMD 与 mixed 输入在误差和白昼评价指标上的对比。</figcaption>
         </figure>
       </div>
     </section>
@@ -445,10 +445,10 @@
     <section>
       <div class="section-head">
         <h2>工程流程</h2>
-        <p class="section-note">项目不是静态报告堆叠，而是从数据、模型、指标到展示入口的一条可复现链路。</p>
+        <p class="section-note">项目不是静态图表堆叠，而是从数据、模型、指标到展示入口的一条可复现链路。</p>
       </div>
       <div class="workflow">
-        <div class="step"><b>业务目标与评价口径</b><span>明确日前预测任务、装机容量归一化指标和交付约束。</span></div>
+        <div class="step"><b>业务目标与评价口径</b><span>明确日前预测任务、装机容量归一化指标和运行约束。</span></div>
         <div class="step"><b>站点机理诊断</b><span>整理站点功率、NWP、LMD，并进行理论功率与偏差诊断。</span></div>
         <div class="step"><b>深度预测模型</b><span>比较 PureLSTM、FusionModel、BiFusionModel 和 checkpoint 复用。</span></div>
         <div class="step"><b>运行场景归因</b><span>分析天气场景、输入特征和空间降尺度对误差的影响。</span></div>
@@ -467,7 +467,7 @@
         <div class="term-card"><b>BiFusionModel</b><span>结合 BiLSTM、TCN 和 Transformer 的增强结构，用于检验更复杂模型是否带来稳定收益。</span></div>
         <div class="term-card"><b>NWP</b><span>Numerical Weather Prediction，目标日前可获得的数值天气预报，提供辐照、温度、湿度、风速等未来天气信息。</span></div>
         <div class="term-card"><b>LMD / mixed</b><span>LMD 表示局地气象数据；mixed 表示 NWP+LMD 混合输入，当前最优结果来自 FusionModel_mixed。</span></div>
-        <div class="term-card"><b>E_rmse / C_R / Q_R</b><span>白昼附件指标。E_rmse 越小越好，C_R 和 Q_R 越高越好，当前 mixed 链路达到 C_R 95.35%。</span></div>
+        <div class="term-card"><b>E_rmse / C_R / Q_R</b><span>白昼评价指标。E_rmse 越小越好，C_R 和 Q_R 越高越好，当前 mixed 链路达到 C_R 95.35%。</span></div>
       </div>
     </section>
 
@@ -493,11 +493,12 @@ python 2025\run_project.py --show all</code></pre>
 
     <section>
       <div class="section-head">
-        <h2>材料入口</h2>
+        <h2>工程资料</h2>
         <p class="section-note">这些链接指向公开仓库中的源文件。Pages 页面只保留静态摘要，详细复现和维护记录以仓库为准。</p>
       </div>
       <div class="links">
         <a class="link-card" href="https://github.com/wzgig/ai-foundations-b-pv-forecasting" target="_blank" rel="noreferrer"><b>GitHub 仓库</b><span>代码、数据样例、结果图表和论文材料。</span></a>
+        <a class="link-card" href="https://github.com/wzgig/ai-foundations-b-pv-forecasting/blob/main/2025/ENGINEERING_PROFILE.md" target="_blank" rel="noreferrer"><b>工程画像</b><span>系统定位、数据契约、质量门禁和运行档案口径。</span></a>
         <a class="link-card" href="https://github.com/wzgig/ai-foundations-b-pv-forecasting/blob/main/2025/RUN_GUIDE.md" target="_blank" rel="noreferrer"><b>运行指南</b><span>完整运行顺序、checkpoint 复用和输出查看方式。</span></a>
         <a class="link-card" href="https://github.com/wzgig/ai-foundations-b-pv-forecasting/blob/main/2025/CODE_INDEX.md" target="_blank" rel="noreferrer"><b>代码索引</b><span>每个脚本的职责、正式入口和历史工作区说明。</span></a>
         <a class="link-card" href="https://github.com/wzgig/ai-foundations-b-pv-forecasting/blob/main/PROJECT_LOG.md" target="_blank" rel="noreferrer"><b>维护日志</b><span>重要改动、验证命令、提交与推送记录。</span></a>
@@ -517,7 +518,7 @@ python 2025\run_project.py --show all</code></pre>
       plan: ["日前计划", "关注下一日 96 点功率曲线、白昼误差和天气扰动，优先查看气象预报融合与局地校正融合结果。"],
       review: ["调度复盘", "对比实际功率、预测曲线和天气场景，定位高误差时段，判断误差来自天气突变、局地信息缺口还是模型偏差。"],
       maintain: ["模型维护", "检查 checkpoint 复用、输入模式收益和指标漂移，决定是否重训模型、扩展局地气象输入或更新运行参数。"],
-      delivery: ["交付审查", "核对指标 CSV、图表、运行摘要、报告和维护日志，确保每个结论都能回溯到仓库中的真实输出。"]
+      audit: ["质量审计", "核对指标 CSV、图表、运行摘要、报告和维护日志，确保每个结论都能回溯到仓库中的真实输出。"]
     };
     const panel = document.getElementById("scenarioPanel");
     document.querySelectorAll("[data-scenario]").forEach((button) => {

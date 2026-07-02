@@ -1,15 +1,12 @@
-# 2025 光伏日前预测工程目录说明
+# 2025 光伏日前预测运行系统目录说明
 
-本目录按工程工作流组织光伏电站日前预测材料，目标是让后续复现实验、继续改代码、查找结果和维护交付报告都有稳定入口。
+本目录按工程工作流组织光伏电站日前预测系统，目标是让后续复现实验、继续改代码、查找结果、维护运行档案都有稳定入口。
 
 ## 目录总览
 
 ```text
 2025/
 ├── 00_course_materials/
-│   ├── 人工智能基础B_期末大作业布置通知.pdf
-│   ├── A题：光伏电站发电功率日前预测问题.pdf
-│   └── 附件1.pdf
 ├── 01_modeling_workspace/
 │   └── pvod_full_experiment/
 ├── 02_problem_solutions/
@@ -32,6 +29,7 @@
 │   ├── project_health_check.py
 │   ├── generate_csust_report.py
 │   └── export_csust_report.ps1
+├── ENGINEERING_PROFILE.md
 ├── app.py
 ├── software_launcher.py
 ├── start_software.vbs
@@ -47,7 +45,7 @@
 
 ### `00_course_materials/`
 
-存放课程通知、原始业务目标和评价附件，只作为需求和背景资料，不放实验输出。
+存放原始需求文件、业务目标和评价附件，只作为需求和背景资料，不放实验输出。
 
 ### `01_modeling_workspace/pvod_full_experiment/`
 
@@ -55,7 +53,7 @@
 
 ### `02_problem_solutions/`
 
-按工程链路拆分的交付材料。
+按工程链路拆分的正式运行目录。
 
 - `problem1_data_analysis/`：站点机理诊断、理论功率建模、物理量分析、MATLAB/Python 探索脚本、单站点 Excel 数据和 Python 诊断输出。
 - `problem2_baseline_forecasting/`：历史功率基线预测、白昼指标、统一预测表和可视化图。
@@ -68,11 +66,11 @@
 
 ### `04_paper/final_submission/`
 
-存放早期论文/竞赛论文素材，当前课程最终报告以 `05_delivery/项目主报告_终稿.*` 为准。
+存放早期论文/竞赛论文素材，当前归档报告以 `05_delivery/项目主报告_终稿.*` 为准。
 
 ### `05_delivery/`
 
-面向《人工智能基础B》最终提交的材料归档目录，包含作业要求提取、完成度复盘、课程主报告草稿、团队分工模板、功能性能稳定性测试表、演示视频脚本、网站使用指南和最终提交包清单。该目录保留为提交证据，不再作为网页中的独立展示页面。
+归档报告、测试记录、演示脚本和最终打包清单目录。该目录保留原始约束和提交证据，但公开页和工作台以工程运行链路为主，不把该目录作为独立展示页面。
 
 ### `llm/`
 
@@ -93,6 +91,10 @@
 - `project_health_check.py`：静态检查 Python 语法、重复代码快照和相对输入文件是否能在项目内找到；不会执行训练。
 - `generate_csust_report.py`：按长沙理工大学样张从终稿 Markdown 生成 Word 报告。
 - `export_csust_report.ps1`：更新 Word 目录和页码、导出 PDF，并在可用时渲染检查页。
+
+### `ENGINEERING_PROFILE.md`
+
+工程化运行画像，说明系统定位、数据契约、模型链路、质量门禁、运行档案和后续扩展边界。公开展示和后续维护优先沿用该口径。
 
 ## 复现建议
 
@@ -144,7 +146,7 @@ python -m streamlit run 2025\app.py
 
 不要直接运行 `python 2025\app.py`；该命令现在只会输出正确启动提示，避免 Streamlit bare mode 的 `missing ScriptRunContext` 警告刷屏。`software_launcher.py` 提供桌面窗口，可启动/打开浏览器软件界面、运行健康检查并停止后台服务。
 
-展示界面包含工作台、运行结果、交付引用、代码与命令、运行解读和训练控制六个页面。交付引用页集中索引业务目标、评价附件、报告、运行摘要、指标表和核心脚本；训练控制页默认只查看已有输出或执行 dry-run，真正启动训练前需要显式勾选确认框，并提供后台日志、Epoch 进度、停止进程树和基于 checkpoint 的继续运行。根目录 `docs/index.html` 是 GitHub Pages 静态展示页，只展示项目摘要和核心结果；完整交互功能仍需本地运行 Streamlit 工作台。
+展示界面包含工作台、运行结果、工程档案、代码与命令、运行解读和训练控制六个页面。工程档案页集中索引业务目标、评价附件、工程画像、报告、运行摘要、指标表和核心脚本；训练控制页默认只查看已有输出或执行 dry-run，真正启动训练前需要显式勾选确认框，并提供后台日志、Epoch 进度、停止进程树和基于 checkpoint 的继续运行。根目录 `docs/index.html` 是 GitHub Pages 静态展示页，只展示项目摘要和核心结果；完整交互功能仍需本地运行 Streamlit 工作台。
 
 运行单条链路脚本时，可以直接进入对应目录：
 

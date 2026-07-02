@@ -4,7 +4,7 @@
 
 ## 命名规则
 
-- `problemN_...`：正式交付目录中的历史脚本前缀，当前按工程链路解释其职责。
+- `problemN_...`：正式运行目录中的历史脚本前缀，当前按工程链路解释其职责。
 - `workspace_...`：`01_modeling_workspace` 中的历史实验快照或探索副本。
 - `theoretical_power_...`：站点机理诊断中的 Python 理论功率计算与诊断脚本。
 - `matlab_...`：站点机理诊断或探索图中的 MATLAB 分析脚本。
@@ -20,16 +20,17 @@
 | `_shared/matlab/project_output_path.m` | MATLAB `outputs/` 输出路径生成工具。 |
 | `_shared/matlab/save_project_figure.m` | MATLAB 期刊风格图像保存工具，默认写入 `outputs/figures/`。 |
 | `tools/project_health_check.py` | 静态健康检查脚本，检查 Python 语法、重复代码快照、相对输入文件和正式链路脚本输出约束。 |
-| `tools/generate_csust_report.py` | 课程主报告 Word 生成脚本，按长沙理工大学样张设置页眉页脚、摘要、目录、正文标题、图表编号和表格样式。 |
+| `ENGINEERING_PROFILE.md` | 工程化运行画像，说明系统定位、数据契约、模型链路、质量门禁、运行档案和扩展边界。 |
+| `tools/generate_csust_report.py` | 归档报告 Word 生成脚本，按长沙理工大学样张设置页眉页脚、摘要、目录、正文标题、图表编号和表格样式。 |
 | `tools/export_csust_report.ps1` | 报告导出脚本，更新 Word 目录和页码，导出 PDF，并渲染检查页。 |
 | `run_project.py` | 项目总控入口，支持用 `--run` 选择工程链路、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出，并显式处理运行场景归因对历史功率基线/气象预报融合预测表的依赖。 |
-| `app.py` | Streamlit 预测工作台，读取已有 `outputs/`，提供工作台、运行结果、交付引用、代码与命令、运行解读和训练控制；训练控制支持后台日志、Epoch 进度、停止和基于 checkpoint 的继续运行；直接用 `python app.py` 运行时只输出正确启动提示。 |
+| `app.py` | Streamlit 预测工作台，读取已有 `outputs/`，提供工作台、运行结果、工程档案、代码与命令、运行解读和训练控制；训练控制支持后台日志、Epoch 进度、停止和基于 checkpoint 的继续运行；直接用 `python app.py` 运行时只输出正确启动提示。 |
 | `software_launcher.py` | Windows 桌面启动器，通过 Tkinter 提供启动/打开软件、运行健康检查和停止后台 Streamlit 服务的可视化入口。 |
 | `start_software.vbs` | 无终端双击入口，优先通过 `pythonw` 启动 `software_launcher.py`，适合演示视频和教师复现时使用。 |
 | `run.bat` | Windows 命令行调试启动脚本，会检查 Python/Streamlit 并启动 `app.py`，适合查看依赖安装和 Streamlit 输出。 |
 | `llm/result_context.py` | 从各条链路的 `run_summary.json` 和指标 CSV 中读取结果，整理为运行解读上下文。 |
 | `llm/assistant.py` | 运行解读入口，默认读取本机 Codex config/auth 并支持 Responses API；环境变量可覆盖为兼容 HTTP、本地或远程接口，失败时离线规则兜底。 |
-| `llm/prompts.py` | 项目运行解读与交付说明整理的提示词模板。 |
+| `llm/prompts.py` | 项目运行解读与运行说明整理的提示词模板。 |
 
 ## 正式链路代码
 

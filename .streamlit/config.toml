@@ -1,13 +1,13 @@
 [theme]
 base = "light"
-primaryColor = "#315c49"
-backgroundColor = "#fbfaf6"
-secondaryBackgroundColor = "#eef2ef"
+primaryColor = "#2b7783"
+backgroundColor = "#f4f7f8"
+secondaryBackgroundColor = "#e8eef0"
 textColor = "#17201d"
 linkColor = "#2b7783"
 codeTextColor = "#24302c"
-codeBackgroundColor = "#f2f4f0"
-borderColor = "#d8ded8"
+codeBackgroundColor = "#eef3f4"
+borderColor = "#cfdbde"
 showWidgetBorder = true
 showSidebarBorder = true
 baseRadius = "8px"
@@ -19,15 +19,15 @@ baseFontSize = 15
 headingFontSizes = ["36px", "26px", "21px", "17px", "15px", "13px"]
 headingFontWeights = [700, 700, 650, 650, 600, 600]
 linkUnderline = false
-chartCategoricalColors = ["#315c49", "#2b7783", "#d1912a", "#356b9a", "#b24545", "#6f7b55"]
-chartSequentialColors = ["#f8fbf8", "#e8f0e9", "#d5e4d7", "#bed4c3", "#9ebda8", "#78a086", "#5c816b", "#446753", "#31503f", "#21382c"]
+chartCategoricalColors = ["#2b7783", "#315c49", "#d1912a", "#356b9a", "#b24545", "#6f7b55"]
+chartSequentialColors = ["#f7fbfc", "#e8f3f5", "#d4e7eb", "#b7d5db", "#8ebdc7", "#659fab", "#4b8792", "#356f78", "#28585f", "#1b3d43"]
 greenColor = "#315c49"
 blueColor = "#2b7783"
 orangeColor = "#d1912a"
 redColor = "#b24545"
 grayColor = "#5d6763"
-dataframeBorderColor = "#d8ded8"
-dataframeHeaderBackgroundColor = "#eef2ef"
+dataframeBorderColor = "#cfdbde"
+dataframeHeaderBackgroundColor = "#e8eef0"
 
 [theme.sidebar]
 backgroundColor = "#17201d"

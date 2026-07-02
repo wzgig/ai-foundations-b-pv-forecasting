@@ -2,6 +2,32 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-07-02 工程级口径统一与公开入口优化
+
+### 调整目标
+
+- 按用户要求对完整项目做一次面向工程级的优化提升，降低公开入口和工作台中的课程作业观感。
+- 保留原始需求和归档报告证据，但把 README、运行指南、工作台和 GitHub Pages 的主叙事统一为“运行系统、工程档案、质量审计、数据契约和运行档案”。
+
+### 主要改动
+
+- 新增 `2025/ENGINEERING_PROFILE.md`，说明系统定位、数据契约、模型链路、质量门禁、运行档案口径和扩展边界。
+- 更新 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md` 和 `2025/CODE_INDEX.md`，将“交付引用、附件指标、早期交付脚本”等表达统一为“工程档案、白昼评价指标、早期分析脚本”等工程口径。
+- 更新 `2025/app.py`，导航从“交付引用”改为“工程档案”，运行视角从“交付审查”改为“质量审计”，并将首页、指标卡、档案表、运行解读快捷问题和说明草稿统一到运行系统叙事。
+- 更新 `docs/index.html`，公开页使用“质量审计、工程资料、白昼评价指标、工程画像”口径，并增加 `ENGINEERING_PROFILE.md` 入口。
+- 更新 `.streamlit/config.toml` 和页面 CSS，将视觉底色从偏暖纸面风格调整为更清爽的运行控制台色系。
+- 更新 `tests/test_project_health.py`，新增工程画像检查，并防止旧口径“交付审查、交付引用、附件指标、材料入口”等重新出现在公开入口中。
+
+### 验证结果
+
+- `python -m py_compile 2025\app.py 2025\run_project.py 2025\tools\project_health_check.py`：通过。
+- `python 2025\tools\project_health_check.py`：通过，无 Python 解析错误、无未解析相对输入、无受管输出问题。
+- `python -m unittest discover -s tests -q`：通过，25 个测试 OK。
+- `.streamlit/config.toml` 使用 Python `tomllib` 解析通过，主题色为 `#2b7783`，背景色为 `#f4f7f8`。
+- 本地启动 `python -m streamlit run 2025\app.py --server.headless=true --server.address=127.0.0.1 --server.port=8521`：通过，`http://127.0.0.1:8521` 返回 HTTP 200。
+- `git diff --check -- README.md 2025\README.md 2025\RUN_GUIDE.md 2025\CODE_INDEX.md 2025\ENGINEERING_PROFILE.md 2025\app.py docs\index.html .streamlit\config.toml tests\test_project_health.py PROJECT_LOG.md`：通过，仅提示 Windows 后续可能写回 CRLF。
+- `rg -n "交付引用|交付审查|白昼附件指标|材料入口|课程交付|问题 2 ·|问题 3 ·|问题 4 ·" docs\index.html 2025\app.py`：无匹配，确认公开页和工作台旧口径未回流。
+
 ## 2026-07-02 GitHub Pages 同步模型与指标口径
 
 ### 调整目标

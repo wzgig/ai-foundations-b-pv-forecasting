@@ -1,12 +1,12 @@
-# 光伏电站发电功率日前预测
+# 光伏电站日前功率预测与运行工作台
 
-这是一个面向光伏电站日前发电计划的预测项目仓库，围绕站点历史功率、数值天气预报和局地气象数据整理代码、数据分析、模型实验、结果图表和交付报告。
+这是一个面向光伏电站日前发电计划的运行型预测仓库，围绕站点历史功率、数值天气预报和局地气象数据组织数据契约、模型训练、指标评估、运行档案和本地工作台。
 
 ## 项目概览
 
-项目基于光伏电站历史功率、数值天气预报和相关气象数据，完成从站点机理诊断、日前预测建模、天气场景归因到多源气象输入评估的完整工程链路。
+项目基于光伏电站历史功率、数值天气预报和相关气象数据，完成从站点机理诊断、日前预测建模、天气场景归因到多源气象输入评估的完整工程链路。系统默认读取已有运行产物，支持在本地工作台中查看指标、图表、代码入口、质量门禁和受控训练状态。
 
-原始交付规范、当前项目适配情况和后续改造路线见 `2025/ASSIGNMENT_REQUIREMENTS_ANALYSIS.md`。面向《人工智能基础B》最终提交的要求提取、完成度复盘、课程主报告草稿、测试表、演示视频脚本和打包清单集中放在 `2025/05_delivery/`。
+工程化运行画像见 `2025/ENGINEERING_PROFILE.md`。原始需求约束、报告归档、测试记录和演示脚本保留在 `2025/05_delivery/`，作为可追溯材料，不作为公开页和工作台的主叙事。
 
 主要工程链路包括：
 
@@ -21,21 +21,22 @@
 .
 ├── AGENTS.md                     项目级代理协作规则
 ├── 2025/
-│   ├── 00_course_materials/       课程通知、题面和评价附件
+│   ├── 00_course_materials/       需求原件和评价附件
 │   ├── 01_modeling_workspace/     完整 PVOD 建模实验工作区
 │   ├── 02_problem_solutions/      各条工程链路的代码、数据、结果和图表
 │   ├── 03_figures/                探索图、论文素材图和场景对比图
 │   ├── 04_paper/                  历史论文素材
-│   ├── 05_delivery/               课程交付复盘、终稿报告、测试表和视频脚本
+│   ├── 05_delivery/               归档报告、测试记录和演示脚本
 │   ├── llm/                       运行解读模块与可选语言接口
 │   ├── _shared/                   Python 与 MATLAB 公共工具
 │   ├── tools/                     健康检查、报告导出等维护脚本
+│   ├── ENGINEERING_PROFILE.md     工程化运行画像
 │   ├── app.py                     Streamlit 预测工作台
 │   ├── software_launcher.py       Windows 桌面启动器
 │   ├── start_software.vbs         无终端双击启动入口
 │   ├── run.bat                    Windows 一键启动脚本
 │   ├── CODE_AUDIT.md              代码审计与优化记录
-│   ├── ASSIGNMENT_REQUIREMENTS_ANALYSIS.md  原始交付要求分析
+│   ├── ASSIGNMENT_REQUIREMENTS_ANALYSIS.md  原始需求约束分析
 │   ├── README.md                  2025 目录说明
 │   ├── requirements.txt           Python 运行依赖清单
 │   └── requirements-optional.txt  可选实验依赖清单
@@ -49,7 +50,7 @@
 
 - Python：`numpy`、`pandas`、`matplotlib`、`seaborn`、`scikit-learn`、`scipy`、`torch`、`plotly`、`streamlit`
 - MATLAB：理论功率建模和探索性绘图
-- Office 文档：交付报告、链路说明和补充材料
+- Office 文档：技术报告、链路说明和归档材料
 
 ## 复现与检查
 
@@ -97,7 +98,7 @@ python 2025\run_project.py --show 4
 python -m streamlit run 2025\app.py
 ```
 
-不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。界面包含工作台、运行结果、交付引用、代码与命令、运行解读和训练控制页面。训练控制页支持后台运行、Epoch 进度日志、停止进程树和基于 checkpoint 的继续运行。运行解读模块默认离线可用，也可读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，或通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
+不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。界面包含工作台、运行结果、工程档案、代码与命令、运行解读和训练控制页面。训练控制页支持后台运行、Epoch 进度日志、停止进程树和基于 checkpoint 的继续运行。运行解读模块默认离线可用，也可读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，或通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
 
 GitHub Pages 静态展示页位于 `docs/index.html`。Pages 只展示项目摘要、核心指标、图表和本地运行方式；完整 Streamlit 工作台需要本地运行。
 
@@ -128,7 +129,7 @@ python .\problem2_baseline_three_model_forecast.py
 
 2026-06-03 已新增项目总控入口：`2025/run_project.py` 支持用 `--run` 选择工程链路、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出；运行场景归因会显式检查历史功率基线和气象预报融合预测表依赖。
 
-2026-06-03 已新增工程交付展示层：`2025/app.py` 提供 Streamlit 预测工作台，后续已升级为带真实预测图首屏、结果摘要、交付引用索引和受控运行页的软件界面；`2025/llm/` 提供离线优先且支持本机 Codex 配置、Responses API 与兼容 HTTP 接口的运行解读能力，`2025/start_software.vbs` 和 `2025/software_launcher.py` 提供无终端桌面启动入口，`2025/run.bat` 保留为命令行调试启动脚本，`requirements.txt` 改为固定版本运行依赖。
+2026-06-03 已新增工程展示层：`2025/app.py` 提供 Streamlit 预测工作台，后续已升级为带真实预测图首屏、结果摘要、工程档案索引和受控运行页的软件界面；`2025/llm/` 提供离线优先且支持本机 Codex 配置、Responses API 与兼容 HTTP 接口的运行解读能力，`2025/start_software.vbs` 和 `2025/software_launcher.py` 提供无终端桌面启动入口，`2025/run.bat` 保留为命令行调试启动脚本，`requirements.txt` 改为固定版本运行依赖。
 
 2026-06-02 已完成输出模块和中文期刊绘图规范整理：正式链路脚本统一使用 `outputs/` 目录和 `run_summary.json`，共享绘图配置改为中文字体兜底、600 dpi 保存、弱网格、统一配色和期刊式坐标轴；MATLAB 增加对应的输出与绘图 helper。
 
