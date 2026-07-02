@@ -25,7 +25,7 @@ from llm.prompts import DEFAULT_QUESTIONS
 from llm.result_context import ROOT, TaskContext, collect_all_context, project_relative
 
 
-PAGE_TITLE = "光伏电站日前预测工作台"
+PAGE_TITLE = "光伏电站日前功率预测与运行工作台"
 TEXT_SUFFIXES = {".py", ".md", ".bat", ".txt", ".m", ".json"}
 EXCLUDED_TEXT_DIRS = {
     "__pycache__",
@@ -1211,7 +1211,7 @@ def render_title() -> None:
         <div class="hero-panel"{background_style}>
           <div class="hero-content">
           <div class="pv-kicker">PV day-ahead forecasting · Station operation console</div>
-          <h1>光伏电站发电功率日前预测工作台</h1>
+          <h1>光伏电站日前功率预测与运行工作台</h1>
           <p>面向电站日前计划、调度复盘和模型维护的结果工作台：从真实预测曲线进入指标、图表、脚本、材料和受控运行流程，默认只读取已有 outputs。</p>
           <div class="hero-actions">
             <span class="hero-chip">白昼附件指标</span>
@@ -1422,7 +1422,7 @@ def render_workbench(contexts: dict[str, TaskContext]) -> None:
     render_section_title("精选图表", "直接来自项目输出与交付材料")
     render_featured_visuals()
     st.markdown(
-        '<div class="note">界面默认只读取已有 outputs，不触发长时间训练；需要重训时请到“运行控制”页显式勾选确认。</div>',
+        '<div class="note">界面默认只读取已有 outputs，不触发长时间训练；需要重训时请到“训练控制”页显式勾选确认。</div>',
         unsafe_allow_html=True,
     )
 

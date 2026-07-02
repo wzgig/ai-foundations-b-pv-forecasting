@@ -144,7 +144,7 @@
 
 ### 已完成的改进
 
-- `2025/app.py` 使用 Streamlit 搭建预测工作台，默认只读取已有结果，提供工作台、结果浏览、代码与命令、结果解释和受保护运行控制；直接 `python app.py` 会输出正确启动提示。
+- `2025/app.py` 使用 Streamlit 搭建预测工作台，默认只读取已有结果，提供工作台、结果浏览、代码与命令、运行解读和训练控制；直接 `python app.py` 会输出正确启动提示。
 - `2025/llm/result_context.py` 将问题 1-4 的运行摘要、指标表和产物路径整理为结构化上下文。
 - `2025/llm/assistant.py` 默认读取本机 `~\.codex\config.toml` 与 `~\.codex\auth.json`，支持 Responses API、Chat Completions、OpenAI-compatible、本地端点和离线模板兜底。
 - `2025/start_software.vbs` 与 `2025/software_launcher.py` 支持 Windows 无终端桌面启动；`2025/run.bat` 保留为命令行调试入口。

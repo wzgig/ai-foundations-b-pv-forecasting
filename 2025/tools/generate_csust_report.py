@@ -28,8 +28,8 @@ OUTPUT_DOCX = REPORT_DIR / "项目主报告_终稿.docx"
 TRACKED_LOGO = ROOT / "03_figures" / "paper_assets" / "csust_header_logo.jpeg"
 EXTRACTED_TEMPLATE_LOGO = ROOT.parent / "tmp" / "template_review" / "media" / "image2.jpeg"
 TEMPLATE_LOGO = TRACKED_LOGO if TRACKED_LOGO.exists() else EXTRACTED_TEMPLATE_LOGO
-TITLE = "光伏电站日前计划与功率预测工作台项目主报告"
-EN_TITLE = "PV STATION DAY-AHEAD PLANNING AND POWER FORECASTING WORKBENCH"
+TITLE = "光伏电站日前功率预测与运行工作台项目主报告"
+EN_TITLE = "PV STATION DAY-AHEAD POWER FORECASTING AND OPERATION WORKBENCH"
 
 
 def set_run_font(run, east_asia: str = "宋体", latin: str = "Times New Roman", size: float = 12, bold: bool | None = None) -> None:

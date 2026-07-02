@@ -283,7 +283,7 @@ requires_openai_auth = true
             self.assertGreater(path.stat().st_size, 500, filename)
 
         report = (DELIVERY_DIR / "项目主报告_课程版.md").read_text(encoding="utf-8")
-        self.assertIn("光伏电站日前计划与功率预测工作台", report)
+        self.assertIn("光伏电站日前功率预测与运行工作台", report)
         self.assertIn("FusionModel_mixed", report)
         self.assertIn("E_rmse=0.0465", report)
 
@@ -326,7 +326,7 @@ requires_openai_auth = true
     def test_static_pages_site_references_real_assets(self):
         html = DOCS_INDEX.read_text(encoding="utf-8")
 
-        self.assertIn("光伏电站日前计划与功率预测工作台", html)
+        self.assertIn("光伏电站日前功率预测与运行工作台", html)
         self.assertIn("历史功率基线", html)
         self.assertIn("气象预报融合", html)
         self.assertIn("局地校正融合", html)
