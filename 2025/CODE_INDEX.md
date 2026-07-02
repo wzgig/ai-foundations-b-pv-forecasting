@@ -23,7 +23,7 @@
 | `tools/generate_csust_report.py` | 课程主报告 Word 生成脚本，按长沙理工大学样张设置页眉页脚、摘要、目录、正文标题、图表编号和表格样式。 |
 | `tools/export_csust_report.ps1` | 报告导出脚本，更新 Word 目录和页码，导出 PDF，并渲染检查页。 |
 | `run_project.py` | 项目总控入口，支持用 `--run` 选择工程链路、用 `--parallel` 并行运行互不依赖主任务、用 `--show` 查看已有输出，并显式处理运行场景归因对历史功率基线/气象预报融合预测表的依赖。 |
-| `app.py` | Streamlit 预测工作台，读取已有 `outputs/`，提供工作台、运行结果、交付引用、代码与命令、运行解读和受保护运行控制；直接用 `python app.py` 运行时只输出正确启动提示。 |
+| `app.py` | Streamlit 预测工作台，读取已有 `outputs/`，提供工作台、运行结果、交付引用、代码与命令、运行解读和训练控制；训练控制支持后台日志、Epoch 进度、停止和基于 checkpoint 的继续运行；直接用 `python app.py` 运行时只输出正确启动提示。 |
 | `software_launcher.py` | Windows 桌面启动器，通过 Tkinter 提供启动/打开软件、运行健康检查和停止后台 Streamlit 服务的可视化入口。 |
 | `start_software.vbs` | 无终端双击入口，优先通过 `pythonw` 启动 `software_launcher.py`，适合演示视频和教师复现时使用。 |
 | `run.bat` | Windows 命令行调试启动脚本，会检查 Python/Streamlit 并启动 `app.py`，适合查看依赖安装和 Streamlit 输出。 |

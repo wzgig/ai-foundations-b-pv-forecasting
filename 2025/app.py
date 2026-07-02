@@ -5,9 +5,13 @@ from __future__ import annotations
 
 import base64
 import os
+import re
+import signal
 import subprocess
 import sys
 import logging
+import time
+from datetime import datetime
 from functools import lru_cache
 from html import escape
 from pathlib import Path
@@ -79,25 +83,37 @@ REFERENCE_FILES = [
     ("评价口径", ROOT / "00_course_materials" / "附件1.pdf", "指标定义与约束"),
     ("论文素材", ROOT / "04_paper" / "final_submission" / "历史论文素材_光伏日前预测.pdf", "历史 PDF 素材"),
     ("论文素材", ROOT / "04_paper" / "final_submission" / "历史论文素材_光伏日前预测.docx", "历史 Word 素材"),
-    ("课程交付", ROOT / "05_delivery" / "项目主报告_课程版.md", "课程主报告草稿"),
-    ("课程交付", ROOT / "05_delivery" / "交付完成度复盘.md", "完成度审查"),
-    ("课程交付", ROOT / "05_delivery" / "最终提交包清单.md", "最终打包检查"),
     ("运行说明", ROOT / "README.md", "项目说明"),
     ("运行说明", ROOT / "RUN_GUIDE.md", "复现流程"),
     ("代码索引", ROOT / "CODE_INDEX.md", "文件用途表"),
     ("维护记录", ROOT.parent / "PROJECT_LOG.md", "改动备注"),
 ]
-DELIVERY_FILES = [
-    ("要求提取", ROOT / "05_delivery" / "作业要求提取.md", "课程通知、题面和附件指标的硬性要求"),
-    ("完成度复盘", ROOT / "05_delivery" / "交付完成度复盘.md", "已完成、未完成、风险和收尾动作"),
-    ("主报告草稿", ROOT / "05_delivery" / "项目主报告_课程版.md", "面向课程评分表的项目主报告"),
-    ("团队分工", ROOT / "05_delivery" / "团队分工与项目计划.md", "成员职责和最终收尾计划"),
-    ("测试记录", ROOT / "05_delivery" / "功能性能稳定性测试表.md", "功能、性能、稳定性和复核命令"),
-    ("视频脚本", ROOT / "05_delivery" / "演示视频脚本.md", "3 分钟 MP4 分镜与录屏路线"),
-    ("使用指南", ROOT / "05_delivery" / "网站使用指南与案例.md", "工作台、Pages 和使用案例"),
-    ("提交清单", ROOT / "05_delivery" / "最终提交包清单.md", "压缩包命名、内容和体积控制"),
-]
-NAVIGATION = ["工作台", "运行结果", "交付引用", "课程交付", "代码与命令", "运行解读", "运行控制"]
+NAVIGATION = ["工作台", "运行结果", "交付引用", "代码与命令", "运行解读", "训练控制"]
+TRAINING_RUN_DIR = ROOT / "tools" / "runtime" / "training_runs"
+TASK_OPTIONS = {
+    "历史功率基线": "2",
+    "气象预报融合": "3",
+    "局地校正融合": "4",
+    "运行场景归因": "3-analysis",
+    "站点机理诊断": "1",
+    "主预测链路": "main",
+    "全部链路": "all",
+}
+TASK_MODEL_UNITS = {"1": 0, "2": 3, "3": 3, "3-analysis": 0, "4": 3}
+TASK_ALIASES = {
+    "1": ("1",),
+    "2": ("2",),
+    "3": ("3",),
+    "3-analysis": ("3-analysis",),
+    "4": ("4",),
+    "main": ("1", "2", "3", "4"),
+    "all": ("1", "2", "3", "4", "3-analysis"),
+}
+Q4_MODE_OPTIONS = {"NWP": "nwp", "LMD": "lmd", "NWP+LMD": "mixed"}
+Q4_MODEL_OPTIONS = {"PureLSTM": "PureLSTM", "FusionModel": "FusionModel", "BiFusionModel": "BiFusionModel"}
+EPOCH_RE = re.compile(r"Epoch\s+(\d+)\s*:\s*Train=([0-9.]+),\s*Val=([0-9.]+)")
+TASK_START_RE = re.compile(r"===== 运行\s+(.+?)\s+=====")
+MODEL_START_RE = re.compile(r"(?:正在训练/加载模型：|>> 模型：)\s*([^|\n=]+)")
 PIPELINE_CARDS = {
     "2": {
         "name": "历史功率基线",
@@ -495,11 +511,64 @@ pre, code {
   font-size: .78rem;
   overflow-wrap: anywhere;
 }
+.training-panel {
+  border: 1px solid var(--hairline);
+  border-left: 5px solid var(--leaf);
+  border-radius: 8px;
+  background: rgba(255,255,255,.80);
+  padding: .9rem 1rem;
+  margin: .75rem 0 1rem 0;
+  box-shadow: var(--shadow-soft);
+}
+.training-panel b {
+  display: block;
+  margin-bottom: .25rem;
+  color: var(--ink);
+}
+.training-panel span {
+  color: var(--muted);
+  font-size: .9rem;
+}
+.training-state-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+  margin: .75rem 0 1rem 0;
+}
+.training-state {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: rgba(255,255,255,.74);
+  padding: .78rem .86rem;
+  min-height: 5.4rem;
+}
+.training-state b {
+  display: block;
+  color: var(--muted);
+  font-size: .82rem;
+  margin-bottom: .2rem;
+}
+.training-state span {
+  display: block;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 720;
+  overflow-wrap: anywhere;
+}
+.training-command {
+  border: 1px dashed rgba(53, 107, 154, .35);
+  border-radius: 8px;
+  background: rgba(53, 107, 154, .07);
+  padding: .68rem .8rem;
+  margin: .55rem 0 .85rem 0;
+  color: var(--graphite);
+}
 @media (max-width: 900px) {
   .status-grid,
   .workflow-band,
   .visual-grid,
-  .pipeline-list {
+  .pipeline-list,
+  .training-state-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .hero-panel::after {
@@ -513,7 +582,8 @@ pre, code {
   .status-grid,
   .workflow-band,
   .visual-grid,
-  .pipeline-list {
+  .pipeline-list,
+  .training-state-grid {
     grid-template-columns: 1fr;
   }
   .hero-panel {
@@ -771,6 +841,7 @@ def run_project_command(args: list[str], timeout_seconds: int = 240) -> tuple[in
     command = [sys.executable, str(ROOT / "run_project.py"), *args]
     env = os.environ.copy()
     env.setdefault("PYTHONIOENCODING", "utf-8")
+    env.setdefault("PYTHONUNBUFFERED", "1")
     command_text = " ".join(f'"{item}"' if " " in item else item for item in command)
     try:
         completed = subprocess.run(
@@ -791,6 +862,345 @@ def run_project_command(args: list[str], timeout_seconds: int = 240) -> tuple[in
         if isinstance(output, bytes):
             output = output.decode("utf-8", errors="replace")
         return 124, f"{output}\n\n命令超过 {timeout_seconds} 秒，已停止等待。", command_text
+
+
+def command_text(command: list[str]) -> str:
+    return " ".join(f'"{item}"' if " " in item else item for item in command)
+
+
+def task_keys_for(task: str) -> tuple[str, ...]:
+    return TASK_ALIASES.get(task, (task,))
+
+
+def expected_training_units(task: str, q4_modes: list[str], q4_models: list[str]) -> tuple[int, int]:
+    task_keys = task_keys_for(task)
+    model_units = 0
+    for key in task_keys:
+        if key == "4":
+            model_units += max(1, len(q4_modes)) * max(1, len(q4_models))
+        else:
+            model_units += TASK_MODEL_UNITS.get(key, 0)
+    return model_units, max(1, len(task_keys))
+
+
+def build_runner_args(
+    *,
+    operation: str,
+    task: str,
+    use_parallel: bool,
+    force_retrain: bool,
+    epochs: int,
+    patience: int,
+    batch_size: int,
+    hidden_dim: int,
+    q4_modes: list[str],
+    q4_models: list[str],
+    q4_fast: bool,
+) -> list[str]:
+    args = ["--show", task] if operation == "查看已有输出" else ["--run", task]
+    if operation == "dry-run 预演":
+        args.append("--dry-run")
+    if operation != "查看已有输出":
+        if use_parallel:
+            args.append("--parallel")
+        if force_retrain:
+            args.append("--force-retrain")
+        args.extend(["--epochs", str(epochs)])
+        args.extend(["--patience", str(patience)])
+        args.extend(["--batch-size", str(batch_size)])
+        args.extend(["--hidden-dim", str(hidden_dim)])
+        if "4" in task_keys_for(task):
+            args.extend(["--q4-modes", ",".join(q4_modes)])
+            args.extend(["--q4-models", ",".join(q4_models)])
+            if q4_fast:
+                args.append("--q4-fast")
+    return args
+
+
+def read_log_tail(path: Path, max_chars: int = 24_000) -> str:
+    if not path.exists():
+        return ""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if len(text) <= max_chars:
+        return text
+    return "... 已省略前半段日志 ...\n" + text[-max_chars:]
+
+
+def safe_run_slug(label: str) -> str:
+    slug = re.sub(r"[^0-9A-Za-z\u4e00-\u9fff_-]+", "_", label).strip("_")
+    return slug[:36] or "training"
+
+
+def start_training_run(
+    args: list[str],
+    *,
+    label: str,
+    expected_models: int,
+    expected_steps: int,
+    max_epochs: int,
+) -> None:
+    TRAINING_RUN_DIR.mkdir(parents=True, exist_ok=True)
+    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_path = TRAINING_RUN_DIR / f"{run_id}_{safe_run_slug(label)}.log"
+    command = [sys.executable, "-u", str(ROOT / "run_project.py"), *args]
+    env = os.environ.copy()
+    env.setdefault("PYTHONIOENCODING", "utf-8")
+    env.setdefault("PYTHONUNBUFFERED", "1")
+    popen_kwargs: dict[str, object] = {}
+    if os.name == "nt":
+        popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+    else:
+        popen_kwargs["start_new_session"] = True
+
+    with log_path.open("w", encoding="utf-8", buffering=1) as log_file:
+        log_file.write(f"# started_at: {datetime.now().isoformat(timespec='seconds')}\n")
+        log_file.write(f"# command: {command_text(command)}\n\n")
+        process = subprocess.Popen(
+            command,
+            cwd=ROOT.parent,
+            stdin=subprocess.DEVNULL,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            env=env,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            **popen_kwargs,
+        )
+
+    st.session_state["training_run"] = {
+        "run_id": run_id,
+        "label": label,
+        "args": args,
+        "pid": process.pid,
+        "process": process,
+        "log_path": str(log_path),
+        "command": command_text(command),
+        "started_at": time.time(),
+        "started_label": datetime.now().strftime("%H:%M:%S"),
+        "expected_models": expected_models,
+        "expected_steps": expected_steps,
+        "max_epochs": max_epochs,
+    }
+
+
+def pid_is_running(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        try:
+            completed = subprocess.run(
+                ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+                timeout=5,
+            )
+        except Exception:
+            return False
+        return str(pid) in (completed.stdout or "")
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def training_run_status(run: dict[str, object]) -> tuple[str, str, int | None]:
+    if run.get("stopped"):
+        return "stopped", "已停止", int(run.get("returncode", -1))
+    process = run.get("process")
+    if isinstance(process, subprocess.Popen):
+        returncode = process.poll()
+        if returncode is None:
+            return "running", "运行中", None
+        run["returncode"] = returncode
+        run.setdefault("finished_at", time.time())
+        return ("success", "已完成", returncode) if returncode == 0 else ("failed", "运行失败", returncode)
+    pid = int(run.get("pid", 0) or 0)
+    if pid_is_running(pid):
+        return "running", "运行中", None
+    return "unknown", "进程已结束", None
+
+
+def stop_training_run(run: dict[str, object]) -> str:
+    pid = int(run.get("pid", 0) or 0)
+    output = ""
+    if pid <= 0:
+        run["stopped"] = True
+        run["returncode"] = -1
+        run["finished_at"] = time.time()
+        return "未找到可停止的进程。"
+
+    if os.name == "nt":
+        completed = subprocess.run(
+            ["taskkill", "/PID", str(pid), "/T", "/F"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            timeout=15,
+        )
+        output = completed.stdout or ""
+    else:
+        try:
+            os.killpg(pid, signal.SIGTERM)
+            output = f"已向进程组 {pid} 发送 SIGTERM。"
+        except OSError as exc:
+            output = str(exc)
+    run["stopped"] = True
+    run["returncode"] = -1
+    run["finished_at"] = time.time()
+    return output
+
+
+def without_force_retrain(args: list[str]) -> list[str]:
+    return [item for item in args if item != "--force-retrain"]
+
+
+def format_elapsed(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    minutes, sec = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}h {minutes:02d}m {sec:02d}s"
+    return f"{minutes:02d}m {sec:02d}s"
+
+
+def parse_training_progress(
+    log_text: str,
+    *,
+    expected_models: int,
+    expected_steps: int,
+    max_epochs: int,
+    finished: bool,
+) -> dict[str, object]:
+    epoch_matches = EPOCH_RE.findall(log_text)
+    reused_count = log_text.count("已复用训练好的模型")
+    task_starts = TASK_START_RE.findall(log_text)
+    model_starts = MODEL_START_RE.findall(log_text)
+    has_error = "Traceback (most recent call last)" in log_text or "运行失败" in log_text
+
+    if finished:
+        progress = 1.0
+    elif expected_models > 0:
+        epoch_units = len(epoch_matches) / max(1, max_epochs)
+        progress = min(0.97, (reused_count + epoch_units) / max(1, expected_models))
+    else:
+        progress = min(0.92, max(0.05, len(task_starts) / max(1, expected_steps)))
+
+    latest_epoch = "-"
+    latest_loss = "-"
+    if epoch_matches:
+        epoch, train_loss, val_loss = epoch_matches[-1]
+        latest_epoch = f"{epoch}/{max_epochs}"
+        latest_loss = f"Train {train_loss} · Val {val_loss}"
+
+    if has_error:
+        headline = "日志中出现异常，请查看末尾输出"
+    elif finished:
+        headline = "运行结束，输出文件已回写到对应 outputs 目录"
+    elif reused_count and not epoch_matches:
+        headline = f"已复用 {reused_count} 个 checkpoint，正在继续后续链路"
+    elif epoch_matches:
+        headline = f"正在训练：Epoch {latest_epoch}"
+    elif task_starts:
+        headline = f"正在执行：{task_starts[-1]}"
+    else:
+        headline = "进程已启动，等待脚本输出"
+
+    return {
+        "progress": progress,
+        "headline": headline,
+        "epoch_count": len(epoch_matches),
+        "reused_count": reused_count,
+        "latest_epoch": latest_epoch,
+        "latest_loss": latest_loss,
+        "latest_model": model_starts[-1].strip() if model_starts else "-",
+    }
+
+
+def render_training_monitor(auto_refresh: bool) -> None:
+    run = st.session_state.get("training_run")
+    if not isinstance(run, dict):
+        st.info("当前没有后台训练任务。可以先选择链路并点击“启动后台运行”。")
+        return
+
+    status_key, status_label, returncode = training_run_status(run)
+    running = status_key == "running"
+    elapsed_end = time.time() if running else float(run.get("finished_at", time.time()))
+    elapsed = elapsed_end - float(run.get("started_at", time.time()))
+    log_path = Path(str(run.get("log_path", "")))
+    log_text = read_log_tail(log_path)
+    progress_info = parse_training_progress(
+        log_text,
+        expected_models=int(run.get("expected_models", 0) or 0),
+        expected_steps=int(run.get("expected_steps", 1) or 1),
+        max_epochs=int(run.get("max_epochs", 1) or 1),
+        finished=not running,
+    )
+
+    st.markdown(
+        f"""
+        <div class="training-panel">
+          <b>{html_text(run.get("label", "后台运行"))} · {html_text(status_label)}</b>
+          <span>{html_text(progress_info["headline"])}；日志保存在 <span class="path-pill">{html_text(project_relative(log_path))}</span></span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+        <div class="training-state-grid">
+          <div class="training-state"><b>PID</b><span>{html_text(run.get("pid", "-"))}</span></div>
+          <div class="training-state"><b>耗时</b><span>{format_elapsed(elapsed)}</span></div>
+          <div class="training-state"><b>最新轮次</b><span>{html_text(progress_info["latest_epoch"])}</span></div>
+          <div class="training-state"><b>模型/损失</b><span>{html_text(progress_info["latest_model"])}<br>{html_text(progress_info["latest_loss"])}</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.progress(float(progress_info["progress"]), text=str(progress_info["headline"]))
+
+    actions = st.columns([1, 1, 1, 3])
+    if running and actions[0].button("停止运行", type="primary"):
+        stop_output = stop_training_run(run)
+        st.session_state["last_stop_output"] = stop_output
+        st.rerun()
+    if actions[1].button("刷新状态"):
+        st.rerun()
+    if not running and actions[2].button("继续运行"):
+        next_args = without_force_retrain(list(run.get("args", [])))
+        start_training_run(
+            next_args,
+            label=f"{run.get('label', '后台运行')}（继续）",
+            expected_models=int(run.get("expected_models", 0) or 0),
+            expected_steps=int(run.get("expected_steps", 1) or 1),
+            max_epochs=int(run.get("max_epochs", 1) or 1),
+        )
+        st.rerun()
+    if not running and actions[3].button("清除面板记录"):
+        st.session_state.pop("training_run", None)
+        st.rerun()
+
+    if "last_stop_output" in st.session_state:
+        st.caption(st.session_state.pop("last_stop_output"))
+
+    st.caption(f"returncode={returncode if returncode is not None else '-'} | started={run.get('started_label', '-')}")
+    st.markdown(
+        f'<div class="training-command">{html_text(run.get("command", ""))}</div>',
+        unsafe_allow_html=True,
+    )
+    st.text_area("实时日志", log_text or "等待输出...", height=380)
+
+    if running and auto_refresh:
+        time.sleep(1.5)
+        st.rerun()
 
 
 def render_title() -> None:
@@ -1208,109 +1618,6 @@ def render_reference_hub(contexts: dict[str, TaskContext]) -> None:
     )
 
 
-def collect_delivery_rows() -> pd.DataFrame:
-    rows = []
-    for category, path, role in DELIVERY_FILES:
-        rows.append(
-            {
-                "材料": category,
-                "文件": path.name,
-                "路径": project_relative(path),
-                "状态": path_state(path),
-                "大小": file_size_label(path),
-                "用途": role,
-            }
-        )
-    return pd.DataFrame(rows)
-
-
-def render_delivery_center() -> None:
-    render_section_title("课程交付", "要求、报告、视频、测试和最终提交")
-    delivery_df = collect_delivery_rows()
-    existing_count = int((delivery_df["状态"] == "存在").sum()) if not delivery_df.empty else 0
-    total_count = len(delivery_df)
-
-    cols = st.columns(4)
-    summary = [
-        ("交付材料", f"{existing_count}/{total_count}", "已整理为课程提交口径"),
-        ("报告草稿", "已补齐", "仍需导出 Word/PDF"),
-        ("演示视频", "脚本就绪", "真实 MP4 仍需录制"),
-        ("提交包", "清单就绪", "压缩体积需最终检查"),
-    ]
-    for col, (title, value, caption) in zip(cols, summary):
-        with col:
-            st.markdown(
-                f"""
-                <div class="reference-card">
-                  <h3>{html_text(title)}</h3>
-                  <div class="value">{html_text(value)}</div>
-                  <div class="caption">{html_text(caption)}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    progress = existing_count / total_count if total_count else 0
-    st.progress(progress, text=f"课程交付文档完成度 {existing_count}/{total_count}")
-
-    tabs = st.tabs(["材料总览", "文档预览", "提交前动作"])
-    with tabs[0]:
-        selected = st.segmented_control(
-            "材料类型",
-            ["全部", *delivery_df["材料"].drop_duplicates().tolist()],
-            default="全部",
-        )
-        visible = delivery_df if selected == "全部" else delivery_df[delivery_df["材料"] == selected]
-        st.dataframe(visible, width="stretch", hide_index=True)
-
-    with tabs[1]:
-        labels = [f"{category} - {path.name}" for category, path, _role in DELIVERY_FILES]
-        label_to_file = {label: path for label, (_category, path, _role) in zip(labels, DELIVERY_FILES)}
-        selected_label = st.selectbox("选择交付文档", labels, index=2)
-        selected_path = label_to_file[selected_label]
-        st.caption(project_relative(selected_path))
-        if selected_path.exists():
-            text = selected_path.read_text(encoding="utf-8", errors="replace")
-            st.download_button(
-                "下载当前 Markdown",
-                data=text,
-                file_name=selected_path.name,
-                mime="text/markdown",
-            )
-            with st.container(border=True):
-                st.markdown(text)
-        else:
-            st.warning("文件尚未生成。")
-
-    with tabs[2]:
-        st.markdown(
-            """
-            <div class="status-strip">
-              <span class="path-pill">补团队成员</span>
-              <span class="path-pill">导出报告 PDF/DOCX</span>
-              <span class="path-pill">录制 MP4</span>
-              <span class="path-pill">压缩包小于 200M</span>
-              <span class="path-pill">平台上传截图</span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.dataframe(
-            pd.DataFrame(
-                [
-                    ("团队信息", "补齐成员姓名、学号、职责", "待人工确认"),
-                    ("正式报告", "由课程版主报告草稿导出 Word/PDF", "待导出"),
-                    ("演示视频", "按脚本录制 3 分钟以内 MP4", "待录制"),
-                    ("最终压缩包", "按命名规范打包并检查体积", "待执行"),
-                    ("平台提交", "按教师确认的平台上传并保存截图", "待执行"),
-                ],
-                columns=["事项", "动作", "状态"],
-            ),
-            width="stretch",
-            hide_index=True,
-        )
-
-
 def render_code_lab() -> None:
     render_section_title("代码与命令", "受控命令与文本浏览")
     st.markdown(
@@ -1482,37 +1789,111 @@ def render_llm_chat(contexts: dict[str, TaskContext]) -> None:
 
 
 def render_runner() -> None:
-    render_section_title("运行控制", "查看输出、预演或确认执行")
+    render_section_title("训练控制", "后台运行、实时日志和可中止的复现入口")
     st.markdown(
-        '<div class="note danger-note">默认推荐“查看已有输出”或“dry-run 预演”。真正运行任务可能触发训练，请确认后再执行。</div>',
+        """
+        <div class="note danger-note">
+          默认先查看已有输出或 dry-run 预演。启动后台运行后，页面会读取日志中的 Epoch、checkpoint 复用和错误信息来更新进度；停止后可用“继续运行”沿用已保存 checkpoint 重新启动。
+        </div>
+        """,
         unsafe_allow_html=True,
     )
-    task = st.selectbox("任务", ["all", "main", "1", "2", "3", "3-analysis", "4"], index=0)
-    mode = st.segmented_control("操作", ["查看已有输出", "dry-run 预演", "运行任务"], default="查看已有输出")
-    use_parallel = st.toggle("并行运行互不依赖任务", value=task in {"main", "all"})
-    force_retrain = st.toggle("强制重新训练（耗时，默认关闭）", value=False)
-    allow_long_run = st.toggle("确认启动训练/分析任务", value=False)
 
-    if mode == "查看已有输出":
-        args = ["--show", task]
-    elif mode == "dry-run 预演":
-        args = ["--run", task, "--dry-run"]
+    current_run = st.session_state.get("training_run")
+    active_running = isinstance(current_run, dict) and training_run_status(current_run)[0] == "running"
+
+    selected_label = st.selectbox("工程链路", list(TASK_OPTIONS), index=1)
+    task = TASK_OPTIONS[selected_label]
+    operation = st.segmented_control(
+        "操作",
+        ["查看已有输出", "dry-run 预演", "启动训练"],
+        default="查看已有输出",
+    )
+
+    col_a, col_b, col_c, col_d = st.columns(4)
+    with col_a:
+        epochs = int(st.number_input("最大轮数", min_value=1, max_value=80, value=20, step=1))
+    with col_b:
+        patience = int(st.number_input("早停耐心", min_value=1, max_value=20, value=4, step=1))
+    with col_c:
+        batch_size = int(st.selectbox("Batch size", [64, 128, 256], index=1))
+    with col_d:
+        hidden_dim = int(st.selectbox("隐藏维度", [16, 32, 64], index=1))
+
+    task_includes_q4 = "4" in task_keys_for(task)
+    q4_modes = ["mixed"]
+    q4_models = ["FusionModel"]
+    q4_fast = True
+    if task_includes_q4:
+        q4_mode_labels = st.multiselect(
+            "局地校正输入模式",
+            list(Q4_MODE_OPTIONS),
+            default=["NWP+LMD"],
+        )
+        q4_model_labels = st.multiselect(
+            "局地校正模型",
+            list(Q4_MODEL_OPTIONS),
+            default=["FusionModel"],
+        )
+        q4_modes = [Q4_MODE_OPTIONS[label] for label in q4_mode_labels] or ["mixed"]
+        q4_models = [Q4_MODEL_OPTIONS[label] for label in q4_model_labels] or ["FusionModel"]
+        q4_fast = st.toggle("局地校正快速刷新图表", value=True)
+
+    use_parallel = st.toggle("并行运行互不依赖链路", value=False, disabled=operation == "启动训练")
+    force_retrain = st.toggle("强制重新训练", value=False, disabled=operation == "查看已有输出")
+    auto_refresh = st.toggle("运行中自动刷新日志", value=True)
+    allow_long_run = st.toggle("确认启动后台训练/分析任务", value=False, disabled=operation != "启动训练")
+
+    args = build_runner_args(
+        operation=operation,
+        task=task,
+        use_parallel=use_parallel,
+        force_retrain=force_retrain,
+        epochs=epochs,
+        patience=patience,
+        batch_size=batch_size,
+        hidden_dim=hidden_dim,
+        q4_modes=q4_modes,
+        q4_models=q4_models,
+        q4_fast=q4_fast,
+    )
+    display_command = "python 2025\\run_project.py " + " ".join(args)
+    st.code(display_command, language="powershell")
+
+    expected_models, expected_steps = expected_training_units(task, q4_modes, q4_models)
+    if operation == "启动训练":
+        disabled = active_running or not allow_long_run
+        if st.button("启动后台运行", type="primary", disabled=disabled):
+            start_training_run(
+                args,
+                label=selected_label,
+                expected_models=expected_models,
+                expected_steps=expected_steps,
+                max_epochs=epochs,
+            )
+            st.rerun()
+        if active_running:
+            st.warning("已有后台任务正在运行。请先等待完成或停止当前任务。")
+        elif not allow_long_run:
+            st.warning("如需启动训练或分析任务，请先勾选确认框。")
     else:
-        args = ["--run", task]
-    if mode != "查看已有输出" and use_parallel:
-        args.append("--parallel")
-    if mode == "运行任务" and force_retrain:
-        args.append("--force-retrain")
+        if st.button("执行当前操作", type="primary"):
+            returncode, output, executed = run_project_command(args)
+            st.caption(f"returncode={returncode} | {executed}")
+            st.text_area("命令输出", output, height=360)
 
-    st.code("python 2025\\run_project.py " + " ".join(args), language="powershell")
-    disabled = mode == "运行任务" and not allow_long_run
-    if st.button("执行", type="primary", disabled=disabled):
-        timeout = 3600 if mode == "运行任务" else 240
-        returncode, output, command_text = run_project_command(args, timeout_seconds=timeout)
-        st.caption(f"returncode={returncode} | {command_text}")
-        st.text_area("命令输出", output, height=420)
-    if disabled:
-        st.warning("如需真正运行任务，请先勾选确认框。")
+    st.markdown(
+        """
+        <div class="status-strip">
+          <span class="path-pill">日志实时写入</span>
+          <span class="path-pill">Epoch 进度解析</span>
+          <span class="path-pill">停止进程树</span>
+          <span class="path-pill">checkpoint 复用继续</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    render_training_monitor(auto_refresh=auto_refresh)
 
 
 def main() -> None:
@@ -1539,8 +1920,6 @@ def main() -> None:
         render_results(contexts)
     elif page == "交付引用":
         render_reference_hub(contexts)
-    elif page == "课程交付":
-        render_delivery_center()
     elif page == "代码与命令":
         render_code_lab()
     elif page == "运行解读":

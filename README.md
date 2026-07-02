@@ -97,7 +97,7 @@ python 2025\run_project.py --show 4
 python -m streamlit run 2025\app.py
 ```
 
-不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。界面包含工作台、运行结果、交付引用、课程交付、代码与命令、运行解读和受保护运行控制页面。运行解读模块默认离线可用，也可读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，或通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
+不要直接运行 `python 2025\app.py`；该命令只会输出正确启动提示。界面包含工作台、运行结果、交付引用、代码与命令、运行解读和训练控制页面。训练控制页支持后台运行、Epoch 进度日志、停止进程树和基于 checkpoint 的继续运行。运行解读模块默认离线可用，也可读取本机 Codex 配置文件 `~\.codex\config.toml` 与 `~\.codex\auth.json`，或通过 `PV_LLM_*` 环境变量覆盖；密钥不会写入仓库。`software_launcher.py` 负责以桌面窗口方式启动/打开控制台、运行健康检查和停止后台服务。
 
 GitHub Pages 静态展示页位于 `docs/index.html`。Pages 只展示项目摘要、核心指标、图表和本地运行方式；完整 Streamlit 工作台需要本地运行。
 

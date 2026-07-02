@@ -2,6 +2,42 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-07-02 网页课程交付入口移除与训练控制增强
+
+### 调整目标
+
+- 按用户要求去掉网页中的“课程交付”独立展示项，让前台更像真实工程项目工作台，而不是课程材料索引页。
+- 完善训练模块，使实际运行时能看到日志和进度，并提供停止与继续运行的控制入口。
+
+### 主要改动
+
+- 更新 `2025/app.py`：
+  - 侧边栏移除“课程交付”，保留工作台、运行结果、交付引用、代码与命令、运行解读和训练控制。
+  - 从前台交付引用中移除课程材料条目，保留业务目标、评价附件、论文素材、运行说明、代码索引和维护记录。
+  - 新增后台训练控制：通过固定参数调用 `run_project.py`，日志写入 `2025/tools/runtime/training_runs/`，页面解析 `Epoch`、checkpoint 复用和错误信息更新进度。
+  - 新增停止进程树、刷新状态、清除记录和“继续运行”入口；继续运行会去掉 `--force-retrain`，优先复用已有 checkpoint。
+- 更新 `docs/index.html`：
+  - 删除首屏“课程交付材料”标签。
+  - 删除独立“课程交付”区块和 `2025/05_delivery` 材料入口。
+  - 工程流程改为强调 Streamlit 指标、图表、代码索引和受控训练入口。
+- 更新 `.gitignore`，忽略 `2025/tools/runtime/` 本地训练日志目录。
+- 更新 `README.md`、`2025/README.md`、`2025/RUN_GUIDE.md` 和 `2025/CODE_INDEX.md`，同步新页面结构和训练控制能力。
+- 更新 `tests/test_project_health.py`，锁定 App 不再包含“课程交付”前台入口，并检查训练控制函数和 Pages 静态页内容。
+
+### 验证结果
+
+- `python -m py_compile 2025\app.py 2025\run_project.py 2025\tools\project_health_check.py`：通过。
+- `python 2025\run_project.py --run 4 --dry-run --epochs 2 --patience 1 --batch-size 64 --hidden-dim 16 --q4-modes mixed --q4-models FusionModel --q4-fast`：通过，只输出运行计划和环境变量覆盖，不触发训练。
+- `python 2025\tools\project_health_check.py`：通过，无 Python 解析错误、无未解析相对输入、无受管输出问题。
+- `python -m unittest discover -s tests -q`：通过，24 个测试 OK。
+- `python 2025\app.py`：通过，只输出 Streamlit 正确启动提示。
+- 本地启动 `python -m streamlit run 2025\app.py --server.headless=true --server.port=8516 --server.address=127.0.0.1` 并截图检查：侧边栏已显示“训练控制”，未显示“课程交付”。
+
+### 后续注意事项
+
+- 训练停止后的“继续运行”不是从中断 batch 无损恢复，而是重新启动同一链路并复用已经写入的 checkpoint；这与当前训练脚本的 checkpoint 机制一致。
+- 当前工作区存在此前已经修改的 `outputs/` 图表、预测表和摘要文件，本次提交不混入这些产物修改。
+
 ## 2026-07-01 项目文件夹结构整理与命名优化
 
 ### 调整目标

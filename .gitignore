@@ -39,6 +39,7 @@ desktop.ini
 
 # Local runtime logs
 *.log.*
+2025/tools/runtime/
 tmp/
 *.baiduyun.uploading.cfg
 
