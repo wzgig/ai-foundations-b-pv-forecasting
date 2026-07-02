@@ -2,6 +2,28 @@
 
 本文件用于记录本仓库每一次较重要的整理、修改、提交和推送。后续改动建议继续按时间倒序追加。
 
+## 2026-07-02 新增模型与指标名词解释
+
+### 调整目标
+
+- 按用户要求补充一份可直接用于答辩、录屏和材料检查的名词解释文档。
+- 解释三个训练模型、NWP、LMD、mixed 输入、白昼预测口径和核心评价指标，避免读者只看到缩写和模型名称。
+
+### 主要改动
+
+- 新增 `2025/05_delivery/名词解释与指标说明.md`，按工程语境解释 `PureLSTM`、`FusionModel`、`BiFusionModel` 的结构差异和项目作用。
+- 补充 NWP 数值天气预报、LMD 局地气象数据、mixed 混合输入的含义，并列出项目脚本中实际使用的气象字段。
+- 梳理 `RMSE`、`MAE`、`MAPE`、`E_rmse`、`E_mae`、`E_me`、`r`、`C_R`、`Q_R` 的评价含义、趋势和项目计算口径。
+- 将当前三条核心链路的代表结果整理为可引用表述：历史功率基线 `E_rmse=0.0833`、NWP 气象融合 `E_rmse=0.0699`、局地校正 `FusionModel_mixed` 的 `E_rmse=0.0465`。
+- 更新 `2025/05_delivery/README.md` 的文件索引，并在 `tests/test_project_health.py` 中加入新文档存在性和关键术语检查。
+
+### 验证结果
+
+- `python -m py_compile 2025\app.py 2025\run_project.py 2025\tools\project_health_check.py`：通过。
+- `python 2025\tools\project_health_check.py`：通过，无 Python 解析错误、无未解析相对输入、无受管输出问题。
+- `python -m unittest discover -s tests -q`：通过，24 个测试 OK。
+- `git diff --check -- PROJECT_LOG.md 2025\05_delivery\README.md 2025\05_delivery\名词解释与指标说明.md tests\test_project_health.py`：通过，仅提示 Windows 后续可能将 `tests/test_project_health.py` 写回 CRLF。
+
 ## 2026-07-02 三分钟演示视频录制指南细化
 
 ### 调整目标

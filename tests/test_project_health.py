@@ -272,6 +272,7 @@ requires_openai_auth = true
             "项目主报告_终稿.pdf",
             "团队分工与项目计划.md",
             "功能性能稳定性测试表.md",
+            "名词解释与指标说明.md",
             "演示视频脚本.md",
             "网站使用指南与案例.md",
             "最终提交包清单.md",
@@ -293,6 +294,22 @@ requires_openai_auth = true
         self.assertIn("图表", final_report)
         self.assertGreater((DELIVERY_DIR / "项目主报告_终稿.docx").stat().st_size, 100000)
         self.assertGreater((DELIVERY_DIR / "项目主报告_终稿.pdf").stat().st_size, 100000)
+
+        glossary = (DELIVERY_DIR / "名词解释与指标说明.md").read_text(encoding="utf-8")
+        for term in [
+            "PureLSTM",
+            "FusionModel",
+            "BiFusionModel",
+            "NWP",
+            "LMD",
+            "mixed",
+            "E_rmse",
+            "C_R",
+            "Q_R",
+        ]:
+            self.assertIn(term, glossary)
+        self.assertIn("FusionModel_mixed", glossary)
+        self.assertIn("daylight_metrics", glossary)
 
     def test_reference_materials_have_clear_paths(self):
         course_materials = PROJECT_ROOT / "2025" / "00_course_materials"
