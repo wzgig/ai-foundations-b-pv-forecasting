@@ -40,10 +40,22 @@ DIRECT_OUTPUT_PATTERNS = {
     "plotly_show": re.compile(r"\bfig\.show\s*\("),
     "direct_savefig": re.compile(r"\.savefig\s*\("),
 }
+IGNORED_CODE_PART_PREFIXES = ("06_",)
+
+
+def is_generated_delivery_path(path: Path) -> bool:
+    """Return True for generated submission-package copies under 2025/06_*."""
+
+    try:
+        relative = path.relative_to(ROOT)
+    except ValueError:
+        return False
+    return any(part.startswith(IGNORED_CODE_PART_PREFIXES) for part in relative.parts)
 
 
 def iter_code_files() -> list[Path]:
-    return sorted([*ROOT.rglob("*.py"), *ROOT.rglob("*.m")])
+    files = [*ROOT.rglob("*.py"), *ROOT.rglob("*.m")]
+    return sorted(path for path in files if not is_generated_delivery_path(path))
 
 
 def parse_python_files(paths: list[Path]) -> list[dict[str, str]]:

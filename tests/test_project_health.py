@@ -79,6 +79,9 @@ class ProjectHealthTests(unittest.TestCase):
     def test_training_scripts_do_not_share_best_model_checkpoint_name(self):
         offenders = []
         for path in (PROJECT_ROOT / "2025").rglob("*.py"):
+            relative = path.relative_to(PROJECT_ROOT / "2025")
+            if any(part.startswith("06_") for part in relative.parts):
+                continue
             text = path.read_text(encoding="utf-8", errors="ignore")
             if "best_model.pth" in text:
                 offenders.append(str(path.relative_to(PROJECT_ROOT)))

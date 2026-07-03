@@ -1,6 +1,6 @@
 {
   "script": "problem4_feature_ablation_forecast.py",
-  "generated_at": "2026-06-02T15:14:59.175568+00:00",
+  "generated_at": "2026-07-03T06:53:57.261656+00:00",
   "metadata": {
     "problem": "problem4_feature_ablation",
     "models": [
@@ -11,44 +11,6 @@
       "lmd",
       "mixed"
     ],
-    "feature_modes": {
-      "nwp": [
-        "nwp_globalirrad",
-        "nwp_directirrad",
-        "nwp_temperature",
-        "nwp_humidity",
-        "nwp_windspeed",
-        "nwp_pressure",
-        "nwp_wind_x",
-        "nwp_wind_y"
-      ],
-      "lmd": [
-        "lmd_totalirrad",
-        "lmd_diffuseirrad",
-        "lmd_temperature",
-        "lmd_pressure",
-        "lmd_windspeed",
-        "lmd_wind_x",
-        "lmd_wind_y"
-      ],
-      "mixed": [
-        "nwp_globalirrad",
-        "nwp_directirrad",
-        "nwp_temperature",
-        "nwp_humidity",
-        "nwp_windspeed",
-        "nwp_pressure",
-        "nwp_wind_x",
-        "nwp_wind_y",
-        "lmd_totalirrad",
-        "lmd_diffuseirrad",
-        "lmd_temperature",
-        "lmd_pressure",
-        "lmd_windspeed",
-        "lmd_wind_x",
-        "lmd_wind_y"
-      ]
-    },
     "input_dimensions": {
       "nwp": 9,
       "lmd": 8,
@@ -56,34 +18,13 @@
     },
     "sample_summary": {
       "nwp": {
-        "train_samples": 25253,
-        "test_days": 28
+        "test_rows": 2688
       },
       "lmd": {
-        "train_samples": 25253,
-        "test_days": 28
+        "test_rows": 2688
       },
       "mixed": {
-        "train_samples": 25253,
-        "test_days": 28
-      }
-    },
-    "test_date_first_in_problem_order": "2019-02-22",
-    "test_date_last_in_problem_order": "2018-11-30",
-    "test_date_min": "2018-08-25",
-    "test_date_max": "2019-05-31",
-    "training": {
-      "epochs": 20,
-      "batch_size": 128,
-      "patience": 4,
-      "learning_rate": 0.001,
-      "hidden_dim": 32,
-      "force_retrain": false,
-      "save_run_diagnostics": true,
-      "checkpoint_reused": {
-        "FusionModel_nwp": true,
-        "FusionModel_lmd": true,
-        "FusionModel_mixed": true
+        "test_rows": 2688
       }
     },
     "best_run_by_E_rmse": "FusionModel_mixed",
@@ -92,57 +33,36 @@
       "MAE": 0.2134703293543207,
       "MAPE": 18.099765384424398,
       "E_rmse": 0.04649532731708884,
-      "E_mae": 0.0323439892961092,
-      "E_me": 0.005911635457977666,
+      "E_mae": 0.032343989296109196,
+      "E_me": -0.005911635457977666,
       "r": 0.9691924969269701,
       "C_R": 95.35046726829111,
       "Q_R": 99.8389694041868
     },
-    "metric_heatmap_scoring": "RMSE/MAE/MAPE/E_rmse/E_mae/abs(E_me) are inverted; r/C_R/Q_R are direct, all normalized by column.",
+    "metric_source": "recomputed from existing Q4 prediction CSV files without retraining",
     "table_time_alignment": "issue_time is previous-day 00:00; forecast_time covers the target test day",
-    "weather_feature_alignment": "previous-day measured power plus target-day weather feature sequence",
-    "elapsed_seconds": 88.64908075332642
+    "weather_feature_alignment": "previous-day measured power plus target-day weather feature sequence"
   },
   "artifacts": {
     "predictions": [
-      "outputs\\predictions\\Q4_pred_FusionModel_nwp.csv",
-      "outputs\\predictions\\Q4_pred_FusionModel_lmd.csv",
-      "outputs\\predictions\\Q4_pred_FusionModel_mixed.csv"
+      "outputs/predictions/Q4_pred_FusionModel_nwp.csv",
+      "outputs/predictions/Q4_pred_FusionModel_lmd.csv",
+      "outputs/predictions/Q4_pred_FusionModel_mixed.csv"
     ],
     "metrics": [
-      "outputs\\metrics\\Q4_模型输入对比结果.csv"
+      "outputs/metrics/Q4_模型输入对比结果.csv",
+      "outputs/metrics/Q4_model_input_metrics.csv"
     ],
     "figures": [
-      "outputs\\figures\\FusionModel_nwp_daylight_forecast_curve.png",
-      "outputs\\figures\\FusionModel_nwp_daylight_error_distribution.png",
-      "outputs\\figures\\FusionModel_nwp_actual_vs_predicted_scatter.png",
-      "outputs\\figures\\FusionModel_nwp_error_analysis_matrix.png",
-      "outputs\\figures\\FusionModel_nwp_interactive_forecast_sample0.html",
-      "outputs\\figures\\FusionModel_lmd_daylight_forecast_curve.png",
-      "outputs\\figures\\FusionModel_lmd_daylight_error_distribution.png",
-      "outputs\\figures\\FusionModel_lmd_actual_vs_predicted_scatter.png",
-      "outputs\\figures\\FusionModel_lmd_error_analysis_matrix.png",
-      "outputs\\figures\\FusionModel_lmd_interactive_forecast_sample0.html",
-      "outputs\\figures\\FusionModel_mixed_daylight_forecast_curve.png",
-      "outputs\\figures\\FusionModel_mixed_daylight_error_distribution.png",
-      "outputs\\figures\\FusionModel_mixed_actual_vs_predicted_scatter.png",
-      "outputs\\figures\\FusionModel_mixed_error_analysis_matrix.png",
-      "outputs\\figures\\FusionModel_mixed_interactive_forecast_sample0.html",
-      "outputs\\figures\\Q4_模型输入对比结果热力图.png",
-      "outputs\\figures\\RMSE_指标对比_不同输入模式.png",
-      "outputs\\figures\\MAPE_指标对比_不同输入模式.png",
-      "outputs\\figures\\E_rmse_指标对比_不同输入模式.png",
-      "outputs\\figures\\C_R_vs_输入特征维度.png",
-      "outputs\\figures\\Q_R_vs_输入特征维度.png",
-      "outputs\\figures\\FusionModel_输入对比雷达图.png"
+      "outputs/figures/Q4_模型输入对比结果热力图.png"
     ],
     "reports": [
-      "outputs\\reports\\run_summary.json"
+      "outputs/reports/run_summary.json"
     ],
     "models": [
-      "models\\problem4_FusionModel_nwp.pth",
-      "models\\problem4_FusionModel_lmd.pth",
-      "models\\problem4_FusionModel_mixed.pth"
+      "models/problem4_FusionModel_nwp.pth",
+      "models/problem4_FusionModel_lmd.pth",
+      "models/problem4_FusionModel_mixed.pth"
     ]
   }
 }

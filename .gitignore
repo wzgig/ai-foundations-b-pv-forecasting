@@ -43,6 +43,11 @@ desktop.ini
 tmp/
 *.baiduyun.uploading.cfg
 
+# Local course-platform submission artifacts
+2025/06_最终提交文件夹/
+2025/05_delivery/视频/
+2025/05_delivery/人工智能基础B_王子成组.*
+
 # Local secrets and API configuration
 .env
 .env.*
