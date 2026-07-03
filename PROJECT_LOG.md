@@ -1,3 +1,19 @@
+## 2026-07-03 作业提交说明补充
+
+### 调整目标
+
+- 为课程平台上传补充一份面向评阅老师的提交说明，写清楚压缩包结构、运行方式、核心结果和 GitHub 仓库链接。
+
+### 主要改动
+
+- 新增 `2025/05_delivery/作业提交说明.md`。
+- 将该说明同步到 `2025/06_最终提交文件夹/.../作业提交说明.md`，并重新生成最终提交 ZIP。
+- 说明中明确 GitHub 仓库 `https://github.com/wzgig/ai-foundations-b-pv-forecasting` 和 GitHub Pages `https://wzgig.github.io/ai-foundations-b-pv-forecasting/`。
+
+### 验证结果
+
+- 最终提交 ZIP 已重新生成，大小约 95.0MB。
+- ZIP 内包含根目录 `作业提交说明.md`。
 ## 2026-07-03 课程最终提交包整理与补充材料完善
 
 ### 调整目标
